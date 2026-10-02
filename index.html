@@ -155,24 +155,20 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
 @media (max-width:700px){.magicStars .magicStar{opacity:.5}}
 </style><style id="cursor-sparkle-style">
 .cursorSparkle{
-  position:fixed;
-  left:0;top:0;
-  width:9px;height:9px;
-  margin:-4.5px 0 0 -4.5px;
-  pointer-events:none;
-  z-index:99999;
-  background:url("assets/magic-star.png") center/contain no-repeat;
-  opacity:0;
-  will-change:transform,opacity;
-  filter:drop-shadow(0 0 5px rgba(45,145,255,.55));
-  animation:cursorSparkleFly .75s ease-out forwards;
+ position:fixed;left:0;top:0;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;
+ pointer-events:none;z-index:2147483647;opacity:0;
+ color:#39a9ff;font:900 11px/11px Arial,sans-serif;text-align:center;
+ text-shadow:0 0 3px #fff,0 0 7px #188cff,0 0 12px rgba(40,150,255,.9);
+ will-change:transform,opacity;
+ animation:cursorSparkleFly .85s ease-out forwards;
 }
+.cursorSparkle::before{content:"★";display:block}
 @keyframes cursorSparkleFly{
-  0%{opacity:.9;transform:translate(0,0) scale(.72) rotate(0deg)}
-  35%{opacity:.8}
-  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.18) rotate(var(--rot))}
+ 0%{opacity:0;transform:translate3d(0,0,0) scale(.2) rotate(0)}
+ 12%{opacity:1;transform:translate3d(0,0,0) scale(1) rotate(0)}
+ 100%{opacity:0;transform:translate3d(var(--dx),var(--dy),0) scale(.25) rotate(var(--rot))}
 }
-@media (max-width:700px){.cursorSparkle{display:none}}
+@media(max-width:700px){.cursorSparkle{display:none!important}}
 </style></head><body><script id="magic-stars-script">
 (function(){
   function initMagicStars(){
@@ -495,25 +491,30 @@ window.addEventListener("appinstalled",()=>{
 });
 </script><script id="cursor-sparkle-script">
 (function(){
-  if("ontouchstart" in window)return;
+  if(window.matchMedia("(hover:none), (pointer:coarse)").matches)return;
   let last=0;
-  function spawn(x,y){
+  function sparkle(x,y){
     const now=performance.now();
-    if(now-last<34)return;
+    if(now-last<45)return;
     last=now;
-    const s=document.createElement("span");
-    s.className="cursorSparkle";
-    s.style.left=x+"px";
-    s.style.top=y+"px";
-    s.style.setProperty("--dx",(Math.random()*26-13).toFixed(1)+"px");
-    s.style.setProperty("--dy",(Math.random()*30-8).toFixed(1)+"px");
-    s.style.setProperty("--rot",(Math.random()*140-70).toFixed(1)+"deg");
-    const size=6+Math.random()*6;
-    s.style.width=size+"px";
-    s.style.height=size+"px";
-    document.body.appendChild(s);
-    setTimeout(()=>s.remove(),800);
+    const amount=1+(Math.random()<0.28?1:0);
+    for(let i=0;i<amount;i++){
+      const s=document.createElement("span");
+      s.className="cursorSparkle";
+      s.style.left=(x+(Math.random()*10-5))+"px";
+      s.style.top=(y+(Math.random()*10-5))+"px";
+      s.style.setProperty("--dx",(Math.random()*34-17).toFixed(1)+"px");
+      s.style.setProperty("--dy",(Math.random()*34-6).toFixed(1)+"px");
+      s.style.setProperty("--rot",(Math.random()*180-90).toFixed(1)+"deg");
+      const size=8+Math.random()*7;
+      s.style.fontSize=size+"px";
+      s.style.lineHeight=size+"px";
+      s.style.width=size+"px";
+      s.style.height=size+"px";
+      document.body.appendChild(s);
+      setTimeout(()=>s.remove(),900);
+    }
   }
-  window.addEventListener("mousemove",e=>spawn(e.clientX,e.clientY),{passive:true});
+  document.addEventListener("mousemove",e=>sparkle(e.clientX,e.clientY),{passive:true});
 })();
 </script></body></html>
