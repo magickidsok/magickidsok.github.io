@@ -143,7 +143,11 @@
 }
 </style><style>
 .streamBadge{position:absolute;top:10px;left:10px;z-index:3;display:flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:rgba(2,10,34,.82);border:1px solid rgba(255,255,255,.12);font-size:9px;letter-spacing:.5px;pointer-events:none}.streamDot{width:7px;height:7px;border-radius:50%;background:#20e86b;box-shadow:0 0 10px rgba(32,232,107,.8)}.streamBadge.offline .streamDot{background:#ff3b47;box-shadow:0 0 10px rgba(255,59,71,.7)}.streamBadge.connecting .streamDot{background:#ffd21b;box-shadow:0 0 10px rgba(255,210,27,.7)}.retryBtn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;border:0;border-radius:10px;padding:10px 14px;background:linear-gradient(135deg,#1788ff,#0d5cc8);color:#fff;font-weight:1000;font-size:11px;cursor:pointer;box-shadow:0 12px 25px rgba(0,0,0,.3)}.retryBtn.hidden{display:none}
-</style><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#03164b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"></head><body><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="active" href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="donate" href="donar.html">DONAR</a><a href="descargar-aplicacion.html" class="downloadAppNav"><span class="androidIcon">●</span> DESCARGAR APLICACION</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><div class="alert"><span class="dot"></span><b>MAGIC KIDS EN VIVO</b><span>La programación que recordás, ahora online.</span></div><section class="hero"><div class="card player"><div class="row"><h1>Magic Kids <em>EN VIVO</em></h1><span class="live">● LIVE</span></div><div class="screen" id="screen">
+</style><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#03164b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>
+.pwaInstall{display:none;align-items:center;justify-content:center;gap:9px;margin:10px auto 0;padding:10px 15px;border:1px solid rgba(87,214,116,.35);border-radius:12px;background:linear-gradient(135deg,#168f3a,#0c6f2d);color:#fff;font-weight:1000;font-size:11px;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.18)}
+.pwaInstall.show{display:inline-flex}
+.pwaInstall span{font-size:15px}
+</style></head><body><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="active" href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="donate" href="donar.html">DONAR</a><a href="descargar-aplicacion.html" class="downloadAppNav"><span class="androidIcon">●</span> DESCARGAR APLICACION</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><div class="alert"><span class="dot"></span><b>MAGIC KIDS EN VIVO</b><span>La programación que recordás, ahora online.</span></div><button id="installPwa" class="pwaInstall"><span>📲</span> INSTALAR MAGIC KIDS</button><section class="hero"><div class="card player"><div class="row"><h1>Magic Kids <em>EN VIVO</em></h1><span class="live">● LIVE</span></div><div class="screen" id="screen">
   <video id="magicVideo" autoplay muted playsinline controls preload="auto"></video>
   <div class="streamBadge" id="streamBadge"><span class="streamDot"></span><b id="streamLabel">CONECTANDO</b></div>
   <div class="status" id="status">Conectando Magic Kids…</div>
@@ -391,4 +395,21 @@ document.addEventListener("DOMContentLoaded",function(){
     if(e.target.dataset.ban) MAGIC_DB.ref("banned/"+e.target.dataset.ban).set(true);
   });
 });
-</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script></body></html>
+</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script>
+let magicPwaPrompt=null;
+window.addEventListener("beforeinstallprompt",e=>{
+  e.preventDefault();
+  magicPwaPrompt=e;
+  document.getElementById("installPwa")?.classList.add("show");
+});
+document.getElementById("installPwa")?.addEventListener("click",async()=>{
+  if(!magicPwaPrompt)return;
+  magicPwaPrompt.prompt();
+  await magicPwaPrompt.userChoice;
+  magicPwaPrompt=null;
+  document.getElementById("installPwa")?.classList.remove("show");
+});
+window.addEventListener("appinstalled",()=>{
+  document.getElementById("installPwa")?.classList.remove("show");
+});
+</script></body></html>
