@@ -147,7 +147,68 @@
 .pwaInstall{display:none;align-items:center;justify-content:center;gap:9px;margin:10px auto 0;padding:10px 15px;border:1px solid rgba(87,214,116,.35);border-radius:12px;background:linear-gradient(135deg,#168f3a,#0c6f2d);color:#fff;font-weight:1000;font-size:11px;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.18)}
 .pwaInstall.show{display:inline-flex}
 .pwaInstall span{font-size:15px}
-</style></head><body><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="active" href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="donate" href="donar.html">DONAR</a><a href="descargar-aplicacion.html" class="downloadAppNav"><span class="androidIcon">●</span> DESCARGAR APLICACION</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><div class="alert"><span class="dot"></span><b>MAGIC KIDS EN VIVO</b><span>La programación que recordás, ahora online.</span></div><button id="installPwa" class="pwaInstall"><span>📲</span> INSTALAR MAGIC KIDS</button><section class="hero"><div class="card player"><div class="row"><h1>Magic Kids <em>EN VIVO</em></h1><span class="live">● LIVE</span></div><div class="screen" id="screen">
+</style><style id="magic-stars-style">
+.magicStars{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.magicStars .magicStar{position:absolute;width:var(--size);height:var(--size);object-fit:contain;opacity:var(--opacity);will-change:transform}
+body{position:relative}
+body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
+@media (max-width:700px){.magicStars .magicStar{opacity:.5}}
+</style></head><body><script id="magic-stars-script">
+(function(){
+  function initMagicStars(){
+    if(document.getElementById("magicStars"))return;
+    const field=document.createElement("div");
+    field.id="magicStars";
+    field.className="magicStars";
+    document.body.prepend(field);
+    const count=58;
+    const stars=[];
+    for(let i=0;i<count;i++){
+      const img=document.createElement("img");
+      img.className="magicStar";
+      img.src="assets/magic-star.png";
+      img.alt="";
+      img.setAttribute("aria-hidden","true");
+      const size=4+Math.random()*9;
+      const opacity=.25+Math.random()*.5;
+      const depth=.12+Math.random()*.52;
+      const x=Math.random()*100;
+      const y=Math.random()*100;
+      img.style.setProperty("--size",size+"px");
+      img.style.setProperty("--opacity",opacity.toFixed(2));
+      img.style.left=x+"%";
+      img.style.top=y+"%";
+      field.appendChild(img);
+      stars.push({el:img,x,y,depth});
+    }
+    let targetX=0,targetY=0,currentX=0,currentY=0,raf=0;
+    function animate(){
+      currentX+=(targetX-currentX)*.055;
+      currentY+=(targetY-currentY)*.055;
+      for(const s of stars){
+        const dx=currentX*s.depth;
+        const dy=currentY*s.depth;
+        s.el.style.transform="translate("+dx.toFixed(2)+"px,"+dy.toFixed(2)+"px)";
+      }
+      raf=requestAnimationFrame(animate);
+    }
+    function move(e){
+      const x=(e.clientX/window.innerWidth-.5)*24;
+      const y=(e.clientY/window.innerHeight-.5)*16;
+      targetX=-x; targetY=-y;
+      if(!raf)animate();
+    }
+    window.addEventListener("mousemove",move,{passive:true});
+    window.addEventListener("mouseleave",()=>{targetX=0;targetY=0},{passive:true});
+    // En celulares mantenemos el fondo fijo y liviano.
+    if("ontouchstart" in window){
+      for(const s of stars)s.el.style.opacity=Math.min(parseFloat(getComputedStyle(s.el).opacity),.5);
+    }
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initMagicStars);
+  else initMagicStars();
+})();
+</script><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="active" href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="donate" href="donar.html">DONAR</a><a href="descargar-aplicacion.html" class="downloadAppNav"><span class="androidIcon">●</span> DESCARGAR APLICACION</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><div class="alert"><span class="dot"></span><b>MAGIC KIDS EN VIVO</b><span>La programación que recordás, ahora online.</span></div><button id="installPwa" class="pwaInstall"><span>📲</span> INSTALAR MAGIC KIDS</button><section class="hero"><div class="card player"><div class="row"><h1>Magic Kids <em>EN VIVO</em></h1><span class="live">● LIVE</span></div><div class="screen" id="screen">
   <video id="magicVideo" autoplay muted playsinline controls preload="auto"></video>
   <div class="streamBadge" id="streamBadge"><span class="streamDot"></span><b id="streamLabel">CONECTANDO</b></div>
   <div class="status" id="status">Conectando Magic Kids…</div>
