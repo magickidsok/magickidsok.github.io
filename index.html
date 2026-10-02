@@ -6,6 +6,141 @@
 .mini>*{display:none!important}
 </style><script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.20"></script><style>.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}.screen .status{position:absolute;left:0;right:0;bottom:8px;text-align:center;text-shadow:0 1px 5px #000;pointer-events:none}</style><style>.nowNext{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin-top:16px;padding:15px 18px;border-radius:17px;background:linear-gradient(100deg,rgba(8,59,142,.85),rgba(126,18,27,.82));border:1px solid rgba(139,203,255,.2);box-shadow:0 12px 34px rgba(0,0,0,.18)}.nowNext>div:not(.nextArrow){min-width:0}.nowNext small{display:block;color:#8fd1ff;font-size:9px;letter-spacing:1px;font-weight:1000}.nowNext strong{display:block;font-size:16px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowNext span{display:block;color:#d4e3f3;font-size:10px;margin-top:3px}.nextArrow{font-size:27px;font-weight:900;color:#ffd21b}.nowNext>div:last-child{text-align:right}@media(max-width:600px){.nowNext{grid-template-columns:1fr;gap:7px}.nowNext>div:last-child{text-align:left}.nextArrow{display:none}.nowNext strong{white-space:normal}}</style><style>
 .chatCard{padding:20px;min-height:100%;display:flex;flex-direction:column}.chatIntro{color:#bfd4ec;font-size:12px;line-height:1.55;margin:8px 0 12px}.chatLogin{display:grid;grid-template-columns:1fr auto;gap:7px}.chatLogin input,.chatCompose input{width:100%;border:1px solid rgba(130,196,255,.2);background:#04194a;color:#fff;border-radius:10px;padding:10px 11px;outline:none}.blueBtn{background:linear-gradient(135deg,#1788ff,#0d5cc8);color:#fff;border:0;cursor:pointer;margin:0}.hidden{display:none!important}.chatApp{display:flex;flex-direction:column;min-height:390px}.chatTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.chatTop span{font-size:10px;color:#9dccf5;font-weight:900}.miniBtn{border:1px solid rgba(125,192,255,.2);background:rgba(255,255,255,.05);color:#fff;border-radius:8px;padding:7px 8px;font-size:9px;font-weight:900;cursor:pointer}.chatMessages{flex:1;overflow:auto;min-height:220px;max-height:270px;padding:6px 3px;display:flex;flex-direction:column;gap:6px}.msg{padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.045);border:1px solid rgba(145,205,255,.08)}.msg .meta{font-size:9px;color:#75c5ff;font-weight:900;margin-bottom:2px}.msg .txt{font-size:12px;color:#e4effc;word-break:break-word}.msg .mod{float:right;display:flex;gap:4px}.mod button{border:0;border-radius:6px;padding:3px 5px;font-size:8px;color:#fff;background:#7f1d26;cursor:pointer}.chatCompose{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:8px}.chatHint{font-size:9px;color:#7e9fbe;margin-top:7px}.adminPanel{margin-top:10px;border-top:1px solid rgba(146,203,255,.14);padding-top:10px}.adminHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}.adminHead strong{font-size:12px}.adminUser{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);padding:7px;border-radius:8px;margin-bottom:5px}.adminUser span{font-size:10px}.banBtn{background:#b91725}.kickBtn{background:#7f1d26}.adminHelp{font-size:9px;line-height:1.4;color:#819fbc}code{color:#9dd5ff}@media(max-width:600px){.chatLogin,.chatCompose{grid-template-columns:1fr}.chatApp{min-height:320px}}
+</style><style>
+/* MAGIC KIDS — MOBILE POLISH */
+@media (max-width: 700px){
+  html{font-size:16px}
+  body{overflow-x:hidden}
+  .shell{width:100%;max-width:none;padding:0 10px 22px}
+  header{padding:12px 0 8px}
+  .brand{width:min(220px,64vw);margin-bottom:8px}
+  .clock{
+    position:static;
+    display:inline-flex;
+    margin:4px auto 0;
+    font-size:10px;
+    padding:6px 9px;
+  }
+  nav{
+    width:100%;
+    justify-content:flex-start;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+    gap:6px;
+    padding:7px;
+  }
+  nav::-webkit-scrollbar{display:none}
+  nav a{
+    flex:0 0 auto;
+    white-space:nowrap;
+    padding:10px 12px;
+    font-size:10px;
+  }
+  .alert{
+    margin:10px 0 12px;
+    padding:9px 10px;
+    justify-content:flex-start;
+    flex-wrap:wrap;
+    font-size:11px;
+    line-height:1.35;
+  }
+  .alert span:last-child{width:100%;padding-left:17px}
+  .hero,.grid,.donateGrid{grid-template-columns:1fr!important;gap:12px}
+  .player,.donateBox,.grid>.card,.donateMain,.side,.scheduleCard,.returnGrid .card{padding:15px}
+  .row{gap:8px}
+  .row h1{font-size:23px;line-height:1.15}
+  .live{font-size:9px;padding:7px 8px}
+  .screen{
+    margin-top:12px;
+    aspect-ratio:16/9;
+    min-height:190px;
+    border-radius:13px;
+  }
+  .play{width:62px;height:62px;font-size:22px}
+  .controls{display:grid;grid-template-columns:1fr 1fr}
+  .controls button{width:100%;padding:10px 8px}
+  .donateBox{text-align:left}
+  .donateBox .heart{text-align:center}
+  .donateBox h2,.donateMain h2{font-size:21px;line-height:1.2}
+  .donateBox p,.donateMain p,.side p{font-size:12px;line-height:1.6}
+  .bank{padding:14px;margin-top:10px}
+  .bank strong{font-size:22px}
+  .btn{width:100%;margin-top:10px}
+  .tiles{grid-template-columns:1fr!important;gap:9px;margin-top:12px}
+  .tile{padding:12px}
+  .tile b{width:36px;height:36px}
+  .tile strong{font-size:12px}
+  .tile span{font-size:9px}
+  .nowNext{
+    grid-template-columns:1fr!important;
+    gap:8px;
+    padding:13px;
+    margin-top:12px;
+  }
+  .nowNext>div:last-child{text-align:left!important}
+  .nextArrow{display:none}
+  .nowNext strong{font-size:15px;white-space:normal}
+  .grid{margin-top:12px}
+  .grid>.card{min-width:0}
+  .schedule{max-height:300px;overflow:auto;padding-right:2px}
+  .item{grid-template-columns:52px 1fr;padding:10px}
+  .item time{font-size:11px}
+  .item strong{font-size:11px}
+  .socials{min-height:unset}
+  .socialRow{margin-bottom:0}
+  .campaign{
+    margin-top:12px;
+    padding:15px;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+  }
+  .campaign h2{font-size:20px}
+  .campaign p{font-size:11px;line-height:1.5}
+  footer{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:10px;
+    padding-top:18px;
+    margin-top:18px;
+  }
+  footer .links{flex-wrap:wrap;gap:10px}
+  .head{padding:22px 6px 14px}
+  .head h1{font-size:31px;line-height:1.1}
+  .head p{font-size:12px}
+  .banner{padding:12px;flex-direction:column;align-items:flex-start;gap:5px}
+  .banner h2{font-size:17px}
+  .list{gap:6px}
+  .prog{
+    grid-template-columns:56px minmax(0,1fr);
+    gap:9px;
+    padding:11px 10px;
+  }
+  .prog time{font-size:12px}
+  .prog strong{font-size:11px;line-height:1.25}
+  .prog b{display:none}
+  .returnHero{padding:35px 16px 28px}
+  .returnHero h1{font-size:43px;line-height:1}
+  .returnHero p{font-size:12px;line-height:1.6}
+  .returnGrid{grid-template-columns:1fr!important;gap:10px;margin-top:12px}
+  .star{width:65px;height:65px;font-size:32px}
+  .chatCard{min-height:0!important}
+  .chatIntro{font-size:11px}
+  .chatLogin,.chatCompose{grid-template-columns:1fr!important}
+  .chatApp{min-height:360px}
+  .chatMessages{min-height:190px;max-height:290px}
+  .chatTop{gap:8px}
+  .chatTop span{font-size:9px}
+  .chatCompose input,.chatLogin input{font-size:14px;padding:11px}
+  .blueBtn{width:100%;padding:11px}
+  .adminPanel{font-size:11px}
+}
+@media (min-width:701px) and (max-width:980px){
+  .shell{width:calc(100% - 20px)}
+}
 </style></head><body><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="active" href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="donate" href="donar.html">DONAR</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><div class="alert"><span class="dot"></span><b>MAGIC KIDS EN VIVO</b><span>La programación que recordás, ahora online.</span></div><section class="hero"><div class="card player"><div class="row"><h1>Magic Kids <em>EN VIVO</em></h1><span class="live">● LIVE</span></div><div class="screen" id="screen">
   <video id="magicVideo" autoplay muted playsinline controls preload="auto"></video>
   <div class="status" id="status">Conectando Magic Kids…</div>
