@@ -73,13 +73,18 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
 .donorTicker::before{left:0;background:linear-gradient(90deg,#061a4d,rgba(6,26,77,0))}
 .donorTicker::after{right:0;background:linear-gradient(270deg,#061a4d,rgba(6,26,77,0))}
 .donorTickerTrack{
-  display:inline-flex;
+  display:flex;
   align-items:center;
   flex:0 0 auto;
+  width:max-content;
   white-space:nowrap;
   will-change:transform;
-  animation:magicDonorTicker 58s linear infinite;
-  padding-left:100%;
+  animation:magicDonorTicker 52s linear infinite;
+}
+.donorTickerGroup{
+  display:flex;
+  align-items:center;
+  flex:0 0 auto;
 }
 .donorTickerItem{
   color:#fff;
@@ -87,28 +92,17 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
   font-weight:900;
   letter-spacing:.2px;
   margin-right:46px;
+  flex:0 0 auto;
 }
-.donorTickerItem.yellow{
-  color:#ffd21b;
-}
+.donorTickerItem.yellow{color:#ffd21b}
 @keyframes magicDonorTicker{
-  from{transform:translateX(0)}
-  to{transform:translateX(-50%)}
+  from{transform:translate3d(0,0,0)}
+  to{transform:translate3d(-50%,0,0)}
 }
 @media(max-width:700px){
-  .donorTicker{
-    height:33px;
-    margin-top:7px;
-    border-radius:8px;
-  }
-  .donorTickerTrack{animation-duration:68s}
-  .donorTickerItem{
-    font-size:9.5px;
-    margin-right:34px;
-  }
-}
-@media(prefers-reduced-motion:reduce){
-  .donorTickerTrack{animation:none;transform:none;padding-left:10px}
+  .donorTicker{height:33px;margin-top:7px;border-radius:8px}
+  .donorTickerTrack{animation-duration:64s}
+  .donorTickerItem{font-size:9.5px;margin-right:34px}
 }
 </style></head><body><script id="magic-stars-script">
 (function(){
@@ -165,7 +159,7 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initMagicStars);
   else initMagicStars();
 })();
-</script><div class="shell"><header><a class="brand realBrand" href="index.html"><img src="assets/magic-kids-logo.webp" alt="Magic Kids" class="realMagicLogo"></a><nav><a href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="downloadAppNav active" href="descargar-aplicacion.html"><span class="androidIcon"></span> DESCARGAR APLICACION</a><a class="donate" href="donar.html">DONAR</a></nav><div class="donorTicker" aria-label="Donadores de Magic Kids"><div class="donorTickerTrack"><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span></div></div><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><section class="hero"><div class="androidBadge"><svg class="playStoreIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg><span>DESCARGA PARA ANDROID</span></div><h1>DESCARGAR APLICACION</h1><p>Descargá la aplicación de Magic Kids para mirar la señal, consultar la programación y tener el canal siempre a mano.</p><div class="appDownloadCard"><div class="playHero" aria-label="Google Play"><svg class="playStoreLarge" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg></div><div class="playCircle"><svg class="playStoreIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg></div><h2>Aplicación Magic Kids</h2><p>Descargá el APK y mirá Magic Kids desde tu dispositivo Android.</p><div class="note">La descarga se realiza desde MediaFire. Activá la instalación de aplicaciones desde fuentes externas solo si Android te lo solicita.</div></div><a class="downloadBtn" href="https://www.mediafire.com/file/g0dsndishwvx9lf/ELMAGICTVOK.apk/file" target="_blank" rel="noopener"><span class="bigAndroid"></span> DESCARGAR APLICACIÓN PARA ANDROID</a><div class="note">La descarga se realiza desde MediaFire.</div><a class="back" href="index.html">← Volver al inicio</a></section><footer><div><div class="mini"><img src="assets/magic-kids-logo.webp" alt="Magic Kids" style="width:170px;height:auto;max-height:90px;object-fit:contain;display:block"></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}clock();setInterval(clock,1000);</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script id="cursor-sparkle-script">
+</script><div class="shell"><header><a class="brand realBrand" href="index.html"><img src="assets/magic-kids-logo.webp" alt="Magic Kids" class="realMagicLogo"></a><nav><a href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="downloadAppNav active" href="descargar-aplicacion.html"><span class="androidIcon"></span> DESCARGAR APLICACION</a><a class="donate" href="donar.html">DONAR</a></nav><div class="donorTicker" aria-label="Donadores de Magic Kids"><div class="donorTickerTrack"><div class="donorTickerGroup"><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span></div><div class="donorTickerGroup"><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span></div></div></div>div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><section class="hero"><div class="androidBadge"><svg class="playStoreIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg><span>DESCARGA PARA ANDROID</span></div><h1>DESCARGAR APLICACION</h1><p>Descargá la aplicación de Magic Kids para mirar la señal, consultar la programación y tener el canal siempre a mano.</p><div class="appDownloadCard"><div class="playHero" aria-label="Google Play"><svg class="playStoreLarge" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg></div><div class="playCircle"><svg class="playStoreIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg></div><h2>Aplicación Magic Kids</h2><p>Descargá el APK y mirá Magic Kids desde tu dispositivo Android.</p><div class="note">La descarga se realiza desde MediaFire. Activá la instalación de aplicaciones desde fuentes externas solo si Android te lo solicita.</div></div><a class="downloadBtn" href="https://www.mediafire.com/file/g0dsndishwvx9lf/ELMAGICTVOK.apk/file" target="_blank" rel="noopener"><span class="bigAndroid"></span> DESCARGAR APLICACIÓN PARA ANDROID</a><div class="note">La descarga se realiza desde MediaFire.</div><a class="back" href="index.html">← Volver al inicio</a></section><footer><div><div class="mini"><img src="assets/magic-kids-logo.webp" alt="Magic Kids" style="width:170px;height:auto;max-height:90px;object-fit:contain;display:block"></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}clock();setInterval(clock,1000);</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script id="cursor-sparkle-script">
 (function(){
   if(window.matchMedia("(hover:none), (pointer:coarse)").matches)return;
   let last=0;
