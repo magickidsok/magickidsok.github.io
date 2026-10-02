@@ -72,18 +72,37 @@ function renderMessages(snap){
 }
 function showChatError(t){const el=document.getElementById("chatMessages");if(el)el.innerHTML='<div class="msg"><div class="txt">'+escapeHtml(t)+"</div></div>";}
 function initChat(){
-  if(!chatReady()){showChatError("El chat está preparado. Falta conectar Firebase.");document.getElementById("chatLogin").classList.add("hidden");return;}
-  firebase.initializeApp(MAGIC_CHAT_FIREBASE_CONFIG); auth=firebase.auth(); db=firebase.database();
-  auth.signInAnonymously().catch(()=>showChatError("No se pudo conectar al chat."));
-  auth.onAuthStateChanged(async user=>{
-    if(!user)return;chatUid=user.uid;
-    const adminSnap=await db.ref("admins/"+user.uid).once("value");isAdmin=adminSnap.val()===true;
-    document.getElementById("chatLogin").classList.add("hidden");document.getElementById("chatApp").classList.remove("hidden");
-    document.getElementById("chatUserLabel").textContent=(chatUserName||"Usuario")+" · conectado";
-    if(isAdmin)document.getElementById("chatAdminBtn").classList.remove("hidden");
-    db.ref("chatMessages").limitToLast(80).on("value",renderMessages);
-    db.ref("banned/"+user.uid).on("value",s=>{if(s.val()===true){document.getElementById("chatText").disabled=true;document.getElementById("chatSend").disabled=true;showChatError("Fuiste expulsado del chat.");}});
-  });
+  if(!chatReady()){showChatError("El chat está preparado. Falta conectar Firebase.");return;}
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(MAGIC_CHAT_FIREBASE_CONFIG);
+    auth=firebase.auth(); db=firebase.database();
+    auth.onAuthStateChanged(async user=>{
+      if(!user)return;
+      chatUid=user.uid;
+      try{
+        const adminSnap=await db.ref("admins/"+user.uid).once("value");
+        isAdmin=adminSnap.val()===true;
+      }catch(e){isAdmin=false;}
+      document.getElementById("chatLogin").classList.add("hidden");
+      document.getElementById("chatApp").classList.remove("hidden");
+      document.getElementById("chatUserLabel").textContent=(chatUserName||"Usuario")+" · conectado";
+      if(isAdmin)document.getElementById("chatAdminBtn").classList.remove("hidden");
+      db.ref("chatMessages").limitToLast(80).on("value",renderMessages);
+      db.ref("banned/"+user.uid).on("value",s=>{
+        if(s.val()===true){
+          document.getElementById("chatText").disabled=true;
+          document.getElementById("chatSend").disabled=true;
+          showChatError("Fuiste expulsado del chat.");
+        }
+      });
+    });
+    auth.signInAnonymously().catch(err=>{
+      const code=err&&err.code?err.code:"error desconocido";
+      showChatError("No se pudo conectar al chat ("+code+"). Verificá que magickidsok.github.io esté en los dominios autorizados de Firebase Authentication.");
+    });
+  }catch(e){
+    showChatError("Error al iniciar el chat. Actualizá la página e intentá nuevamente.");
+  }
 }
 function sendChat(){
   if(!db||!chatUid)return;
