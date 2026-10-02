@@ -206,13 +206,18 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
 .donorTicker::before{left:0;background:linear-gradient(90deg,#061a4d,rgba(6,26,77,0))}
 .donorTicker::after{right:0;background:linear-gradient(270deg,#061a4d,rgba(6,26,77,0))}
 .donorTickerTrack{
-  display:inline-flex;
+  display:flex;
   align-items:center;
   flex:0 0 auto;
+  width:max-content;
   white-space:nowrap;
   will-change:transform;
-  animation:magicDonorTicker 58s linear infinite;
-  padding-left:100%;
+  animation:magicDonorTicker 52s linear infinite;
+}
+.donorTickerGroup{
+  display:flex;
+  align-items:center;
+  flex:0 0 auto;
 }
 .donorTickerItem{
   color:#fff;
@@ -220,28 +225,17 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
   font-weight:900;
   letter-spacing:.2px;
   margin-right:46px;
+  flex:0 0 auto;
 }
-.donorTickerItem.yellow{
-  color:#ffd21b;
-}
+.donorTickerItem.yellow{color:#ffd21b}
 @keyframes magicDonorTicker{
-  from{transform:translateX(0)}
-  to{transform:translateX(-50%)}
+  from{transform:translate3d(0,0,0)}
+  to{transform:translate3d(-50%,0,0)}
 }
 @media(max-width:700px){
-  .donorTicker{
-    height:33px;
-    margin-top:7px;
-    border-radius:8px;
-  }
-  .donorTickerTrack{animation-duration:68s}
-  .donorTickerItem{
-    font-size:9.5px;
-    margin-right:34px;
-  }
-}
-@media(prefers-reduced-motion:reduce){
-  .donorTickerTrack{animation:none;transform:none;padding-left:10px}
+  .donorTicker{height:33px;margin-top:7px;border-radius:8px}
+  .donorTickerTrack{animation-duration:64s}
+  .donorTickerItem{font-size:9.5px;margin-right:34px}
 }
 </style></head><body><script id="magic-stars-script">
 (function(){
@@ -298,7 +292,7 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initMagicStars);
   else initMagicStars();
 })();
-</script><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="" href="index.html">INICIO</a><a class="" href="programacion.html">PROGRAMACIÓN</a><a class="active" href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a href="descargar-aplicacion.html" class="downloadAppNav" style="background:linear-gradient(135deg,#168f3a,#0c6f2d);color:#fff!important"><span class="androidIcon" style="display:inline-block;width:10px;height:9px;border-radius:3px;background:#49d06b;margin-right:4px;vertical-align:-1px;position:relative"></span> DESCARGAR APLICACION</a><a class="donate " href="donar.html">DONAR</a></nav><div class="donorTicker" aria-label="Donadores de Magic Kids"><div class="donorTickerTrack"><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span></div></div><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><section class="heroReturn"><span>CAMPAÑA DE LA COMUNIDAD</span><h1>QUE VUELVA MAGIC</h1><p>Un espacio para recordar una época y acompañar el objetivo de llevar nuevamente Magic Kids a la televisión argentina.</p><a class="btn red" href="donar.html">VER CÓMO COLABORAR</a></section><section class="returnGrid"><article class="card"><div class="star">★</div><h2>Los recuerdos siguen vivos</h2><p>Series, personajes y tardes frente al televisor que forman parte de la memoria de quienes crecieron con Magic Kids.</p></article><article class="card"><div class="star">✦</div><h2>La comunidad acompaña</h2><p>Compartí el proyecto para que más personas conozcan la campaña y el sitio.</p></article><article class="card"><div class="star">★</div><h2>La magia continúa</h2><p>La web reúne la señal online, la programación y la información de la campaña.</p></article></section><footer><div><div class="mini">magic<span>★</span><b>KIDS</b></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}document.addEventListener("DOMContentLoaded",()=>{clock();setInterval(clock,1000);document.getElementById("copy")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copy").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copy").textContent="COPIAR ALIAS",1600)}catch(e){}})});</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script id="cursor-sparkle-script">
+</script><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="" href="index.html">INICIO</a><a class="" href="programacion.html">PROGRAMACIÓN</a><a class="active" href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a href="descargar-aplicacion.html" class="downloadAppNav" style="background:linear-gradient(135deg,#168f3a,#0c6f2d);color:#fff!important"><span class="androidIcon" style="display:inline-block;width:10px;height:9px;border-radius:3px;background:#49d06b;margin-right:4px;vertical-align:-1px;position:relative"></span> DESCARGAR APLICACION</a><a class="donate " href="donar.html">DONAR</a></nav><div class="donorTicker" aria-label="Donadores de Magic Kids"><div class="donorTickerTrack"><div class="donorTickerGroup"><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span></div><div class="donorTickerGroup"><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span></div></div></div>div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><section class="heroReturn"><span>CAMPAÑA DE LA COMUNIDAD</span><h1>QUE VUELVA MAGIC</h1><p>Un espacio para recordar una época y acompañar el objetivo de llevar nuevamente Magic Kids a la televisión argentina.</p><a class="btn red" href="donar.html">VER CÓMO COLABORAR</a></section><section class="returnGrid"><article class="card"><div class="star">★</div><h2>Los recuerdos siguen vivos</h2><p>Series, personajes y tardes frente al televisor que forman parte de la memoria de quienes crecieron con Magic Kids.</p></article><article class="card"><div class="star">✦</div><h2>La comunidad acompaña</h2><p>Compartí el proyecto para que más personas conozcan la campaña y el sitio.</p></article><article class="card"><div class="star">★</div><h2>La magia continúa</h2><p>La web reúne la señal online, la programación y la información de la campaña.</p></article></section><footer><div><div class="mini">magic<span>★</span><b>KIDS</b></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}document.addEventListener("DOMContentLoaded",()=>{clock();setInterval(clock,1000);document.getElementById("copy")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copy").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copy").textContent="COPIAR ALIAS",1600)}catch(e){}})});</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script id="cursor-sparkle-script">
 (function(){
   if(window.matchMedia("(hover:none), (pointer:coarse)").matches)return;
   let last=0;
