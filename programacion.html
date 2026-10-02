@@ -145,6 +145,26 @@
 body{position:relative}
 body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
 @media (max-width:700px){.magicStars .magicStar{opacity:.5}}
+</style><style id="cursor-sparkle-style">
+.cursorSparkle{
+  position:fixed;
+  left:0;top:0;
+  width:9px;height:9px;
+  margin:-4.5px 0 0 -4.5px;
+  pointer-events:none;
+  z-index:99999;
+  background:url("assets/magic-star.png") center/contain no-repeat;
+  opacity:0;
+  will-change:transform,opacity;
+  filter:drop-shadow(0 0 5px rgba(45,145,255,.55));
+  animation:cursorSparkleFly .75s ease-out forwards;
+}
+@keyframes cursorSparkleFly{
+  0%{opacity:.9;transform:translate(0,0) scale(.72) rotate(0deg)}
+  35%{opacity:.8}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.18) rotate(var(--rot))}
+}
+@media (max-width:700px){.cursorSparkle{display:none}}
 </style></head><body><script id="magic-stars-script">
 (function(){
   function initMagicStars(){
@@ -200,4 +220,27 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initMagicStars);
   else initMagicStars();
 })();
-</script><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="" href="index.html">INICIO</a><a class="active" href="programacion.html">PROGRAMACIÓN</a><a class="" href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a href="descargar-aplicacion.html" class="downloadAppNav" style="background:linear-gradient(135deg,#168f3a,#0c6f2d);color:#fff!important"><span class="androidIcon" style="display:inline-block;width:10px;height:9px;border-radius:3px;background:#49d06b;margin-right:4px;vertical-align:-1px;position:relative"></span> DESCARGAR APLICACION</a><a class="donate " href="donar.html">DONAR</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><section class="head"><span>MAGIC KIDS</span><h1>Programación nocturna</h1><p>Horarios y títulos de la grilla de Magic Kids.</p></section><div class="card scheduleCard"><div class="banner"><h2>HORARIOS Y SERIES</h2><span>GRILLA MAGIC KIDS</span></div><div class="list"><div class="prog"><time>22:00</time><strong>DRAGON BALL</strong></div><div class="prog"><time>22:30</time><strong>DRAGON BALL KAI</strong></div><div class="prog"><time>23:00</time><strong>DRAGON BALL Z</strong></div><div class="prog"><time>01:00</time><strong>DRAGON BALL SUPER</strong></div><div class="prog"><time>02:30</time><strong>DRAGON BALL HEROES</strong></div><div class="prog"><time>03:30</time><strong>DRAGON BALL GT</strong></div><div class="prog"><time>04:00</time><strong>POKEMON</strong></div><div class="prog"><time>04:30</time><strong>DIGIMON TAMERS</strong></div><div class="prog"><time>05:00</time><strong>MIKAMI CAZAFANTASMAS</strong></div><div class="prog"><time>05:30</time><strong>POWER RANGERS FUERZA DEL TIEMPO</strong></div><div class="prog"><time>06:00</time><strong>MOB 100</strong><b>NUEVA SERIE</b></div><div class="prog"><time>06:30</time><strong>DETECTIVE CONAN</strong></div><div class="prog"><time>07:30</time><strong>LOS SIMPSONS</strong></div><div class="prog"><time>08:00</time><strong>GAME LIFE</strong></div><div class="prog"><time>08:30</time><strong>MONSTERS CIBERNETICOS</strong></div><div class="prog"><time>09:00</time><strong>BLOQUE ANIMAX</strong></div><div class="prog"><time>11:00</time><strong>RANMA 1/2</strong></div><div class="prog"><time>11:30</time><strong>SAILOR MOON</strong></div></div></div><footer><div><div class="mini">magic<span>★</span><b>KIDS</b></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}document.addEventListener("DOMContentLoaded",()=>{clock();setInterval(clock,1000);document.getElementById("copy")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copy").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copy").textContent="COPIAR ALIAS",1600)}catch(e){}})});</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script></body></html>
+</script><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="" href="index.html">INICIO</a><a class="active" href="programacion.html">PROGRAMACIÓN</a><a class="" href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a href="descargar-aplicacion.html" class="downloadAppNav" style="background:linear-gradient(135deg,#168f3a,#0c6f2d);color:#fff!important"><span class="androidIcon" style="display:inline-block;width:10px;height:9px;border-radius:3px;background:#49d06b;margin-right:4px;vertical-align:-1px;position:relative"></span> DESCARGAR APLICACION</a><a class="donate " href="donar.html">DONAR</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><section class="head"><span>MAGIC KIDS</span><h1>Programación nocturna</h1><p>Horarios y títulos de la grilla de Magic Kids.</p></section><div class="card scheduleCard"><div class="banner"><h2>HORARIOS Y SERIES</h2><span>GRILLA MAGIC KIDS</span></div><div class="list"><div class="prog"><time>22:00</time><strong>DRAGON BALL</strong></div><div class="prog"><time>22:30</time><strong>DRAGON BALL KAI</strong></div><div class="prog"><time>23:00</time><strong>DRAGON BALL Z</strong></div><div class="prog"><time>01:00</time><strong>DRAGON BALL SUPER</strong></div><div class="prog"><time>02:30</time><strong>DRAGON BALL HEROES</strong></div><div class="prog"><time>03:30</time><strong>DRAGON BALL GT</strong></div><div class="prog"><time>04:00</time><strong>POKEMON</strong></div><div class="prog"><time>04:30</time><strong>DIGIMON TAMERS</strong></div><div class="prog"><time>05:00</time><strong>MIKAMI CAZAFANTASMAS</strong></div><div class="prog"><time>05:30</time><strong>POWER RANGERS FUERZA DEL TIEMPO</strong></div><div class="prog"><time>06:00</time><strong>MOB 100</strong><b>NUEVA SERIE</b></div><div class="prog"><time>06:30</time><strong>DETECTIVE CONAN</strong></div><div class="prog"><time>07:30</time><strong>LOS SIMPSONS</strong></div><div class="prog"><time>08:00</time><strong>GAME LIFE</strong></div><div class="prog"><time>08:30</time><strong>MONSTERS CIBERNETICOS</strong></div><div class="prog"><time>09:00</time><strong>BLOQUE ANIMAX</strong></div><div class="prog"><time>11:00</time><strong>RANMA 1/2</strong></div><div class="prog"><time>11:30</time><strong>SAILOR MOON</strong></div></div></div><footer><div><div class="mini">magic<span>★</span><b>KIDS</b></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}document.addEventListener("DOMContentLoaded",()=>{clock();setInterval(clock,1000);document.getElementById("copy")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copy").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copy").textContent="COPIAR ALIAS",1600)}catch(e){}})});</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script id="cursor-sparkle-script">
+(function(){
+  if("ontouchstart" in window)return;
+  let last=0;
+  function spawn(x,y){
+    const now=performance.now();
+    if(now-last<34)return;
+    last=now;
+    const s=document.createElement("span");
+    s.className="cursorSparkle";
+    s.style.left=x+"px";
+    s.style.top=y+"px";
+    s.style.setProperty("--dx",(Math.random()*26-13).toFixed(1)+"px");
+    s.style.setProperty("--dy",(Math.random()*30-8).toFixed(1)+"px");
+    s.style.setProperty("--rot",(Math.random()*140-70).toFixed(1)+"deg");
+    const size=6+Math.random()*6;
+    s.style.width=size+"px";
+    s.style.height=size+"px";
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),800);
+  }
+  window.addEventListener("mousemove",e=>spawn(e.clientX,e.clientY),{passive:true});
+})();
+</script></body></html>
