@@ -1,4 +1,4 @@
-const CACHE_NAME="magic-kids-pwa-v1";
+const CACHE_NAME="magic-kids-pwa-v2";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -6,7 +6,7 @@ const APP_SHELL=[
   "./donar.html",
   "./que-vuelva-magic.html",
   "./descargar-aplicacion.html",
-  "./assets/magic-kids-logo.webp"
+  "./assets/magic-kids-logo.webp","./assets/magic-star.png"
 ];
 
 self.addEventListener("install",event=>{
