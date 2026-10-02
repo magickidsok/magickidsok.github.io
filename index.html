@@ -170,15 +170,15 @@ function setStreamState(state,msg){
   if(!badge||!label)return;
   badge.classList.remove("offline","connecting");
   if(state==="live"){label.textContent="EN VIVO";status.textContent="Magic Kids EN VIVO";retry?.classList.add("hidden");}
-  else if(state==="offline"){badge.classList.add("offline");label.textContent="SIN SEÑAL";status.textContent=msg||"Señal no disponible. Reintentando…";retry?.classList.remove("hidden");}
+  else if(state==="offline"){badge.classList.add("offline");label.textContent="SIN SEÑAL";status.textContent=msg||"Señal no disponible.";retry?.classList.remove("hidden");}
   else {badge.classList.add("connecting");label.textContent="CONECTANDO";status.textContent=msg||"Conectando Magic Kids…";retry?.classList.add("hidden");}
 }
 function scheduleStreamRetry(){
   if(magicRetryTimer)return;
-  const delay=Math.min(20000,5000*Math.max(1,magicRetryAttempt));
-  magicRetryAttempt=Math.min(magicRetryAttempt+1,4);
+  const delay=8000;
+  magicRetryAttempt++;
   magicRetryTimer=setTimeout(()=>{magicRetryTimer=null;startStream(true)},delay);
-  setStreamState("offline","Señal interrumpida. Reintentando en "+Math.ceil(delay/1000)+"s…");
+  setStreamState("offline","La señal tuvo una interrupción. Reintentando…");
 }
 function destroyMagicHls(){
   if(magicHls){try{magicHls.destroy()}catch(e){} magicHls=null;}
@@ -186,50 +186,51 @@ function destroyMagicHls(){
 function startStream(isRetry=false){
   const video=document.getElementById("magicVideo");
   if(!video)return;
-  clearTimeout(magicRetryTimer); magicRetryTimer=null;
+  if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}
   destroyMagicHls();
   setStreamState("connecting",isRetry?"Reconectando Magic Kids…":"Conectando Magic Kids…");
-  video.muted=true; video.autoplay=true; video.playsInline=true;
+  video.muted=true;video.autoplay=true;video.playsInline=true;
   if(video.canPlayType("application/vnd.apple.mpegurl")){
     video.src=STREAM_URL;
     video.load();
-    video.play().catch(()=>{});
+    const p=video.play();if(p&&p.catch)p.catch(()=>{});
+    magicStreamStarted=true;
     return;
   }
-  if(window.Hls && Hls.isSupported()){
+  if(window.Hls&&Hls.isSupported()){
     magicHls=new Hls({
       enableWorker:true,
-      lowLatencyMode:true,
-      backBufferLength:30,
-      liveSyncDurationCount:3,
-      manifestLoadingMaxRetry:2,
-      levelLoadingMaxRetry:2,
-      fragLoadingMaxRetry:2,
+      lowLatencyMode:false,
+      backBufferLength:60,
+      maxBufferLength:30,
+      maxMaxBufferLength:60,
+      liveSyncDurationCount:5,
+      manifestLoadingMaxRetry:4,
+      levelLoadingMaxRetry:6,
+      fragLoadingMaxRetry:6,
       fragLoadingRetryDelay:1000
     });
     magicHls.loadSource(STREAM_URL);
     magicHls.attachMedia(video);
-    magicHls.on(Hls.Events.MANIFEST_PARSED,()=>video.play().catch(()=>{}));
+    magicHls.on(Hls.Events.MANIFEST_PARSED,()=>{const p=video.play();if(p&&p.catch)p.catch(()=>{});});
     magicHls.on(Hls.Events.ERROR,(event,data)=>{
-      if(data.fatal){
-        if(data.type===Hls.ErrorTypes.MEDIA_ERROR){
-          try{magicHls.recoverMediaError();setStreamState("connecting","Recuperando la señal…");return}catch(e){}
-        }
-        if(data.type===Hls.ErrorTypes.NETWORK_ERROR){
-          try{magicHls.startLoad();setStreamState("connecting","Reconectando con VDO Panel…");return}catch(e){}
-        }
-        scheduleStreamRetry();
+      if(!data.fatal)return;
+      if(data.type===Hls.ErrorTypes.MEDIA_ERROR){
+        try{magicHls.recoverMediaError();setStreamState("connecting","Recuperando la reproducción…");return}catch(e){}
       }
+      if(data.type===Hls.ErrorTypes.NETWORK_ERROR){
+        try{magicHls.startLoad();setStreamState("connecting","Reconectando con VDO Panel…");return}catch(e){}
+      }
+      scheduleStreamRetry();
     });
-  }else{
-    setStreamState("offline","Este navegador no admite HLS.");
+    magicStreamStarted=true;
+    return;
   }
-  magicStreamStarted=true;
+  setStreamState("offline","Este navegador no admite HLS.");
 }
 document.getElementById("retryStream")?.addEventListener("click",()=>{magicRetryAttempt=0;startStream(true)});
 document.getElementById("magicVideo")?.addEventListener("playing",()=>{magicRetryAttempt=0;setStreamState("live")});
 document.getElementById("magicVideo")?.addEventListener("waiting",()=>{setStreamState("connecting","Bufferizando la señal…")});
-document.getElementById("magicVideo")?.addEventListener("stalled",()=>{scheduleStreamRetry()});
 document.getElementById("magicVideo")?.addEventListener("error",()=>{scheduleStreamRetry()});
 window.addEventListener("online",()=>{if(magicStreamStarted)startStream(true)});
 window.addEventListener("offline",()=>setStreamState("offline","Sin conexión a Internet."));
