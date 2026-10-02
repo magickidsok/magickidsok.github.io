@@ -205,7 +205,71 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Magic Kids">
 <link rel="icon" href="/assets/magic-kids-tab.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="assets/magic-kids-logo.webp"><script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Magic Kids","url":"https://magickidsok.online/","description":"Magic Kids EN VIVO, programación, chat y contenido del canal.","inLanguage":"es-AR"}</script></head><body><script id="magic-stars-script">
+<link rel="apple-touch-icon" href="assets/magic-kids-logo.webp"><script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Magic Kids","url":"https://magickidsok.online/","description":"Magic Kids EN VIVO, programación, chat y contenido del canal.","inLanguage":"es-AR"}</script><style id="donor-ticker-style">
+.donorTicker{
+  width:100%;
+  height:34px;
+  margin-top:8px;
+  border-radius:9px;
+  overflow:hidden;
+  background:#061a4d;
+  border:1px solid rgba(75,163,255,.26);
+  box-shadow:0 7px 18px rgba(0,0,0,.18);
+  display:flex;
+  align-items:center;
+  position:relative;
+}
+.donorTicker::before,
+.donorTicker::after{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:24px;
+  z-index:2;
+  pointer-events:none;
+}
+.donorTicker::before{left:0;background:linear-gradient(90deg,#061a4d,rgba(6,26,77,0))}
+.donorTicker::after{right:0;background:linear-gradient(270deg,#061a4d,rgba(6,26,77,0))}
+.donorTickerTrack{
+  display:inline-flex;
+  align-items:center;
+  flex:0 0 auto;
+  white-space:nowrap;
+  will-change:transform;
+  animation:magicDonorTicker 58s linear infinite;
+  padding-left:100%;
+}
+.donorTickerItem{
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.2px;
+  margin-right:46px;
+}
+.donorTickerItem.yellow{
+  color:#ffd21b;
+}
+@keyframes magicDonorTicker{
+  from{transform:translateX(0)}
+  to{transform:translateX(-50%)}
+}
+@media(max-width:700px){
+  .donorTicker{
+    height:33px;
+    margin-top:7px;
+    border-radius:8px;
+  }
+  .donorTickerTrack{animation-duration:68s}
+  .donorTickerItem{
+    font-size:9.5px;
+    margin-right:34px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .donorTickerTrack{animation:none;transform:none;padding-left:10px}
+}
+</style></head><body><script id="magic-stars-script">
 (function(){
   function initMagicStars(){
     if(document.getElementById("magicStars"))return;
@@ -260,7 +324,7 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initMagicStars);
   else initMagicStars();
 })();
-</script><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="active" href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="donate" href="donar.html">DONAR</a><a href="descargar-aplicacion.html" class="downloadAppNav"><span class="androidIcon">●</span> DESCARGAR APLICACION</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><div class="alert"><span class="dot"></span><b>MAGIC KIDS EN VIVO</b><span>La programación que recordás, ahora online.</span></div><button id="installPwa" class="pwaInstall"><span>📲</span> INSTALAR MAGIC KIDS</button><section class="hero"><div class="card player"><div class="row"><h1>Magic Kids <em>EN VIVO</em></h1><span class="live">● LIVE</span></div><div class="screen" id="screen">
+</script><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="active" href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="donate" href="donar.html">DONAR</a><a href="descargar-aplicacion.html" class="downloadAppNav"><span class="androidIcon">●</span> DESCARGAR APLICACION</a></nav><div class="donorTicker" aria-label="Donadores de Magic Kids"><div class="donorTickerTrack"><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span></div></div><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><div class="alert"><span class="dot"></span><b>MAGIC KIDS EN VIVO</b><span>La programación que recordás, ahora online.</span></div><button id="installPwa" class="pwaInstall"><span>📲</span> INSTALAR MAGIC KIDS</button><section class="hero"><div class="card player"><div class="row"><h1>Magic Kids <em>EN VIVO</em></h1><span class="live">● LIVE</span></div><div class="screen" id="screen">
   <video id="magicVideo" autoplay muted playsinline controls preload="auto"></video>
   <img class="playerLogoOverlay" src="assets/magic-player-logo.webp" alt="Magic Kids" aria-hidden="true"><div class="streamBadge" id="streamBadge"><span class="streamDot"></span><b id="streamLabel">CONECTANDO</b></div>
   <div class="status" id="status">Conectando Magic Kids…</div>
