@@ -115,13 +115,53 @@ function startMagicChat(){
   document.getElementById("chatUserLabel").textContent=name+" · conectando…";
   if(!MAGIC_CHAT_STARTED){MAGIC_CHAT_STARTED=true;chatInitFirebase();}
 }
+const MAGIC_CHAT_COOLDOWN_MS=3000;
+const MAGIC_CHAT_REPEAT_LIMIT=2;
+let magicChatLastSent=Number(localStorage.getItem("magicChatLastSent")||0);
+let magicChatRepeatCount=Number(localStorage.getItem("magicChatRepeatCount")||0);
+let magicChatLastText=localStorage.getItem("magicChatLastText")||"";
+let magicChatCooldownTimer=null;
+
+function chatCooldown(ms){
+  const input=document.getElementById("chatText"), send=document.getElementById("chatSend");
+  if(!input||!send)return;
+  send.disabled=true;
+  let left=Math.ceil(ms/1000);
+  const original="ENVIAR";
+  send.textContent=left>0?"ESPERÁ "+left+"s":original;
+  clearInterval(magicChatCooldownTimer);
+  magicChatCooldownTimer=setInterval(function(){
+    const remain=Math.max(0,magicChatLastSent+MAGIC_CHAT_COOLDOWN_MS-Date.now());
+    left=Math.ceil(remain/1000);
+    send.textContent=left>0?"ESPERÁ "+left+"s":original;
+    if(left<=0){clearInterval(magicChatCooldownTimer);send.disabled=false;}
+  },250);
+}
+
 function sendMagicChat(){
   if(!MAGIC_DB||!MAGIC_UID)return;
   const input=document.getElementById("chatText");
   const raw=(input.value||"").trim();
   const cleaned=raw.replace(/https?:\/\/\S+|www\.\S+|\b[a-z0-9-]+\.(?:com|net|org|es|ar|tv|site)\b/gi,"").replace(/\s+/g," ").trim().slice(0,180);
   if(!cleaned){input.value="";return;}
-  if(cleaned!==raw) chatShow("Los enlaces están prohibidos en el chat.");
+
+  const now=Date.now();
+  const remaining=MAGIC_CHAT_COOLDOWN_MS-(now-magicChatLastSent);
+  if(remaining>0){chatShow("Podés enviar otro mensaje en "+Math.ceil(remaining/1000)+" segundos.");chatCooldown(remaining);return;}
+
+  if(cleaned===magicChatLastText){
+    magicChatRepeatCount+=1;
+  }else{
+    magicChatRepeatCount=0;
+  }
+  if(magicChatRepeatCount>=MAGIC_CHAT_REPEAT_LIMIT){
+    chatShow("Ese mismo mensaje no se puede repetir varias veces seguidas.");
+    return;
+  }
+  if(cleaned!==raw){chatShow("Los enlaces están prohibidos en el chat.");}
+  
+  const send=document.getElementById("chatSend");
+  if(send)send.disabled=true;
   MAGIC_DB.ref("banned/"+MAGIC_UID).once("value").then(function(s){
     if(s.val()===true) throw new Error("banned");
     return MAGIC_DB.ref("chatMessages").push({
@@ -131,9 +171,19 @@ function sendMagicChat(){
       ts:Date.now()
     });
   }).then(function(){
+    magicChatLastSent=Date.now();
+    magicChatLastText=cleaned;
+    localStorage.setItem("magicChatLastSent",String(magicChatLastSent));
+    localStorage.setItem("magicChatLastText",magicChatLastText);
+    localStorage.setItem("magicChatRepeatCount",String(magicChatRepeatCount));
     input.value="";
+    chatCooldown(MAGIC_CHAT_COOLDOWN_MS);
   }).catch(function(err){
-    chatShow("No se pudo guardar el mensaje: "+(err.code||"permission-denied")+".");
+    if(err.message!=="banned"){
+      chatShow("No se pudo guardar el mensaje: "+(err.code||"permission-denied")+".");
+    }
+    const remain=Math.max(0,MAGIC_CHAT_COOLDOWN_MS-(Date.now()-magicChatLastSent));
+    if(remain>0)chatCooldown(remain);else if(send)send.disabled=false;
   });
 }
 document.addEventListener("DOMContentLoaded",function(){
