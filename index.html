@@ -153,6 +153,26 @@
 body{position:relative}
 body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
 @media (max-width:700px){.magicStars .magicStar{opacity:.5}}
+</style><style id="cursor-sparkle-style">
+.cursorSparkle{
+  position:fixed;
+  left:0;top:0;
+  width:9px;height:9px;
+  margin:-4.5px 0 0 -4.5px;
+  pointer-events:none;
+  z-index:99999;
+  background:url("assets/magic-star.png") center/contain no-repeat;
+  opacity:0;
+  will-change:transform,opacity;
+  filter:drop-shadow(0 0 5px rgba(45,145,255,.55));
+  animation:cursorSparkleFly .75s ease-out forwards;
+}
+@keyframes cursorSparkleFly{
+  0%{opacity:.9;transform:translate(0,0) scale(.72) rotate(0deg)}
+  35%{opacity:.8}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.18) rotate(var(--rot))}
+}
+@media (max-width:700px){.cursorSparkle{display:none}}
 </style></head><body><script id="magic-stars-script">
 (function(){
   function initMagicStars(){
@@ -473,4 +493,27 @@ document.getElementById("installPwa")?.addEventListener("click",async()=>{
 window.addEventListener("appinstalled",()=>{
   document.getElementById("installPwa")?.classList.remove("show");
 });
+</script><script id="cursor-sparkle-script">
+(function(){
+  if("ontouchstart" in window)return;
+  let last=0;
+  function spawn(x,y){
+    const now=performance.now();
+    if(now-last<34)return;
+    last=now;
+    const s=document.createElement("span");
+    s.className="cursorSparkle";
+    s.style.left=x+"px";
+    s.style.top=y+"px";
+    s.style.setProperty("--dx",(Math.random()*26-13).toFixed(1)+"px");
+    s.style.setProperty("--dy",(Math.random()*30-8).toFixed(1)+"px");
+    s.style.setProperty("--rot",(Math.random()*140-70).toFixed(1)+"deg");
+    const size=6+Math.random()*6;
+    s.style.width=size+"px";
+    s.style.height=size+"px";
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),800);
+  }
+  window.addEventListener("mousemove",e=>spawn(e.clientX,e.clientY),{passive:true});
+})();
 </script></body></html>
