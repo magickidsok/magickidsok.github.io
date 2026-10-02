@@ -1,4 +1,4 @@
-const CACHE_NAME="magic-kids-pwa-v8";
+const CACHE_NAME="magic-kids-pwa-v9";
 const APP_SHELL=[
   "./",
   "./index.html",
