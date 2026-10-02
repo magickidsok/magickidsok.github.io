@@ -55,7 +55,7 @@ const MAGIC_CHAT_FIREBASE_CONFIG={
   messagingSenderId:"922585540902",
   appId:"1:922585540902:web:d7e86e898fb93e397d79e7"
 };
-const linkPattern=/(https?:\\/\\/|www\\.|[a-z0-9-]+\\.(com|net|org|es|ar|tv|site)\\b)/ig;
+const linkPattern=/https?:|www\.|[a-z0-9-]+\.(com|net|org|es|ar|tv|site)\b/ig;
 function cleanChatText(t){return t.replace(linkPattern,"").replace(/\\s+/g," ").trim().slice(0,180);}
 function chatReady(){return window.firebase && !MAGIC_CHAT_FIREBASE_CONFIG.apiKey.startsWith("PON_AQUI");}
 let chatUserName=localStorage.getItem("magicChatName")||"", chatUid=null, db=null, auth=null, isAdmin=false;
