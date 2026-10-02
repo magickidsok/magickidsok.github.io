@@ -128,9 +128,13 @@ function sendMagicChat(){
       uid:MAGIC_UID,
       name:localStorage.getItem("magicChatName")||"Usuario",
       text:cleaned,
-      ts:firebase.database.ServerValue.TIMESTAMP
+      ts:Date.now()
     });
-  }).then(function(){input.value="";}).catch(function(){});
+  }).then(function(){
+    input.value="";
+  }).catch(function(err){
+    chatShow("No se pudo guardar el mensaje: "+(err.code||"permission-denied")+".");
+  });
 }
 document.addEventListener("DOMContentLoaded",function(){
   const enter=document.getElementById("chatEnter");
