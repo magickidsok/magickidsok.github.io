@@ -344,7 +344,7 @@ function setStreamState(state,msg){
   const badge=document.getElementById("streamBadge"),label=document.getElementById("streamLabel"),status=document.getElementById("status"),retry=document.getElementById("retryStream");
   if(!badge||!label)return;
   badge.classList.remove("offline","connecting");
-  if(state==="live"){label.textContent="EN VIVO";status.textContent="Magic Kids EN VIVO";retry?.classList.add("hidden");}
+  if(state==="live"){label.textContent="EN VIVO";status.textContent="";retry?.classList.add("hidden");}
   else if(state==="offline"){badge.classList.add("offline");label.textContent="SIN SEÑAL";status.textContent=msg||"Señal no disponible.";retry?.classList.remove("hidden");}
   else {badge.classList.add("connecting");label.textContent="CONECTANDO";status.textContent=msg||"Conectando Magic Kids…";retry?.classList.add("hidden");}
 }
