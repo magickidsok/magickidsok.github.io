@@ -12,6 +12,26 @@ footer .mini img{width:170px!important;max-height:90px!important;object-fit:cont
 body{position:relative}
 body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
 @media (max-width:700px){.magicStars .magicStar{opacity:.5}}
+</style><style id="cursor-sparkle-style">
+.cursorSparkle{
+  position:fixed;
+  left:0;top:0;
+  width:9px;height:9px;
+  margin:-4.5px 0 0 -4.5px;
+  pointer-events:none;
+  z-index:99999;
+  background:url("assets/magic-star.png") center/contain no-repeat;
+  opacity:0;
+  will-change:transform,opacity;
+  filter:drop-shadow(0 0 5px rgba(45,145,255,.55));
+  animation:cursorSparkleFly .75s ease-out forwards;
+}
+@keyframes cursorSparkleFly{
+  0%{opacity:.9;transform:translate(0,0) scale(.72) rotate(0deg)}
+  35%{opacity:.8}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.18) rotate(var(--rot))}
+}
+@media (max-width:700px){.cursorSparkle{display:none}}
 </style></head><body><script id="magic-stars-script">
 (function(){
   function initMagicStars(){
@@ -67,4 +87,27 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initMagicStars);
   else initMagicStars();
 })();
-</script><div class="shell"><header><a class="brand realBrand" href="index.html"><img src="assets/magic-kids-logo.webp" alt="Magic Kids" class="realMagicLogo"></a><nav><a href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="downloadAppNav active" href="descargar-aplicacion.html"><span class="androidIcon"></span> DESCARGAR APLICACION</a><a class="donate" href="donar.html">DONAR</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><section class="hero"><div class="androidBadge"><svg class="playStoreIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg><span>DESCARGA PARA ANDROID</span></div><h1>DESCARGAR APLICACION</h1><p>Descargá la aplicación de Magic Kids para mirar la señal, consultar la programación y tener el canal siempre a mano.</p><div class="appDownloadCard"><div class="playHero" aria-label="Google Play"><svg class="playStoreLarge" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg></div><div class="playCircle"><svg class="playStoreIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg></div><h2>Aplicación Magic Kids</h2><p>Descargá el APK y mirá Magic Kids desde tu dispositivo Android.</p><div class="note">La descarga se realiza desde MediaFire. Activá la instalación de aplicaciones desde fuentes externas solo si Android te lo solicita.</div></div><a class="downloadBtn" href="https://www.mediafire.com/file/g0dsndishwvx9lf/ELMAGICTVOK.apk/file" target="_blank" rel="noopener"><span class="bigAndroid"></span> DESCARGAR APLICACIÓN PARA ANDROID</a><div class="note">La descarga se realiza desde MediaFire.</div><a class="back" href="index.html">← Volver al inicio</a></section><footer><div><div class="mini"><img src="assets/magic-kids-logo.webp" alt="Magic Kids" style="width:170px;height:auto;max-height:90px;object-fit:contain;display:block"></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}clock();setInterval(clock,1000);</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script></body></html>
+</script><div class="shell"><header><a class="brand realBrand" href="index.html"><img src="assets/magic-kids-logo.webp" alt="Magic Kids" class="realMagicLogo"></a><nav><a href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="downloadAppNav active" href="descargar-aplicacion.html"><span class="androidIcon"></span> DESCARGAR APLICACION</a><a class="donate" href="donar.html">DONAR</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div></header><section class="hero"><div class="androidBadge"><svg class="playStoreIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg><span>DESCARGA PARA ANDROID</span></div><h1>DESCARGAR APLICACION</h1><p>Descargá la aplicación de Magic Kids para mirar la señal, consultar la programación y tener el canal siempre a mano.</p><div class="appDownloadCard"><div class="playHero" aria-label="Google Play"><svg class="playStoreLarge" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg></div><div class="playCircle"><svg class="playStoreIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 4.8 27.3 24 4 43.2z" fill="#00d66b"/><path d="M4 4.8 20.5 24 27.3 24z" fill="#34a853"/><path d="M20.5 24 4 43.2 27.3 24z" fill="#00a8ff"/><path d="M27.3 24 44 16.7c2-.9 2 3.7 0 4.6L27.3 29.1z" fill="#ffd23f"/></svg></div><h2>Aplicación Magic Kids</h2><p>Descargá el APK y mirá Magic Kids desde tu dispositivo Android.</p><div class="note">La descarga se realiza desde MediaFire. Activá la instalación de aplicaciones desde fuentes externas solo si Android te lo solicita.</div></div><a class="downloadBtn" href="https://www.mediafire.com/file/g0dsndishwvx9lf/ELMAGICTVOK.apk/file" target="_blank" rel="noopener"><span class="bigAndroid"></span> DESCARGAR APLICACIÓN PARA ANDROID</a><div class="note">La descarga se realiza desde MediaFire.</div><a class="back" href="index.html">← Volver al inicio</a></section><footer><div><div class="mini"><img src="assets/magic-kids-logo.webp" alt="Magic Kids" style="width:170px;height:auto;max-height:90px;object-fit:contain;display:block"></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}clock();setInterval(clock,1000);</script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script id="cursor-sparkle-script">
+(function(){
+  if("ontouchstart" in window)return;
+  let last=0;
+  function spawn(x,y){
+    const now=performance.now();
+    if(now-last<34)return;
+    last=now;
+    const s=document.createElement("span");
+    s.className="cursorSparkle";
+    s.style.left=x+"px";
+    s.style.top=y+"px";
+    s.style.setProperty("--dx",(Math.random()*26-13).toFixed(1)+"px");
+    s.style.setProperty("--dy",(Math.random()*30-8).toFixed(1)+"px");
+    s.style.setProperty("--rot",(Math.random()*140-70).toFixed(1)+"deg");
+    const size=6+Math.random()*6;
+    s.style.width=size+"px";
+    s.style.height=size+"px";
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),800);
+  }
+  window.addEventListener("mousemove",e=>spawn(e.clientX,e.clientY),{passive:true});
+})();
+</script></body></html>
