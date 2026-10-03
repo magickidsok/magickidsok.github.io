@@ -605,7 +605,14 @@ document.addEventListener("DOMContentLoaded",()=>{clock();fill();updateNowNext()
     $("customChatText").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();send();}});
     $("customChatLogout").onclick=logout;
     $("customChatMessages").addEventListener("click",function(e){if(e.target.dataset.delete)moderate("delete",e.target.dataset.delete);if(e.target.dataset.ban)moderate("ban",e.target.dataset.ban);});
-    try{const data=await api("/api/me");if(data.user)await enterChat(data.user);}catch(e){if(e.message&&e.message.indexOf("todavía no fue conectado")<0)setAuthMsg("");}
+    if(CHAT_API_URL.indexOf("REEMPLAZAR-")>=0){
+      $("customChatAuthBtn").disabled=true;
+      $("customChatLoginTab").disabled=true;
+      $("customChatRegisterTab").disabled=true;
+      setAuthMsg("El nuevo chat propio de Magic Kids está en configuración. Próximamente estará disponible.","ok");
+      return;
+    }
+    try{const data=await api("/api/me");if(data.user)await enterChat(data.user);}catch(e){}
   }
   document.addEventListener("DOMContentLoaded",init);
 })();
