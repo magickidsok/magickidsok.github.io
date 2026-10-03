@@ -5,4 +5,4 @@ compatibility_date = "2026-10-03"
 [[d1_databases]]
 binding = "DB"
 database_name = "magic-kids-chat-db"
-database_id = "REEMPLAZAR_CON_EL_ID_DE_D1"
+database_id = "5546268a-d1b2-4ce3-bf91-4a5f1c1e09ec"
