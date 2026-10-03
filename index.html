@@ -25,6 +25,8 @@
 .msgCrown{font-size:11px;filter:drop-shadow(0 0 4px rgba(255,208,63,.8));margin-right:3px}
 .chatAuthTab:disabled{opacity:.65;cursor:not-allowed}
 @media(max-width:600px){.chatActions{flex-wrap:wrap;justify-content:flex-end}.chatAuthTab{font-size:9px}}
+</style><style id="registered-admin-style">
+.adminSetup{margin-top:8px;padding:10px;border-radius:10px;background:rgba(255,210,27,.06);border:1px solid rgba(255,210,27,.18);display:grid;gap:6px}.adminSetup strong{font-size:11px}.adminSetup span{font-size:9px;color:#9eb7d4;line-height:1.4}.adminSetup .miniBtn{justify-self:start}
 </style><style>
 /* MAGIC KIDS — MOBILE POLISH */
 @media (max-width: 700px){
@@ -383,8 +385,13 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
 </div>
 <div id="adminPanel" class="adminPanel hidden">
   <div class="adminHead"><strong>Moderación</strong><button id="closeAdmin" class="miniBtn">CERRAR</button></div>
+  <div id="registeredAdminSetup" class="adminSetup hidden">
+    <strong>Cuenta administradora</strong>
+    <span id="registeredAdminSetupText">Tu cuenta ya tiene permisos de administrador.</span>
+    <button id="claimMagicNick" class="miniBtn hidden">👑 ACTIVAR NICK MAGICKIDS</button>
+  </div>
   <div id="adminList"></div>
-  <p class="adminHelp">El administrador puede borrar mensajes y bloquear cuentas registradas.</p>
+  <p class="adminHelp">El administrador puede borrar mensajes, bloquear cuentas y reservar el nick MAGICKIDS.</p>
 </div>
 </div></section><section class="campaign"><div><h2>QUE VUELVA MAGIC</h2><p>Conocé el objetivo de la campaña y cómo colaborar.</p></div><a class="btn red" href="que-vuelva-magic.html">ENTRAR</a></section><footer><div><div class="mini">magic<span>★</span><b>KIDS</b></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>const schedule=[["22:00","DRAGON BALL"],["22:30","DRAGON BALL KAI"],["23:00","DRAGON BALL Z"],["01:00","DRAGON BALL SUPER"],["02:30","DRAGON BALL HEROES"],["03:30","DRAGON BALL GT"],["04:00","POKEMON"],["04:30","DIGIMON TAMERS"],["05:00","MIKAMI CAZAFANTASMAS"],["05:30","POWER RANGERS FUERZA DEL TIEMPO"],["06:00","MOB 100"],["06:30","DETECTIVE CONAN"],["07:30","LOS SIMPSONS"],["08:00","GAME LIFE"],["08:30","MONSTERS CIBERNETICOS"],["09:00","BLOQUE ANIMAX"],["11:00","RANMA 1/2"],["11:30","SAILOR MOON"]];function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}function fill(){const e=document.getElementById("schedule");if(e)e.innerHTML=schedule.slice(0,6).map(x=>'<div class="item"><time>'+x[0]+'</time><strong>'+x[1]+'</strong></div>').join("")}const STREAM_URL="https://kali.vdopanel.com:3007/hybrid/play.m3u8";
 let magicHls=null, magicRetryTimer=null, magicRetryAttempt=0, magicStreamStarted=false;
@@ -471,7 +478,7 @@ const MAGIC_FIREBASE_CONFIG={
   messagingSenderId:"922585540902",
   appId:"1:922585540902:web:d7e86e898fb93e397d79e7"
 };
-let MAGIC_DB=null,MAGIC_AUTH=null,MAGIC_UID=null,MAGIC_ADMIN=false,MAGIC_CHAT_READY=false,MAGIC_REGISTER_MODE=false;
+let MAGIC_DB=null,MAGIC_AUTH=null,MAGIC_UID=null,MAGIC_ADMIN=false,MAGIC_CHAT_READY=false,MAGIC_REGISTER_MODE=false,MAGIC_PROFILE=null;
 const MAGIC_CHAT_COOLDOWN_MS=3000, MAGIC_CHAT_REPEAT_LIMIT=2;
 let magicChatLastSent=Number(localStorage.getItem("registeredChatLastSent")||0);
 let magicChatRepeatCount=Number(localStorage.getItem("registeredChatRepeatCount")||0);
@@ -515,11 +522,40 @@ async function chatLogin(){
 async function chatLoadProfile(user){
   const snap=await MAGIC_DB.ref("registeredChatProfiles/"+user.uid).once("value"),profile=snap.val();
   if(!profile||!profile.name){chatShowAuth("Tu cuenta existe, pero no tiene un perfil de chat.","error");return;}
-  MAGIC_ADMIN=(await MAGIC_DB.ref("admins/"+user.uid).once("value")).val()===true;MAGIC_UID=user.uid;
+  MAGIC_ADMIN=(await MAGIC_DB.ref("admins/"+user.uid).once("value")).val()===true;MAGIC_UID=user.uid;MAGIC_PROFILE=profile;
   document.getElementById("chatAuthPanel").classList.add("hidden");document.getElementById("chatApp").classList.remove("hidden");
   document.getElementById("chatUserLabel").textContent=profile.name;document.getElementById("chatAdminStatus").textContent=MAGIC_ADMIN?"ADMIN ✓":"USUARIO";document.getElementById("chatAdminStatus").classList.toggle("admin",MAGIC_ADMIN);
-  document.getElementById("chatCrown").classList.toggle("hidden",!(MAGIC_ADMIN&&chatNormalizeName(profile.name)==="MAGICKIDS"));document.getElementById("chatAdminBtn").classList.toggle("hidden",!MAGIC_ADMIN);
+  const isMagicAdmin=MAGIC_ADMIN&&chatNormalizeName(profile.name)==="MAGICKIDS";
+  document.getElementById("chatCrown").classList.toggle("hidden",!isMagicAdmin);document.getElementById("chatAdminBtn").classList.toggle("hidden",!MAGIC_ADMIN);
+  const setup=document.getElementById("registeredAdminSetup"),claim=document.getElementById("claimMagicNick"),setupText=document.getElementById("registeredAdminSetupText");
+  setup.classList.toggle("hidden",!MAGIC_ADMIN);
+  claim.classList.toggle("hidden",!MAGIC_ADMIN||isMagicAdmin);
+  setupText.textContent=isMagicAdmin?"Tu cuenta es MAGICKIDS y tiene permisos de administrador.":"Tu cuenta tiene permisos de administrador. Activá el nick exclusivo MAGICKIDS.";
   chatStartPresence(profile);chatBindMessages();MAGIC_CHAT_READY=true;
+}
+async function chatClaimMagicNick(){
+  if(!MAGIC_ADMIN||!MAGIC_UID||!MAGIC_PROFILE)return;
+  const claim=document.getElementById("claimMagicNick");
+  claim.disabled=true;
+  try{
+    const ref=MAGIC_DB.ref("registeredChatUsernames/MAGICKIDS");
+    const tx=await ref.transaction(function(current){return current===null?MAGIC_UID:undefined;});
+    if(!tx.committed||tx.snapshot.val()!==MAGIC_UID)throw new Error("El nick MAGICKIDS ya está ocupado.");
+    const oldNormalized=chatNormalizeName(MAGIC_PROFILE.name);
+    await MAGIC_DB.ref("registeredChatProfiles/"+MAGIC_UID).update({
+      name:"MAGICKIDS",
+      nameNormalized:"MAGICKIDS"
+    });
+    if(oldNormalized&&oldNormalized!=="MAGICKIDS")await MAGIC_DB.ref("registeredChatUsernames/"+oldNormalized).remove().catch(function(){});
+    MAGIC_PROFILE.name="MAGICKIDS";MAGIC_PROFILE.nameNormalized="MAGICKIDS";
+    document.getElementById("chatUserLabel").textContent="MAGICKIDS";
+    document.getElementById("chatCrown").classList.remove("hidden");
+    document.getElementById("registeredAdminSetupText").textContent="Tu cuenta es MAGICKIDS y tiene permisos de administrador.";
+    claim.classList.add("hidden");
+  }catch(e){
+    await MAGIC_DB.ref("registeredChatUsernames/MAGICKIDS").transaction(function(current){return current===MAGIC_UID?null:current;}).catch(function(){});
+    chatShowAuth(e.message||"No se pudo activar el nick MAGICKIDS.","error");
+  }finally{claim.disabled=false;}
 }
 function chatBindMessages(){
   MAGIC_DB.ref("registeredChatMessages").limitToLast(80).on("value",function(snap){
@@ -558,7 +594,7 @@ document.addEventListener("DOMContentLoaded",function(){
   document.getElementById("chatPassword").addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("chatAuthAction").click();});
   document.getElementById("chatPassword2").addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("chatAuthAction").click();});
   document.getElementById("chatSend").onclick=sendMagicChat;document.getElementById("chatText").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();sendMagicChat();}});
-  document.getElementById("chatLogoutBtn").onclick=chatLogout;document.getElementById("chatAdminBtn").onclick=function(){document.getElementById("adminPanel").classList.toggle("hidden");};document.getElementById("closeAdmin").onclick=function(){document.getElementById("adminPanel").classList.add("hidden");};
+  document.getElementById("chatLogoutBtn").onclick=chatLogout;document.getElementById("claimMagicNick").onclick=chatClaimMagicNick;document.getElementById("chatAdminBtn").onclick=function(){document.getElementById("adminPanel").classList.toggle("hidden");};document.getElementById("closeAdmin").onclick=function(){document.getElementById("adminPanel").classList.add("hidden");};
   document.getElementById("chatMessages").addEventListener("click",function(e){if(!MAGIC_ADMIN||!MAGIC_DB)return;if(e.target.dataset.del)MAGIC_DB.ref("registeredChatMessages/"+e.target.dataset.del).remove();if(e.target.dataset.ban)MAGIC_DB.ref("registeredBanned/"+e.target.dataset.ban).set(true);});
   chatInitFirebase();
 });
