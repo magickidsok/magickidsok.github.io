@@ -1,0 +1,8 @@
+name = "magic-kids-chat"
+main = "src/index.js"
+compatibility_date = "2026-10-03"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "magic-kids-chat-db"
+database_id = "REEMPLAZAR_CON_EL_ID_DE_D1"
