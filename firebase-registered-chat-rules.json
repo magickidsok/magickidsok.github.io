@@ -12,15 +12,15 @@
     "registeredChatUsernames": {
       ".read": "auth != null",
       "$name": {
-        ".write": "auth != null && ((data.exists() && data.val() === auth.uid && !newData.exists()) || (!data.exists() && newData.val() === auth.uid))",
-        ".validate": "!newData.exists() || (newData.isString() && newData.val() === auth.uid)"
+        ".write": "auth != null && ((data.exists() === false && newData.val() === auth.uid) || (data.val() === auth.uid && newData.exists() === false))",
+        ".validate": "newData.exists() === false || (newData.isString() && newData.val() === auth.uid)"
       }
     },
     "registeredChatProfiles": {
       ".read": "auth != null",
       "$uid": {
-        ".write": "auth != null && auth.uid === $uid && (( !data.exists() && root.child('registeredChatUsernames').child(newData.child('nameNormalized').val()).val() === auth.uid && (root.child('admins').child(auth.uid).val() === true || (newData.child('nameNormalized').val() !== 'MAGICKIDS' && newData.child('nameNormalized').val() !== 'MAGICKIDSOK')) ) || (data.exists() && root.child('admins').child(auth.uid).val() === true && newData.child('nameNormalized').val() === 'MAGICKIDS' && newData.child('name').val() === 'MAGICKIDS' && newData.child('email').val() === data.child('email').val() && newData.child('createdAt').val() === data.child('createdAt').val() && root.child('registeredChatUsernames').child('MAGICKIDS').val() === auth.uid))",
-        ".validate": "newData.hasChildren(['name','nameNormalized','createdAt']) && newData.child('name').isString() && newData.child('nameNormalized').isString() && newData.child('createdAt').isNumber()"
+        ".write": "auth != null && auth.uid === $uid && (data.exists() === false || root.child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.hasChildren(['name','nameNormalized','createdAt']) && newData.child('name').isString() && newData.child('nameNormalized').isString() && newData.child('createdAt').isNumber() && root.child('registeredChatUsernames').child(newData.child('nameNormalized').val()).val() === auth.uid && ((data.exists() === false && (root.child('admins').child(auth.uid).val() === true || (newData.child('nameNormalized').val() !== 'MAGICKIDS' && newData.child('nameNormalized').val() !== 'MAGICKIDSOK'))) || (data.exists() === true && (newData.child('name').val() === data.child('name').val() || (root.child('admins').child(auth.uid).val() === true && newData.child('nameNormalized').val() === 'MAGICKIDS' && newData.child('name').val() === 'MAGICKIDS' && newData.child('email').val() === data.child('email').val() && newData.child('createdAt').val() === data.child('createdAt').val()))))"
       }
     },
     "registeredChatPresence": {
@@ -33,7 +33,7 @@
     "registeredChatMessages": {
       ".read": "auth != null",
       "$messageId": {
-        ".write": "auth != null && !root.child('registeredBanned').child(auth.uid).val() && !data.exists() && newData.child('uid').val() === auth.uid && newData.child('name').val() === root.child('registeredChatProfiles').child(auth.uid).child('name').val() && newData.child('nameNormalized').val() === root.child('registeredChatProfiles').child(auth.uid).child('nameNormalized').val() && newData.child('isAdmin').val() === (root.child('admins').child(auth.uid).val() === true && root.child('registeredChatProfiles').child(auth.uid).child('nameNormalized').val() === 'MAGICKIDS')",
+        ".write": "auth != null && root.child('registeredBanned').child(auth.uid).val() !== true && data.exists() === false && newData.child('uid').val() === auth.uid && newData.child('name').val() === root.child('registeredChatProfiles').child(auth.uid).child('name').val() && newData.child('nameNormalized').val() === root.child('registeredChatProfiles').child(auth.uid).child('nameNormalized').val() && newData.child('isAdmin').val() === (root.child('admins').child(auth.uid).val() === true && root.child('registeredChatProfiles').child(auth.uid).child('nameNormalized').val() === 'MAGICKIDS')",
         ".validate": "newData.hasChildren(['uid','name','nameNormalized','isAdmin','text','ts']) && newData.child('uid').isString() && newData.child('name').isString() && newData.child('nameNormalized').isString() && newData.child('isAdmin').isBoolean() && newData.child('text').isString() && newData.child('ts').isNumber()"
       }
     },
