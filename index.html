@@ -499,7 +499,7 @@ document.addEventListener("DOMContentLoaded",()=>{clock();fill();updateNowNext()
   async function api(path,options){
     options=options||{};
     if(CHAT_API_URL.indexOf("REEMPLAZAR-")>=0)throw new Error("El backend del chat todavía no fue conectado.");
-    const req={credentials:"include",headers:Object.assign({"Content-Type":"text/plain;charset=UTF-8"},options.headers||{}),method:options.method||"GET"};
+    const req={credentials:"include",headers:Object.assign({},options.headers||{}),method:options.method||"GET"};
     if(options.body!==undefined)req.body=options.body;
     const res=await fetch(CHAT_API_URL+path,req);
     let data={};try{data=await res.json();}catch(e){}
