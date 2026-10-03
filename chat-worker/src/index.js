@@ -55,6 +55,9 @@ async function requireAdmin(request,env){const u=await requireUser(request,env);
 function publicUser(u){return u?{id:u.id,email:u.email,nick:u.nick,isAdmin:u.role==="admin"&&!u.banned}:null;}
 
 async function register(request,env,origin){
+  if(!env.SESSION_SECRET){
+    return json({error:"Falta configurar SESSION_SECRET en el Worker de Cloudflare."},500,origin);
+  }
   const b=await body(request),email=String(b.email||"").trim().toLowerCase(),nick=String(b.nick||"").trim().replace(/\s+/g," ").slice(0,24),password=String(b.password||"");
   if(!validNick(nick))return json({error:"El nick debe tener entre 3 y 24 caracteres."},400,origin);
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json({error:"El correo electrónico no es válido."},400,origin);
@@ -64,12 +67,18 @@ async function register(request,env,origin){
   if(admin && norm==="MAGICKIDS")return json({error:"El nick MAGICKIDS está reservado para el administrador."},409,origin);
   if(await env.DB.prepare("SELECT id FROM users WHERE email=?").bind(email).first())return json({error:"Ese correo ya está registrado."},409,origin);
   if(await env.DB.prepare("SELECT id FROM users WHERE nick_norm=?").bind(norm).first())return json({error:"Ese nick ya está ocupado."},409,origin);
+
   const pass=await makePasswordRecord(password),uid=crypto.randomUUID(),now=Date.now(),role=(!admin&&norm==="MAGICKIDS")?"admin":"user";
   try{
-    await env.DB.prepare("INSERT INTO users (id,email,nick,nick_norm,password_salt,password_hash,role,banned,created_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(uid,email,nick,norm,pass.salt,pass.hash,role,0,now).run();
     const token=await makeSession(uid,env.SESSION_SECRET);
+    await env.DB.prepare("INSERT INTO users (id,email,nick,nick_norm,password_salt,password_hash,role,banned,created_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(uid,email,nick,norm,pass.salt,pass.hash,role,0,now).run();
     return json({user:publicUser({id:uid,email:email,nick:nick,role:role,banned:0})},200,origin,{"Set-Cookie":setSessionCookie(token)});
-  }catch(e){return json({error:"No se pudo crear la cuenta."},500,origin);}
+  }catch(e){
+    console.error("register error",e);
+    const message=String(e&&e.message||"");
+    if(/UNIQUE|constraint/i.test(message))return json({error:"Ese correo o nick ya está registrado."},409,origin);
+    return json({error:"No se pudo crear la cuenta. Revisá la configuración del chat."},500,origin);
+  }
 }
 async function login(request,env,origin){
   const b=await body(request),email=String(b.email||"").trim().toLowerCase(),password=String(b.password||"");
@@ -124,7 +133,7 @@ export default {
     try{
       await ensureSchema(env.DB);
       const path=new URL(request.url).pathname;
-      if(path==="/")return json({ok:true,service:"Magic Kids Chat API"},200,origin);
+      if(path==="/api/health"&&request.method==="GET")return json({ok:true,service:"Magic Kids Chat API",database:true,sessionConfigured:!!env.SESSION_SECRET},200,origin);\n      if(path==="/")return json({ok:true,service:"Magic Kids Chat API"},200,origin);
       if(path==="/api/register"&&request.method==="POST")return register(request,env,origin);
       if(path==="/api/login"&&request.method==="POST")return login(request,env,origin);
       if(path==="/api/logout"&&request.method==="POST")return json({ok:true},200,origin,{"Set-Cookie":clearSessionCookie()});
