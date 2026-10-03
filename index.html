@@ -27,6 +27,37 @@
 @media(max-width:600px){.chatActions{flex-wrap:wrap;justify-content:flex-end}.chatAuthTab{font-size:9px}}
 </style><style id="registered-admin-style">
 .adminSetup{margin-top:8px;padding:10px;border-radius:10px;background:rgba(255,210,27,.06);border:1px solid rgba(255,210,27,.18);display:grid;gap:6px}.adminSetup strong{font-size:11px}.adminSetup span{font-size:9px;color:#9eb7d4;line-height:1.4}.adminSetup .miniBtn{justify-self:start}
+</style><style id="custom-chat-style">
+.customChatAuth{display:grid;gap:7px}
+.customChatTabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
+.customChatTab{border:1px solid rgba(125,192,255,.2);background:rgba(255,255,255,.05);color:#cfe4fb;border-radius:9px;padding:9px;font-size:10px;font-weight:1000;cursor:pointer}
+.customChatTab.active{background:rgba(25,130,245,.2);color:#fff;border-color:rgba(75,163,255,.35)}
+.customChatField{width:100%;border:1px solid rgba(130,196,255,.2);background:#04194a;color:#fff;border-radius:10px;padding:10px 11px;outline:none}
+.customChatAuthMsg{min-height:17px;color:#ffcf55;font-size:10px;line-height:1.35}
+.customChatAuthMsg.ok{color:#7cf29e}
+.customChatAuthMsg.error{color:#ff9b9b}
+.customChatApp{display:flex;flex-direction:column;min-height:390px}
+.customChatTop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.customChatIdentity{display:flex;align-items:center;gap:8px;min-width:0}
+.customChatCrown{font-size:22px;line-height:1;filter:drop-shadow(0 0 6px rgba(255,211,55,.8))}
+.customChatIdentity strong{display:block;font-size:11px;line-height:1.1}
+.customChatIdentity span{display:block;color:#76e88e;font-size:9px;margin-top:3px}
+.customChatCrown.hidden{display:none}
+.customChatActions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.customChatRole{display:inline-flex;align-items:center;white-space:nowrap;color:#b7c7da;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);padding:4px 7px;border-radius:999px;font-size:8px;font-weight:900}
+.customChatRole.admin{color:#79f0a0;background:rgba(57,205,101,.12);border-color:rgba(57,205,101,.28)}
+.customChatMessages{flex:1;overflow:auto;min-height:220px;max-height:290px;padding:6px 3px;display:flex;flex-direction:column;gap:6px}
+.customChatMsg{padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.045);border:1px solid rgba(145,205,255,.08)}
+.customChatMeta{font-size:9px;color:#75c5ff;font-weight:900;margin-bottom:2px}
+.customChatCrownMini{font-size:11px;margin-right:3px;filter:drop-shadow(0 0 4px rgba(255,211,55,.8))}
+.customChatText{font-size:12px;color:#e4effc;word-break:break-word}
+.customChatMod{float:right;display:flex;gap:4px}
+.customChatMod button{border:0;border-radius:6px;padding:3px 5px;font-size:8px;color:#fff;background:#7f1d26;cursor:pointer}
+.customChatCompose{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:8px}
+.customChatCompose input{width:100%;border:1px solid rgba(130,196,255,.2);background:#04194a;color:#fff;border-radius:10px;padding:10px 11px;outline:none}
+.customChatHint{font-size:9px;color:#7e9fbe;margin-top:7px}
+.customChatAdminPanel{margin-top:10px;border-top:1px solid rgba(146,203,255,.14);padding-top:10px}
+@media(max-width:600px){.customChatActions{align-items:flex-end}.customChatCompose{grid-template-columns:1fr}.customChatApp{min-height:330px}.customChatMessages{max-height:290px}}
 </style><style>
 /* MAGIC KIDS — MOBILE POLISH */
 @media (max-width: 700px){
@@ -345,54 +376,46 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
   <div class="status" id="status">Conectando Magic Kids…</div>
   <button class="retryBtn hidden" id="retryStream">↻ REINTENTAR</button>
 </div><div class="controls"><button id="mute">🔊 Sonido</button><button id="full">⛶ Pantalla completa</button></div></div><aside class="card donateBox"><div class="heart">♥</div><h2>Apoyá a sostener Magic Kids</h2><p>Tu aporte está destinado a impulsar las acciones necesarias para que Magic Kids vuelva a la televisión argentina lo más pronto posible.</p><div class="bank"><small>BANCO BRUBANK</small><strong>MAGICKIDS.OK</strong><span>A NOMBRE DE MARCELO GOMEZ</span><button id="copyHome">COPIAR ALIAS</button></div><a class="btn red" href="donar.html">VER DATOS DE DONACIÓN</a></aside></section><section class="tiles"><a class="tile" href="programacion.html"><b>▦</b><div><strong>Programación</strong><span>Horarios y series</span></div><i>›</i></a><a class="tile" href="donar.html"><b>♥</b><div><strong>Apoyar Magic Kids</strong><span>Alias de la campaña</span></div><i>›</i></a></section><section class="nowNext" aria-label="Programación en tiempo real"><div><small>AHORA</small><strong id="nowShow">Calculando…</strong><span id="nowTime">--:--</span></div><div class="nextArrow">→</div><div><small>PRÓXIMO</small><strong id="nextShow">Calculando…</strong><span id="nextTime">--:--</span></div></section><section class="grid"><div class="card"><div class="row"><h2>La programación</h2><a class="link" href="programacion.html">Ver todo →</a></div><div id="schedule" class="schedule"></div></div><div class="card chatCard">
-<h2>💬 Chat Magic Kids</h2>
-<p class="chatIntro">Registrate gratis para participar. Cada usuario tiene un único nick y <b>MAGICKIDS</b> está reservado para el administrador.</p>
-<div id="chatAuthPanel">
-  <div class="chatAuthTabs">
-    <button id="chatLoginTab" class="chatAuthTab active">INICIAR SESIÓN</button>
-    <button id="chatRegisterTab" class="chatAuthTab">REGISTRARME</button>
+  <h2>💬 Chat Magic Kids</h2>
+  <p class="chatIntro">Registrate gratis para participar. Cada usuario tiene un nick único. <b>MAGICKIDS</b> está reservado para el administrador.</p>
+  <div id="customChatAuth" class="customChatAuth">
+    <div class="customChatTabs">
+      <button id="customLoginTab" class="customChatTab active">INICIAR SESIÓN</button>
+      <button id="customRegisterTab" class="customChatTab">REGISTRARME</button>
+    </div>
+    <input id="customChatNick" class="customChatField hidden" maxlength="24" placeholder="Tu nick" autocomplete="nickname">
+    <input id="customChatEmail" class="customChatField" type="email" maxlength="120" placeholder="Correo electrónico" autocomplete="email">
+    <input id="customChatPassword" class="customChatField" type="password" maxlength="128" placeholder="Contraseña" autocomplete="current-password">
+    <input id="customChatPassword2" class="customChatField hidden" type="password" maxlength="128" placeholder="Repetí la contraseña" autocomplete="new-password">
+    <button id="customChatAuthBtn" class="btn blueBtn">INICIAR SESIÓN</button>
+    <div id="customChatAuthMsg" class="customChatAuthMsg"></div>
   </div>
-  <div id="chatRegisterFields" class="hidden">
-    <input id="chatName" maxlength="24" placeholder="Tu nick (3 a 24 caracteres)" autocomplete="nickname">
-  </div>
-  <input id="chatEmail" type="email" maxlength="120" placeholder="Correo electrónico" autocomplete="email">
-  <input id="chatPassword" type="password" maxlength="128" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password">
-  <input id="chatPassword2" class="hidden" type="password" maxlength="128" placeholder="Repetí la contraseña" autocomplete="new-password">
-  <button id="chatAuthAction" class="btn blueBtn">INICIAR SESIÓN</button>
-  <div id="chatAuthMsg" class="chatAuthMsg"></div>
-</div>
-<div id="chatApp" class="chatApp hidden">
-  <div class="chatTop">
-    <div class="chatIdentityWrap">
-      <div id="chatCrown" class="chatCrown hidden" aria-label="Administrador">👑</div>
-      <div>
-        <span id="chatUserLabel">Conectando…</span>
-        <span id="chatOnlineCount" class="chatOnlineCount" title="Usuarios conectados al chat">👥 0 conectados</span>
+  <div id="customChatApp" class="customChatApp hidden">
+    <div class="customChatTop">
+      <div class="customChatIdentity">
+        <div id="customChatCrown" class="customChatCrown hidden">👑</div>
+        <div>
+          <strong id="customChatUser">Usuario</strong>
+          <span id="customChatOnline">👥 0 conectados</span>
+        </div>
+      </div>
+      <div class="customChatActions">
+        <span id="customChatRole" class="customChatRole">USUARIO</span>
+        <button id="customChatAdminBtn" class="miniBtn hidden">MODO ADMIN ✓</button>
+        <button id="customChatLogout" class="miniBtn">SALIR</button>
       </div>
     </div>
-    <div class="chatActions">
-      <span id="chatAdminStatus" class="chatAdminStatus">USUARIO</span>
-      <button id="chatAdminBtn" class="miniBtn hidden">MODO ADMIN ✓</button>
-      <button id="chatLogoutBtn" class="miniBtn">SALIR</button>
+    <div id="customChatMessages" class="customChatMessages"></div>
+    <div class="customChatCompose">
+      <input id="customChatText" maxlength="180" placeholder="Escribí un mensaje…" autocomplete="off">
+      <button id="customChatSend" class="btn blueBtn">ENVIAR</button>
     </div>
+    <div class="customChatHint">Solo texto · sin enlaces · anti-spam activo.</div>
   </div>
-  <div id="chatMessages" class="chatMessages"></div>
-  <div class="chatCompose">
-    <input id="chatText" maxlength="180" placeholder="Escribí un mensaje…" autocomplete="off">
-    <button id="chatSend" class="btn blueBtn">ENVIAR</button>
+  <div id="customChatAdminPanel" class="customChatAdminPanel hidden">
+    <div class="adminHead"><strong>Moderación</strong><button id="customChatAdminClose" class="miniBtn">CERRAR</button></div>
+    <p class="adminHelp">Como administrador podés borrar mensajes y bloquear cuentas.</p>
   </div>
-  <div class="chatHint">Solo texto · sin enlaces · anti-spam activo.</div>
-</div>
-<div id="adminPanel" class="adminPanel hidden">
-  <div class="adminHead"><strong>Moderación</strong><button id="closeAdmin" class="miniBtn">CERRAR</button></div>
-  <div id="registeredAdminSetup" class="adminSetup hidden">
-    <strong>Cuenta administradora</strong>
-    <span id="registeredAdminSetupText">Tu cuenta ya tiene permisos de administrador.</span>
-    <button id="claimMagicNick" class="miniBtn hidden">👑 ACTIVAR NICK MAGICKIDS</button>
-  </div>
-  <div id="adminList"></div>
-  <p class="adminHelp">El administrador puede borrar mensajes, bloquear cuentas y reservar el nick MAGICKIDS.</p>
-</div>
 </div></section><section class="campaign"><div><h2>QUE VUELVA MAGIC</h2><p>Conocé el objetivo de la campaña y cómo colaborar.</p></div><a class="btn red" href="que-vuelva-magic.html">ENTRAR</a></section><footer><div><div class="mini">magic<span>★</span><b>KIDS</b></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>const schedule=[["22:00","DRAGON BALL"],["22:30","DRAGON BALL KAI"],["23:00","DRAGON BALL Z"],["01:00","DRAGON BALL SUPER"],["02:30","DRAGON BALL HEROES"],["03:30","DRAGON BALL GT"],["04:00","POKEMON"],["04:30","DIGIMON TAMERS"],["05:00","MIKAMI CAZAFANTASMAS"],["05:30","POWER RANGERS FUERZA DEL TIEMPO"],["06:00","MOB 100"],["06:30","DETECTIVE CONAN"],["07:30","LOS SIMPSONS"],["08:00","GAME LIFE"],["08:30","MONSTERS CIBERNETICOS"],["09:00","BLOQUE ANIMAX"],["11:00","RANMA 1/2"],["11:30","SAILOR MOON"]];function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}function fill(){const e=document.getElementById("schedule");if(e)e.innerHTML=schedule.slice(0,6).map(x=>'<div class="item"><time>'+x[0]+'</time><strong>'+x[1]+'</strong></div>').join("")}const STREAM_URL="https://kali.vdopanel.com:3007/hybrid/play.m3u8";
 let magicHls=null, magicRetryTimer=null, magicRetryAttempt=0, magicStreamStarted=false;
 function setStreamState(state,msg){
@@ -465,139 +488,127 @@ document.getElementById("magicVideo")?.addEventListener("error",()=>{scheduleStr
 window.addEventListener("online",()=>{if(magicStreamStarted)startStream(true)});
 window.addEventListener("offline",()=>setStreamState("offline","Sin conexión a Internet."));
 function updateNowNext(){const nowEl=document.getElementById("nowShow"),nextEl=document.getElementById("nextShow"),nowTimeEl=document.getElementById("nowTime"),nextTimeEl=document.getElementById("nextTime");if(!nowEl||!nextEl)return;const d=new Date();const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(d);const h=Number(parts.find(p=>p.type==="hour").value)%24,m=Number(parts.find(p=>p.type==="minute").value);const cur=h*60+m;const starts=schedule.map((x,i)=>{const [hh,mm]=x[0].split(":").map(Number);let t=hh*60+mm;return {i,t:t<720?t+1440:t}});let base=cur<720?cur+1440:cur;let active=-1,nextIndex=-1,nextAbs=null;if(base>=1320||base<=(11*60+30)+1440-1440){for(let i=0;i<starts.length;i++){let s=starts[i].t;if(base>=s){let e=i<starts.length-1?starts[i+1].t:starts[0].t+1440;if(base<e){active=i;nextIndex=i<starts.length-1?i+1:0;nextAbs=e;break}}}}if(active===-1){nowEl.textContent="Fuera de programación";nowTimeEl.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}).format(d);const n=schedule[0];nextEl.textContent=n[1];nextTimeEl.textContent=n[0];return}nowEl.textContent=schedule[active][1];nowTimeEl.textContent=schedule[active][0];const nxt=schedule[nextIndex];nextEl.textContent=nxt[1];const nt=(nextAbs%(1440)+1440)%1440;nextTimeEl.textContent=String(Math.floor(nt/60)).padStart(2,"0")+":"+String(nt%60).padStart(2,"0")}
-document.addEventListener("DOMContentLoaded",()=>{clock();fill();updateNowNext();setInterval(()=>{clock();updateNowNext()},1000);startStream();document.getElementById("full")?.addEventListener("click",()=>document.getElementById("screen")?.requestFullscreen?.());document.getElementById("copyHome")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copyHome").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copyHome").textContent="COPIAR ALIAS",1600)}catch(e){}})})</script><script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
-<script>
-const MAGIC_FIREBASE_CONFIG={
-  apiKey:"AIzaSyAC9PnhAMfox2-bEvpxPfAnoXOCnkx_XVI",
-  authDomain:"magic-kids-32b27.firebaseapp.com",
-  databaseURL:"https://magic-kids-32b27-default-rtdb.firebaseio.com",
-  projectId:"magic-kids-32b27",
-  storageBucket:"magic-kids-32b27.firebasestorage.app",
-  messagingSenderId:"922585540902",
-  appId:"1:922585540902:web:d7e86e898fb93e397d79e7"
-};
-let MAGIC_DB=null,MAGIC_AUTH=null,MAGIC_UID=null,MAGIC_ADMIN=false,MAGIC_CHAT_READY=false,MAGIC_REGISTER_MODE=false,MAGIC_PROFILE=null;
-const MAGIC_CHAT_COOLDOWN_MS=3000, MAGIC_CHAT_REPEAT_LIMIT=2;
-let magicChatLastSent=Number(localStorage.getItem("registeredChatLastSent")||0);
-let magicChatRepeatCount=Number(localStorage.getItem("registeredChatRepeatCount")||0);
-let magicChatLastText=localStorage.getItem("registeredChatLastText")||"";
-let magicChatCooldownTimer=null;
+document.addEventListener("DOMContentLoaded",()=>{clock();fill();updateNowNext();setInterval(()=>{clock();updateNowNext()},1000);startStream();document.getElementById("full")?.addEventListener("click",()=>document.getElementById("screen")?.requestFullscreen?.());document.getElementById("copyHome")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copyHome").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copyHome").textContent="COPIAR ALIAS",1600)}catch(e){}})})</script><script id="custom-chat-script">
+(function(){
+  const CHAT_API_URL="https://REEMPLAZAR-CON-TU-WORKER.workers.dev";
+  let loginMode=true,currentUser=null,pollTimer=null,heartbeatTimer=null,lastMessagesSignature="";
 
-function chatEscape(v){return String(v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
-function chatNormalizeName(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9]/g,"").toUpperCase();}
-function chatValidName(v){return /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 _.-]{3,24}$/.test(v)&&chatNormalizeName(v).length>=3;}
-function chatIsReservedName(v){const n=chatNormalizeName(v);return n==="MAGICKIDS"||n==="MAGICKIDSOK";}
-function chatShowAuth(text,type){const box=document.getElementById("chatAuthMsg");if(!box)return;box.className="chatAuthMsg"+(type?" "+type:"");box.textContent=text||"";}
-function chatUpdateOnlineCount(){if(!MAGIC_DB)return;const label=document.getElementById("chatOnlineCount");if(!label)return;MAGIC_DB.ref("registeredChatPresence").on("value",function(s){const count=s.numChildren();label.textContent="👥 "+count+" conectado"+(count===1?"":"s");},function(){label.textContent="👥 — conectados";});}
-function chatStartPresence(profile){if(!MAGIC_DB||!MAGIC_UID)return;const ref=MAGIC_DB.ref("registeredChatPresence/"+MAGIC_UID);MAGIC_DB.ref(".info/connected").on("value",function(s){if(s.val()===true){ref.onDisconnect().remove().then(function(){return ref.set({name:profile.name,joinedAt:firebase.database.ServerValue.TIMESTAMP});}).catch(function(){});}});chatUpdateOnlineCount();}
-function chatCooldown(ms){const input=document.getElementById("chatText"),send=document.getElementById("chatSend");if(!input||!send)return;send.disabled=true;clearInterval(magicChatCooldownTimer);magicChatCooldownTimer=setInterval(function(){const remain=Math.max(0,magicChatLastSent+MAGIC_CHAT_COOLDOWN_MS-Date.now()),left=Math.ceil(remain/1000);send.textContent=left>0?"ESPERÁ "+left+"s":"ENVIAR";if(left<=0){clearInterval(magicChatCooldownTimer);send.disabled=false;}},250);const first=Math.ceil(ms/1000);send.textContent=first>0?"ESPERÁ "+first+"s":"ENVIAR";}
-function chatSetMode(registerMode){MAGIC_REGISTER_MODE=registerMode;document.getElementById("chatRegisterTab").classList.toggle("active",registerMode);document.getElementById("chatLoginTab").classList.toggle("active",!registerMode);document.getElementById("chatRegisterFields").classList.toggle("hidden",!registerMode);document.getElementById("chatPassword2").classList.toggle("hidden",!registerMode);document.getElementById("chatAuthAction").textContent=registerMode?"CREAR CUENTA":"INICIAR SESIÓN";document.getElementById("chatPassword").setAttribute("autocomplete",registerMode?"new-password":"current-password");chatShowAuth("");}
-async function chatClaimUsername(uid,name,email){
-  const normalized=chatNormalizeName(name);
-  if(!chatValidName(name))throw new Error("El nick debe tener entre 3 y 24 caracteres y usar solo letras, números, espacios, punto, guion o guion bajo.");
-  if(chatIsReservedName(name)){const adminSnap=await MAGIC_DB.ref("admins/"+uid).once("value");if(adminSnap.val()!==true)throw new Error("MAGICKIDS está reservado exclusivamente para el administrador.");}
-  const claimRef=MAGIC_DB.ref("registeredChatUsernames/"+normalized);
-  const tx=await claimRef.transaction(function(current){return current===null?uid:undefined;});
-  if(!tx.committed||tx.snapshot.val()!==uid)throw new Error("Ese nick ya está ocupado.");
-  try{await MAGIC_DB.ref("registeredChatProfiles/"+uid).set({name:name,nameNormalized:normalized,email:email||"",createdAt:firebase.database.ServerValue.TIMESTAMP});}
-  catch(e){await claimRef.remove().catch(function(){});throw e;}
-}
-function chatFriendlyAuthError(e){const code=e&&e.code||"";if(code==="auth/email-already-in-use")return"Ese correo ya tiene una cuenta. Usá INICIAR SESIÓN.";if(code==="auth/invalid-email")return"El correo electrónico no es válido.";if(code==="auth/weak-password")return"La contraseña es demasiado débil.";if(code==="auth/invalid-credential"||code==="auth/wrong-password"||code==="auth/user-not-found")return"Correo o contraseña incorrectos.";if(code==="auth/operation-not-allowed")return"El acceso por correo y contraseña todavía no está habilitado en Firebase.";return(e&&e.message)||"No se pudo completar la operación.";}
-async function chatRegister(){
-  const name=(document.getElementById("chatName").value||"").trim().replace(/\s+/g," ").slice(0,24),email=(document.getElementById("chatEmail").value||"").trim().toLowerCase(),pass=document.getElementById("chatPassword").value||"",pass2=document.getElementById("chatPassword2").value||"";
-  if(!chatValidName(name)){chatShowAuth("Elegí un nick válido.","error");return;}if(!email||!email.includes("@")){chatShowAuth("Escribí un correo válido.","error");return;}if(pass.length<6){chatShowAuth("La contraseña debe tener al menos 6 caracteres.","error");return;}if(pass!==pass2){chatShowAuth("Las contraseñas no coinciden.","error");return;}
-  const action=document.getElementById("chatAuthAction");action.disabled=true;let createdUser=null;
-  try{const cred=await MAGIC_AUTH.createUserWithEmailAndPassword(email,pass);createdUser=cred.user;MAGIC_UID=createdUser.uid;await chatClaimUsername(MAGIC_UID,name,email);chatShowAuth("Cuenta creada correctamente.","ok");await chatLoadProfile(createdUser);}
-  catch(e){try{if(createdUser&&(!e.code||!String(e.code).startsWith("auth/"))&&MAGIC_AUTH.currentUser&&MAGIC_AUTH.currentUser.uid===createdUser.uid)await MAGIC_AUTH.currentUser.delete();}catch(_){}chatShowAuth(chatFriendlyAuthError(e),"error");}
-  finally{action.disabled=false;}
-}
-async function chatLogin(){
-  const email=(document.getElementById("chatEmail").value||"").trim().toLowerCase(),pass=document.getElementById("chatPassword").value||"";
-  if(!email||!pass){chatShowAuth("Completá correo y contraseña.","error");return;}
-  const action=document.getElementById("chatAuthAction");action.disabled=true;
-  try{await MAGIC_AUTH.signInWithEmailAndPassword(email,pass);}catch(e){chatShowAuth(chatFriendlyAuthError(e),"error");}finally{action.disabled=false;}
-}
-async function chatLoadProfile(user){
-  const snap=await MAGIC_DB.ref("registeredChatProfiles/"+user.uid).once("value"),profile=snap.val();
-  if(!profile||!profile.name){chatShowAuth("Tu cuenta existe, pero no tiene un perfil de chat.","error");return;}
-  MAGIC_ADMIN=(await MAGIC_DB.ref("admins/"+user.uid).once("value")).val()===true;MAGIC_UID=user.uid;MAGIC_PROFILE=profile;
-  document.getElementById("chatAuthPanel").classList.add("hidden");document.getElementById("chatApp").classList.remove("hidden");
-  document.getElementById("chatUserLabel").textContent=profile.name;document.getElementById("chatAdminStatus").textContent=MAGIC_ADMIN?"ADMIN ✓":"USUARIO";document.getElementById("chatAdminStatus").classList.toggle("admin",MAGIC_ADMIN);
-  const isMagicAdmin=MAGIC_ADMIN&&chatNormalizeName(profile.name)==="MAGICKIDS";
-  document.getElementById("chatCrown").classList.toggle("hidden",!isMagicAdmin);document.getElementById("chatAdminBtn").classList.toggle("hidden",!MAGIC_ADMIN);
-  const setup=document.getElementById("registeredAdminSetup"),claim=document.getElementById("claimMagicNick"),setupText=document.getElementById("registeredAdminSetupText");
-  setup.classList.toggle("hidden",!MAGIC_ADMIN);
-  claim.classList.toggle("hidden",!MAGIC_ADMIN||isMagicAdmin);
-  setupText.textContent=isMagicAdmin?"Tu cuenta es MAGICKIDS y tiene permisos de administrador.":"Tu cuenta tiene permisos de administrador. Activá el nick exclusivo MAGICKIDS.";
-  chatStartPresence(profile);chatBindMessages();MAGIC_CHAT_READY=true;
-}
-async function chatClaimMagicNick(){
-  if(!MAGIC_ADMIN||!MAGIC_UID||!MAGIC_PROFILE)return;
-  const claim=document.getElementById("claimMagicNick");
-  claim.disabled=true;
-  try{
-    const ref=MAGIC_DB.ref("registeredChatUsernames/MAGICKIDS");
-    const tx=await ref.transaction(function(current){return current===null?MAGIC_UID:undefined;});
-    if(!tx.committed||tx.snapshot.val()!==MAGIC_UID)throw new Error("El nick MAGICKIDS ya está ocupado.");
-    const oldNormalized=chatNormalizeName(MAGIC_PROFILE.name);
-    await MAGIC_DB.ref("registeredChatProfiles/"+MAGIC_UID).update({
-      name:"MAGICKIDS",
-      nameNormalized:"MAGICKIDS"
-    });
-    if(oldNormalized&&oldNormalized!=="MAGICKIDS")await MAGIC_DB.ref("registeredChatUsernames/"+oldNormalized).remove().catch(function(){});
-    MAGIC_PROFILE.name="MAGICKIDS";MAGIC_PROFILE.nameNormalized="MAGICKIDS";
-    document.getElementById("chatUserLabel").textContent="MAGICKIDS";
-    document.getElementById("chatCrown").classList.remove("hidden");
-    document.getElementById("registeredAdminSetupText").textContent="Tu cuenta es MAGICKIDS y tiene permisos de administrador.";
-    claim.classList.add("hidden");
-  }catch(e){
-    await MAGIC_DB.ref("registeredChatUsernames/MAGICKIDS").transaction(function(current){return current===MAGIC_UID?null:current;}).catch(function(){});
-    chatShowAuth(e.message||"No se pudo activar el nick MAGICKIDS.","error");
-  }finally{claim.disabled=false;}
-}
-function chatBindMessages(){
-  MAGIC_DB.ref("registeredChatMessages").limitToLast(80).on("value",function(snap){
-    const box=document.getElementById("chatMessages");box.innerHTML="";snap.forEach(function(child){
-      const m=child.val()||{},mod=MAGIC_ADMIN?'<span class="mod"><button data-del="'+child.key+'">BORRAR</button><button data-ban="'+chatEscape(m.uid||"")+'">BANEAR</button></span>':"",crown=(m.isAdmin&&chatNormalizeName(m.name)==="MAGICKIDS")?'<span class="msgCrown">👑</span>':"";
-      box.insertAdjacentHTML("beforeend",'<div class="msg"><div class="meta">'+crown+chatEscape(m.name||"Usuario")+" · "+new Date(m.ts||Date.now()).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})+mod+'</div><div class="txt">'+chatEscape(m.text||"")+"</div></div>");
-    });box.scrollTop=box.scrollHeight;
-  });
-  MAGIC_DB.ref("registeredBanned/"+MAGIC_UID).on("value",function(s){if(s.val()===true){document.getElementById("chatText").disabled=true;document.getElementById("chatSend").disabled=true;chatShowAuth("Tu cuenta fue bloqueada del chat.","error");}});
-}
-async function sendMagicChat(){
-  if(!MAGIC_DB||!MAGIC_UID||!MAGIC_CHAT_READY)return;const input=document.getElementById("chatText"),raw=(input.value||"").trim(),profile=(await MAGIC_DB.ref("registeredChatProfiles/"+MAGIC_UID).once("value")).val()||{},name=profile.name||"Usuario";
-  const clean=raw.replace(/https?:\/\/\S+|www\.\S+|\b[a-z0-9-]+\.(?:com|net|org|es|ar|tv|site)\b/gi,"").replace(/\s+/g," ").trim().slice(0,180);if(!clean){input.value="";return;}
-  const remain=MAGIC_CHAT_COOLDOWN_MS-(Date.now()-magicChatLastSent);if(remain>0){chatCooldown(remain);return;}
-  if(clean===magicChatLastText)magicChatRepeatCount++;else magicChatRepeatCount=0;if(magicChatRepeatCount>=MAGIC_CHAT_REPEAT_LIMIT){chatShowAuth("No podés repetir el mismo mensaje varias veces seguidas.","error");return;}
-  const send=document.getElementById("chatSend");send.disabled=true;
-  try{
-    if((await MAGIC_DB.ref("registeredBanned/"+MAGIC_UID).once("value")).val()===true)throw new Error("Tu cuenta está bloqueada.");
-    const isAdmin=(await MAGIC_DB.ref("admins/"+MAGIC_UID).once("value")).val()===true&&chatNormalizeName(name)==="MAGICKIDS";
-    await MAGIC_DB.ref("registeredChatMessages").push({uid:MAGIC_UID,name:name,nameNormalized:chatNormalizeName(name),isAdmin:isAdmin,text:clean,ts:Date.now()});
-    magicChatLastSent=Date.now();magicChatLastText=clean;localStorage.setItem("registeredChatLastSent",String(magicChatLastSent));localStorage.setItem("registeredChatLastText",magicChatLastText);localStorage.setItem("registeredChatRepeatCount",String(magicChatRepeatCount));input.value="";chatCooldown(MAGIC_CHAT_COOLDOWN_MS);
-  }catch(e){chatShowAuth(e.message||"No se pudo enviar el mensaje.","error");send.disabled=false;}
-}
-function chatLogout(){if(MAGIC_AUTH)MAGIC_AUTH.signOut().catch(function(){});}
-function chatInitFirebase(){
-  if(!window.firebase){chatShowAuth("No se cargó Firebase.","error");return;}
-  try{
-    if(!firebase.apps.length)firebase.initializeApp(MAGIC_FIREBASE_CONFIG);MAGIC_AUTH=firebase.auth();MAGIC_DB=firebase.database();
-    MAGIC_AUTH.onAuthStateChanged(function(user){if(!user){document.getElementById("chatAuthPanel").classList.remove("hidden");document.getElementById("chatApp").classList.add("hidden");return;}chatLoadProfile(user).catch(function(e){chatShowAuth(e.message||"No se pudo cargar tu cuenta.","error");});});
-  }catch(e){chatShowAuth("No se pudo iniciar el chat.","error");}
-}
-document.addEventListener("DOMContentLoaded",function(){
-  chatSetMode(false);
-  document.getElementById("chatLoginTab").onclick=function(){chatSetMode(false);};document.getElementById("chatRegisterTab").onclick=function(){chatSetMode(true);};
-  document.getElementById("chatAuthAction").onclick=function(){MAGIC_REGISTER_MODE?chatRegister():chatLogin();};
-  document.getElementById("chatPassword").addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("chatAuthAction").click();});
-  document.getElementById("chatPassword2").addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("chatAuthAction").click();});
-  document.getElementById("chatSend").onclick=sendMagicChat;document.getElementById("chatText").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();sendMagicChat();}});
-  document.getElementById("chatLogoutBtn").onclick=chatLogout;document.getElementById("claimMagicNick").onclick=chatClaimMagicNick;document.getElementById("chatAdminBtn").onclick=function(){document.getElementById("adminPanel").classList.toggle("hidden");};document.getElementById("closeAdmin").onclick=function(){document.getElementById("adminPanel").classList.add("hidden");};
-  document.getElementById("chatMessages").addEventListener("click",function(e){if(!MAGIC_ADMIN||!MAGIC_DB)return;if(e.target.dataset.del)MAGIC_DB.ref("registeredChatMessages/"+e.target.dataset.del).remove();if(e.target.dataset.ban)MAGIC_DB.ref("registeredBanned/"+e.target.dataset.ban).set(true);});
-  chatInitFirebase();
-});
+  const $=id=>document.getElementById(id);
+  function esc(v){return String(v??"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
+  function setAuthMsg(msg,type){const el=$("customChatAuthMsg");if(!el)return;el.className="customChatAuthMsg"+(type?" "+type:"");el.textContent=msg||"";}
+  async function api(path,options){
+    options=options||{};
+    if(CHAT_API_URL.indexOf("REEMPLAZAR-")>=0)throw new Error("El backend del chat todavía no fue conectado.");
+    const req={credentials:"include",headers:Object.assign({"Content-Type":"application/json"},options.headers||{}),method:options.method||"GET"};
+    if(options.body!==undefined)req.body=options.body;
+    const res=await fetch(CHAT_API_URL+path,req);
+    let data={};try{data=await res.json();}catch(e){}
+    if(!res.ok)throw new Error(data.error||"No se pudo conectar con el chat.");
+    return data;
+  }
+  function setMode(register){
+    loginMode=!register;
+    $("customLoginTab").classList.toggle("active",!register);
+    $("customRegisterTab").classList.toggle("active",register);
+    $("customChatNick").classList.toggle("hidden",!register);
+    $("customChatPassword2").classList.toggle("hidden",!register);
+    $("customChatAuthBtn").textContent=register?"CREAR CUENTA":"INICIAR SESIÓN";
+    $("customChatPassword").autocomplete=register?"new-password":"current-password";
+    setAuthMsg("");
+  }
+  async function register(){
+    const nick=$("customChatNick").value.trim().replace(/\s+/g," ").slice(0,24);
+    const email=$("customChatEmail").value.trim().toLowerCase();
+    const password=$("customChatPassword").value;
+    const password2=$("customChatPassword2").value;
+    if(nick.length<3){setAuthMsg("El nick debe tener al menos 3 caracteres.","error");return;}
+    if(!email.includes("@")){setAuthMsg("Escribí un correo válido.","error");return;}
+    if(password.length<6){setAuthMsg("La contraseña debe tener al menos 6 caracteres.","error");return;}
+    if(password!==password2){setAuthMsg("Las contraseñas no coinciden.","error");return;}
+    const btn=$("customChatAuthBtn");btn.disabled=true;
+    try{await api("/api/register",{method:"POST",body:JSON.stringify({nick:nick,email:email,password:password})});setAuthMsg("Cuenta creada. Entrando…","ok");await login();}
+    catch(e){setAuthMsg(e.message||"No se pudo crear la cuenta.","error");}
+    finally{btn.disabled=false;}
+  }
+  async function login(){
+    const email=$("customChatEmail").value.trim().toLowerCase();
+    const password=$("customChatPassword").value;
+    if(!email||!password){setAuthMsg("Completá correo y contraseña.","error");return;}
+    const btn=$("customChatAuthBtn");btn.disabled=true;
+    try{const data=await api("/api/login",{method:"POST",body:JSON.stringify({email:email,password:password})});await enterChat(data.user);}
+    catch(e){setAuthMsg(e.message||"No se pudo iniciar sesión.","error");}
+    finally{btn.disabled=false;}
+  }
+  async function enterChat(user){
+    currentUser=user;
+    $("customChatAuth").classList.add("hidden");
+    $("customChatApp").classList.remove("hidden");
+    $("customChatUser").textContent=user.nick;
+    $("customChatRole").textContent=user.isAdmin?"ADMIN ✓":"USUARIO";
+    $("customChatRole").classList.toggle("admin",!!user.isAdmin);
+    $("customChatCrown").classList.toggle("hidden",!user.isAdmin);
+    $("customChatAdminBtn").classList.toggle("hidden",!user.isAdmin);
+    await refreshMessages();await refreshOnline();startTimers();
+  }
+  function renderMessages(messages){
+    const box=$("customChatMessages");
+    box.innerHTML=messages.map(function(m){
+      const mod=currentUser&&currentUser.isAdmin?'<span class="customChatMod"><button data-delete="'+m.id+'">BORRAR</button><button data-ban="'+esc(m.userId)+'">BANEAR</button></span>':"";
+      const crown=m.isAdmin?'<span class="customChatCrownMini">👑</span>':"";
+      return '<div class="customChatMsg"><div class="customChatMeta">'+crown+esc(m.nick)+" · "+new Date(m.createdAt).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})+mod+'</div><div class="customChatText">'+esc(m.text)+"</div></div>";
+    }).join("");
+    box.scrollTop=box.scrollHeight;
+  }
+  async function refreshMessages(){
+    if(!currentUser)return;
+    try{const data=await api("/api/messages?limit=80");const signature=JSON.stringify(data.messages);if(signature!==lastMessagesSignature){lastMessagesSignature=signature;renderMessages(data.messages);}}catch(e){}
+  }
+  async function refreshOnline(){
+    if(!currentUser)return;
+    try{const data=await api("/api/online");$("customChatOnline").textContent="👥 "+data.count+" conectado"+(data.count===1?"":"s");}catch(e){}
+  }
+  function startTimers(){
+    clearInterval(pollTimer);clearInterval(heartbeatTimer);
+    pollTimer=setInterval(refreshMessages,2000);
+    heartbeatTimer=setInterval(async function(){try{await api("/api/heartbeat",{method:"POST",body:"{}"});await refreshOnline();}catch(e){}},10000);
+  }
+  async function send(){
+    if(!currentUser)return;
+    const input=$("customChatText"),text=input.value.trim();if(!text)return;
+    const btn=$("customChatSend");btn.disabled=true;
+    try{await api("/api/messages",{method:"POST",body:JSON.stringify({text:text})});input.value="";await refreshMessages();}
+    catch(e){setAuthMsg(e.message||"No se pudo enviar el mensaje.","error");}
+    finally{btn.disabled=false;}
+  }
+  async function logout(){
+    try{await api("/api/logout",{method:"POST",body:"{}"});}catch(e){}
+    clearInterval(pollTimer);clearInterval(heartbeatTimer);currentUser=null;lastMessagesSignature="";
+    $("customChatAuth").classList.remove("hidden");$("customChatApp").classList.add("hidden");
+    setAuthMsg("");$("customChatPassword").value="";$("customChatPassword2").value="";
+  }
+  async function moderate(action,id){
+    if(!currentUser||!currentUser.isAdmin)return;
+    try{
+      const payload=action==="delete"?{id:Number(id)}:{userId:id};
+      await api("/api/admin/"+action,{method:"POST",body:JSON.stringify(payload)});
+      await refreshMessages();
+    }catch(e){setAuthMsg(e.message||"No se pudo moderar.","error");}
+  }
+  async function init(){
+    setMode(false);
+    $("customLoginTab").onclick=function(){setMode(false);};
+    $("customRegisterTab").onclick=function(){setMode(true);};
+    $("customChatAuthBtn").onclick=function(){loginMode?login():register();};
+    $("customChatPassword").addEventListener("keydown",function(e){if(e.key==="Enter")(loginMode?login:register)();});
+    $("customChatPassword2").addEventListener("keydown",function(e){if(e.key==="Enter")register();});
+    $("customChatSend").onclick=send;
+    $("customChatText").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();send();}});
+    $("customChatLogout").onclick=logout;
+    $("customChatMessages").addEventListener("click",function(e){if(e.target.dataset.delete)moderate("delete",e.target.dataset.delete);if(e.target.dataset.ban)moderate("ban",e.target.dataset.ban);});
+    try{const data=await api("/api/me");if(data.user)await enterChat(data.user);}catch(e){if(e.message&&e.message.indexOf("todavía no fue conectado")<0)setAuthMsg("");}
+  }
+  document.addEventListener("DOMContentLoaded",init);
+})();
 </script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script>
 let magicPwaPrompt=null;
 window.addEventListener("beforeinstallprompt",e=>{
