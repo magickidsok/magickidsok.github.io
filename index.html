@@ -430,6 +430,17 @@ function chatEscape(v){
     return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
   });
 }
+function chatNormalizeName(v){
+  return String(v||"")
+    .normalize("NFD")
+    .replace(/[\\u0300-\\u036f]/g,"")
+    .replace(/[^a-zA-Z0-9]/g,"")
+    .toUpperCase();
+}
+function chatIsReservedName(v){
+  const n=chatNormalizeName(v);
+  return n==="MAGICKIDS" || n==="MAGICKIDSOK";
+}
 function chatShow(text){
   const box=document.getElementById("chatMessages");
   if(box) box.innerHTML='<div class="msg"><div class="txt">'+chatEscape(text)+'</div></div>';
@@ -470,25 +481,70 @@ function chatInitFirebase(){
       if(!user) return;
       MAGIC_UID=user.uid;
       const name=localStorage.getItem("magicChatName")||"Usuario";
-      document.getElementById("chatUserLabel").textContent=name+" · conectado";      chatStartPresence();
+      document.getElementById("chatUserLabel").textContent=name+" · verificando…";
       Promise.resolve(MAGIC_DB.ref("admins/"+user.uid).once("value")).then(function(s){
         MAGIC_ADMIN=s.val()===true;
-        if(MAGIC_ADMIN) document.getElementById("chatAdminBtn").classList.remove("hidden");
-      }).catch(function(){});
-      MAGIC_DB.ref("chatMessages").limitToLast(80).on("value",function(snap){
-        const box=document.getElementById("chatMessages");
-        box.innerHTML="";
-        snap.forEach(function(child){
-          const m=child.val()||{};
-          const mod=MAGIC_ADMIN?'<span class="mod"><button data-del="'+child.key+'">BORRAR</button><button data-ban="'+chatEscape(m.uid||"")+'">BANEAR</button></span>':"";
-          box.insertAdjacentHTML("beforeend",'<div class="msg"><div class="meta">'+chatEscape(m.name||"Usuario")+" · "+new Date(m.ts||Date.now()).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})+mod+'</div><div class="txt">'+chatEscape(m.text||"")+"</div></div>");
+        const adminBtn=document.getElementById("chatAdminBtn");
+        const userLabel=document.getElementById("chatUserLabel");
+        const reserved=chatIsReservedName(name);
+
+        if(MAGIC_ADMIN){
+          adminBtn.classList.remove("hidden");
+          adminBtn.textContent="MODO ADMIN ✓";
+          userLabel.textContent=name+" · ADMINISTRADOR ✓";
+        }else{
+          adminBtn.classList.add("hidden");
+          userLabel.textContent=name+" · conectado";
+        }
+
+        // El nombre MAGICKIDS queda reservado para la cuenta administradora.
+        // Un usuario anónimo que intente suplantarlo no podrá acceder al chat.
+        if(reserved && !MAGIC_ADMIN){
+          localStorage.removeItem("magicChatName");
+          document.getElementById("chatApp").classList.add("hidden");
+          document.getElementById("chatLogin").classList.remove("hidden");
+          const input=document.getElementById("chatName");
+          const enter=document.getElementById("chatEnter");
+          if(input){
+            input.value="";
+            input.placeholder="MAGICKIDS está reservado para el administrador";
+          }
+          if(enter){
+            enter.textContent="NOMBRE RESERVADO";
+            enter.disabled=true;
+            setTimeout(function(){
+              enter.textContent="ENTRAR AL CHAT";
+              enter.disabled=false;
+              if(input)input.placeholder="Tu nombre";
+            },2500);
+          }
+          MAGIC_AUTH.signOut().catch(function(){});
+          return;
+        }
+
+        chatStartPresence();
+
+        MAGIC_DB.ref("chatMessages").limitToLast(80).on("value",function(snap){
+          const box=document.getElementById("chatMessages");
+          box.innerHTML="";
+          snap.forEach(function(child){
+            const m=child.val()||{};
+            const messageName=m.name||"Usuario";
+            // Oculta mensajes que intenten usar el nombre reservado de Magic Kids.
+            if(chatIsReservedName(messageName) && !(MAGIC_ADMIN && m.uid===MAGIC_UID)) return;
+            const mod=MAGIC_ADMIN?'<span class="mod"><button data-del="'+child.key+'">BORRAR</button><button data-ban="'+chatEscape(m.uid||"")+'">BANEAR</button></span>':"";
+            box.insertAdjacentHTML("beforeend",'<div class="msg"><div class="meta">'+chatEscape(messageName)+" · "+new Date(m.ts||Date.now()).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})+mod+'</div><div class="txt">'+chatEscape(m.text||"")+"</div></div>");
+          });
+          box.scrollTop=box.scrollHeight;
         });
-        box.scrollTop=box.scrollHeight;
-      });
-      MAGIC_DB.ref("banned/"+user.uid).on("value",function(s){
-        const banned=s.val()===true;
-        const input=document.getElementById("chatText"), send=document.getElementById("chatSend");
-        if(banned){input.disabled=true;send.disabled=true;chatShow("Fuiste expulsado del chat.");}
+
+        MAGIC_DB.ref("banned/"+user.uid).on("value",function(s){
+          const banned=s.val()===true;
+          const input=document.getElementById("chatText"), send=document.getElementById("chatSend");
+          if(banned){input.disabled=true;send.disabled=true;chatShow("Fuiste expulsado del chat.");}
+        });
+      }).catch(function(){
+        document.getElementById("chatUserLabel").textContent=name+" · no se pudo verificar";
       });
     });
     MAGIC_AUTH.signInAnonymously().catch(function(err){
@@ -500,6 +556,11 @@ function startMagicChat(){
   const input=document.getElementById("chatName");
   const name=(input.value||"").trim().replace(/\s+/g," ").slice(0,24);
   if(!name){input.focus();return;}
+  if(chatIsReservedName(name) && MAGIC_ADMIN!==true){
+    input.value="";
+    input.placeholder="MAGICKIDS está reservado para el administrador";
+    return;
+  }
   localStorage.setItem("magicChatName",name);
   document.getElementById("chatLogin").classList.add("hidden");
   document.getElementById("chatApp").classList.remove("hidden");
@@ -531,6 +592,11 @@ function chatCooldown(ms){
 
 function sendMagicChat(){
   if(!MAGIC_DB||!MAGIC_UID)return;
+  const savedName=localStorage.getItem("magicChatName")||"Usuario";
+  if(chatIsReservedName(savedName) && MAGIC_ADMIN!==true){
+    chatShow("El nombre MAGICKIDS está reservado para el administrador.");
+    return;
+  }
   const input=document.getElementById("chatText");
   const raw=(input.value||"").trim();
   const cleaned=raw.replace(/https?:\/\/\S+|www\.\S+|\b[a-z0-9-]+\.(?:com|net|org|es|ar|tv|site)\b/gi,"").replace(/\s+/g," ").trim().slice(0,180);
