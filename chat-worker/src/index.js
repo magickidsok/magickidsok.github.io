@@ -409,7 +409,7 @@ export default {
       await ensureSchema(env.DB);
       await ensureVideoSchema(env.DB);
       const path=new URL(request.url).pathname;
-      if(path.startsWith("/media/")&&request.method==="GET")return media(request,env);
+      if(path.startsWith("/media/")&&(request.method==="GET"||request.method==="HEAD"))return media(request,env);
       if(path==="/api/health"&&request.method==="GET")return json({ok:true,service:"Magic Kids Chat API",database:true,sessionConfigured:!!env.SESSION_SECRET},200,origin);
       if(path==="/")return json({ok:true,service:"Magic Kids Chat API"},200,origin);
       if(path==="/api/register"&&request.method==="POST")return register(request,env,origin);
