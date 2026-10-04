@@ -428,78 +428,115 @@ async function loadMagicSchedule(){
     }
   }catch(e){}
 }function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}function fill(){const e=document.getElementById("schedule");if(e)e.innerHTML=schedule.slice(0,6).map(x=>'<div class="item"><time>'+x[0]+'</time><strong>'+x[1]+'</strong></div>').join("")}const STREAM_URL="https://kali.vdopanel.com:3007/hybrid/play.m3u8";
+const VIDEO_API="https://magickidsok-github-io.elmagickids.workers.dev";
 let magicHls=null, magicRetryTimer=null, magicRetryAttempt=0, magicStreamStarted=false;
+let scheduledMode=false, currentVideoIndex=-1, scheduledVideos=[];
+
 function setStreamState(state,msg){
   const badge=document.getElementById("streamBadge"),label=document.getElementById("streamLabel"),status=document.getElementById("status"),retry=document.getElementById("retryStream");
   if(!badge||!label)return;
   badge.classList.remove("offline","connecting");
   if(state==="live"){label.textContent="EN VIVO";status.textContent="";retry?.classList.add("hidden");}
+  else if(state==="scheduled"){label.textContent="PROGRAMADO";status.textContent=msg||"";retry?.classList.add("hidden");}
   else if(state==="offline"){badge.classList.add("offline");label.textContent="SIN SEÑAL";status.textContent=msg||"Señal no disponible.";retry?.classList.remove("hidden");}
   else {badge.classList.add("connecting");label.textContent="CONECTANDO";status.textContent=msg||"Conectando Magic Kids…";retry?.classList.add("hidden");}
 }
 function scheduleStreamRetry(){
-  if(magicRetryTimer)return;
-  const delay=8000;
-  magicRetryAttempt++;
-  magicRetryTimer=setTimeout(()=>{magicRetryTimer=null;startStream(true)},delay);
+  if(scheduledMode||magicRetryTimer)return;
+  const delay=8000;magicRetryAttempt++;
+  magicRetryTimer=setTimeout(()=>{magicRetryTimer=null;startLiveStream(true)},delay);
   setStreamState("offline","La señal tuvo una interrupción. Reintentando…");
 }
-function destroyMagicHls(){
-  if(magicHls){try{magicHls.destroy()}catch(e){} magicHls=null;}
-}
-function startStream(isRetry=false){
-  const video=document.getElementById("magicVideo");
-  if(!video)return;
+function destroyMagicHls(){if(magicHls){try{magicHls.destroy()}catch(e){}magicHls=null;}}
+function startLiveStream(isRetry=false){
+  const video=document.getElementById("magicVideo");if(!video)return;
   if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}
-  destroyMagicHls();
-  setStreamState("connecting",isRetry?"Reconectando Magic Kids…":"Conectando Magic Kids…");
-  video.muted=true;video.autoplay=true;video.playsInline=true;
+  destroyMagicHls();setStreamState("connecting",isRetry?"Reconectando Magic Kids…":"Conectando Magic Kids…");
+  video.crossOrigin="anonymous";video.muted=true;video.autoplay=true;video.playsInline=true;
   if(video.canPlayType("application/vnd.apple.mpegurl")){
-    video.src=STREAM_URL;
-    video.load();
-    const p=video.play();if(p&&p.catch)p.catch(()=>{});
-    magicStreamStarted=true;
-    return;
+    video.src=STREAM_URL;video.load();const p=video.play();if(p&&p.catch)p.catch(()=>{});magicStreamStarted=true;return;
   }
   if(window.Hls&&Hls.isSupported()){
-    magicHls=new Hls({
-      enableWorker:true,
-      lowLatencyMode:false,
-      backBufferLength:60,
-      maxBufferLength:30,
-      maxMaxBufferLength:60,
-      liveSyncDurationCount:5,
-      manifestLoadingMaxRetry:4,
-      levelLoadingMaxRetry:6,
-      fragLoadingMaxRetry:6,
-      fragLoadingRetryDelay:1000
-    });
-    magicHls.loadSource(STREAM_URL);
-    magicHls.attachMedia(video);
+    magicHls=new Hls({enableWorker:true,lowLatencyMode:false,backBufferLength:60,maxBufferLength:30,maxMaxBufferLength:60,liveSyncDurationCount:5,manifestLoadingMaxRetry:4,levelLoadingMaxRetry:6,fragLoadingMaxRetry:6,fragLoadingRetryDelay:1000});
+    magicHls.loadSource(STREAM_URL);magicHls.attachMedia(video);
     magicHls.on(Hls.Events.MANIFEST_PARSED,()=>{const p=video.play();if(p&&p.catch)p.catch(()=>{});});
     magicHls.on(Hls.Events.ERROR,(event,data)=>{
       if(!data.fatal)return;
-      if(data.type===Hls.ErrorTypes.MEDIA_ERROR){
-        try{magicHls.recoverMediaError();setStreamState("connecting","Recuperando la reproducción…");return}catch(e){}
-      }
-      if(data.type===Hls.ErrorTypes.NETWORK_ERROR){
-        try{magicHls.startLoad();setStreamState("connecting","Reconectando con VDO Panel…");return}catch(e){}
-      }
+      if(data.type===Hls.ErrorTypes.MEDIA_ERROR){try{magicHls.recoverMediaError();setStreamState("connecting","Recuperando la reproducción…");return}catch(e){}}
+      if(data.type===Hls.ErrorTypes.NETWORK_ERROR){try{magicHls.startLoad();setStreamState("connecting","Reconectando con VDO Panel…");return}catch(e){}}
       scheduleStreamRetry();
     });
-    magicStreamStarted=true;
-    return;
+    magicStreamStarted=true;return;
   }
   setStreamState("offline","Este navegador no admite HLS.");
 }
-document.getElementById("retryStream")?.addEventListener("click",()=>{magicRetryAttempt=0;startStream(true)});
-document.getElementById("magicVideo")?.addEventListener("playing",()=>{magicRetryAttempt=0;setStreamState("live")});
-document.getElementById("magicVideo")?.addEventListener("waiting",()=>{setStreamState("connecting","Bufferizando la señal…")});
-document.getElementById("magicVideo")?.addEventListener("error",()=>{scheduleStreamRetry()});
-window.addEventListener("online",()=>{if(magicStreamStarted)startStream(true)});
+function cleanMediaKey(key){return String(key||"").split("/").map(encodeURIComponent).join("/");}
+function scheduledVideoUrl(item){return VIDEO_API+"/media/"+cleanMediaKey(item.object_key);}
+function chooseScheduledIndex(){
+  if(!scheduledVideos.length)return -1;
+  const now=new Date();
+  const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(now);
+  const cur=Number(parts.find(p=>p.type==="hour").value)%24*60+Number(parts.find(p=>p.type==="minute").value);
+  let best=-1,bestTime=-1;
+  scheduledVideos.forEach((x,i)=>{const p=String(x.start_time||"00:00").split(":").map(Number),t=p[0]*60+p[1];if(t<=cur&&t>bestTime){best=i;bestTime=t;}});
+  return best>=0?best:scheduledVideos.length-1;
+}
+function setScheduledVideo(index,autoplay=true){
+  const video=document.getElementById("magicVideo");if(!video||!scheduledVideos.length)return;
+  if(index<0)index=0;if(index>=scheduledVideos.length)index=0;
+  currentVideoIndex=index;scheduledMode=true;magicStreamStarted=false;
+  if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}destroyMagicHls();
+  const item=scheduledVideos[index];
+  video.pause();video.removeAttribute("src");video.load();video.crossOrigin="anonymous";video.muted=false;video.autoplay=autoplay;video.controls=true;video.playsInline=true;
+  video.src=scheduledVideoUrl(item);video.load();
+  setStreamState("scheduled",item.title||"Magic Kids");
+  const p=autoplay?video.play():null;
+  if(p&&p.catch)p.catch(()=>{video.muted=true;const q=video.play();if(q&&q.catch)q.catch(()=>{});});
+  updateScheduledNowNext();
+}
+function playNextScheduled(){if(!scheduledMode||!scheduledVideos.length)return;setScheduledVideo((currentVideoIndex+1)%scheduledVideos.length,true);}
+function updateScheduledNowNext(){
+  const nowEl=document.getElementById("nowShow"),nextEl=document.getElementById("nextShow"),nowTimeEl=document.getElementById("nowTime"),nextTimeEl=document.getElementById("nextTime");
+  if(!nowEl||!nextEl||!scheduledVideos.length)return;
+  const cur=scheduledVideos[currentVideoIndex>=0?currentVideoIndex:0],next=scheduledVideos[(currentVideoIndex+1)%scheduledVideos.length];
+  nowEl.textContent=cur.title||"Video";nowTimeEl.textContent=cur.start_time||"--:--";
+  nextEl.textContent=next.title||"Video";nextTimeEl.textContent=next.start_time||"--:--";
+}
+async function loadScheduledPlayer(){
+  try{
+    const r=await fetch(VIDEO_API+"/api/schedule",{cache:"no-store"});if(!r.ok)throw new Error();
+    const d=await r.json();scheduledVideos=Array.isArray(d.schedule)?d.schedule.filter(x=>x.object_key):[];
+    if(scheduledVideos.length){
+      setScheduledVideo(chooseScheduledIndex(),true);
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+document.getElementById("retryStream")?.addEventListener("click",()=>{magicRetryAttempt=0;startLiveStream(true)});
+document.getElementById("magicVideo")?.addEventListener("playing",()=>{magicRetryAttempt=0;if(!scheduledMode)setStreamState("live")});
+document.getElementById("magicVideo")?.addEventListener("waiting",()=>{if(!scheduledMode)setStreamState("connecting","Bufferizando la señal…")});
+document.getElementById("magicVideo")?.addEventListener("error",()=>{if(scheduledMode){setStreamState("offline","No se pudo reproducir este video.");}else scheduleStreamRetry();});
+document.getElementById("magicVideo")?.addEventListener("ended",()=>{if(scheduledMode)playNextScheduled();});
+window.addEventListener("online",()=>{if(!scheduledMode&&magicStreamStarted)startLiveStream(true)});
 window.addEventListener("offline",()=>setStreamState("offline","Sin conexión a Internet."));
-function updateNowNext(){const nowEl=document.getElementById("nowShow"),nextEl=document.getElementById("nextShow"),nowTimeEl=document.getElementById("nowTime"),nextTimeEl=document.getElementById("nextTime");if(!nowEl||!nextEl)return;const d=new Date();const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(d);const h=Number(parts.find(p=>p.type==="hour").value)%24,m=Number(parts.find(p=>p.type==="minute").value);const cur=h*60+m;const starts=schedule.map((x,i)=>{const [hh,mm]=x[0].split(":").map(Number);let t=hh*60+mm;return {i,t:t<720?t+1440:t}});let base=cur<720?cur+1440:cur;let active=-1,nextIndex=-1,nextAbs=null;if(base>=1320||base<=(11*60+30)+1440-1440){for(let i=0;i<starts.length;i++){let s=starts[i].t;if(base>=s){let e=i<starts.length-1?starts[i+1].t:starts[0].t+1440;if(base<e){active=i;nextIndex=i<starts.length-1?i+1:0;nextAbs=e;break}}}}if(active===-1){nowEl.textContent="Fuera de programación";nowTimeEl.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}).format(d);const n=schedule[0];nextEl.textContent=n[1];nextTimeEl.textContent=n[0];return}nowEl.textContent=schedule[active][1];nowTimeEl.textContent=schedule[active][0];const nxt=schedule[nextIndex];nextEl.textContent=nxt[1];const nt=(nextAbs%(1440)+1440)%1440;nextTimeEl.textContent=String(Math.floor(nt/60)).padStart(2,"0")+":"+String(nt%60).padStart(2,"0")}
-document.addEventListener("DOMContentLoaded",()=>{loadMagicSchedule();clock();fill();updateNowNext();setInterval(()=>{clock();updateNowNext()},1000);startStream();document.getElementById("full")?.addEventListener("click",()=>document.getElementById("screen")?.requestFullscreen?.());document.getElementById("copyHome")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copyHome").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copyHome").textContent="COPIAR ALIAS",1600)}catch(e){}})})</script><script id="custom-chat-script">
+function updateNowNext(){
+  if(scheduledMode&&scheduledVideos.length){updateScheduledNowNext();return;}
+  const nowEl=document.getElementById("nowShow"),nextEl=document.getElementById("nextShow"),nowTimeEl=document.getElementById("nowTime"),nextTimeEl=document.getElementById("nextTime");if(!nowEl||!nextEl)return;
+  const d=new Date();const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(d);
+  const h=Number(parts.find(p=>p.type==="hour").value)%24,m=Number(parts.find(p=>p.type==="minute").value),cur=h*60+m;
+  const starts=schedule.map((x,i)=>{const [hh,mm]=x[0].split(":").map(Number);let t=hh*60+mm;return {i,t:t<720?t+1440:t}});
+  let base=cur<720?cur+1440:cur,active=-1,nextIndex=-1,nextAbs=null;
+  for(let i=0;i<starts.length;i++){let s=starts[i].t;if(base>=s){let e=i<starts.length-1?starts[i+1].t:starts[0].t+1440;if(base<e){active=i;nextIndex=i<starts.length-1?i+1:0;nextAbs=e;break}}}
+  if(active===-1){nowEl.textContent="Fuera de programación";nowTimeEl.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}).format(d);const n=schedule[0];nextEl.textContent=n[1];nextTimeEl.textContent=n[0];return}
+  nowEl.textContent=schedule[active][1];nowTimeEl.textContent=schedule[active][0];const nxt=schedule[nextIndex];nextEl.textContent=nxt[1];const nt=(nextAbs%1440+1440)%1440;nextTimeEl.textContent=String(Math.floor(nt/60)).padStart(2,"0")+":"+String(nt%60).padStart(2,"0");
+}
+document.addEventListener("DOMContentLoaded",async()=>{
+  await loadMagicSchedule();clock();fill();updateNowNext();setInterval(()=>{clock();updateNowNext()},1000);
+  const hasScheduled=await loadScheduledPlayer();if(!hasScheduled)startLiveStream();
+  document.getElementById("full")?.addEventListener("click",()=>document.getElementById("screen")?.requestFullscreen?.());
+  document.getElementById("copyHome")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copyHome").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copyHome").textContent="COPIAR ALIAS",1600)}catch(e){}});
+});</script><script id="custom-chat-script">
 (function(){
   const CHAT_API_URL="https://magickidsok-github-io.elmagickids.workers.dev";
   let loginMode=true,currentUser=null,pollTimer=null,heartbeatTimer=null,lastMessagesSignature="";
