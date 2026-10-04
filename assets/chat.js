@@ -18,7 +18,7 @@
     options=options||{};
     const headers=Object.assign({"Content-Type":"application/json"},options.headers||{});
     const t=token();if(t)headers.Authorization="Bearer "+t;
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),9000);
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
     try{
       const res=await fetch(CHAT_API_URL+path,{
         method:options.method||"GET",body:options.body,headers,
