@@ -1,120 +1,137 @@
 /* MAGIC KIDS — CHAT ZONE ONLY
- * This file contains chat authentication, messaging and moderation.
- * PROTECTED PLAYER RULE: never place or modify player/transmission logic here.
+ * Chat authentication, messages and moderation.
+ * PROTECTED PLAYER RULE: this file never controls the player or transmission.
  */
 (function(){
-  // CHAT ONLY: the API lives in the dedicated Worker. The player never uses this file.
   const CHAT_API_URL="https://magickidsok-github-io.elmagickids.workers.dev";
-  // Prioritize the dedicated chat server so a GitHub Pages 404 or slow page response
-  // cannot block registration/login.
-  const CHAT_API_BASES=[CHAT_API_URL,location.origin].filter(function(v,i,a){return v&&a.indexOf(v)===i;});
-  let authMode="login",currentUser=null,pollTimer=null,heartbeatTimer=null,lastMessagesSignature="";
+  const TOKEN_KEY="mk_chat_token_v2";
+  let mode="login",currentUser=null,pollTimer=null,heartbeatTimer=null,lastSignature="";
 
   const $=id=>document.getElementById(id);
-  function esc(v){return String(v??"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
-  function setAuthMsg(msg,type){
-    const el=$("customChatAuthMsg");if(!el)return;
-    el.className="customChatAuthMsg"+(type?" "+type:"");el.textContent=msg||"";
-  }
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  const token=()=>localStorage.getItem(TOKEN_KEY)||"";
+  function saveToken(v){if(v)localStorage.setItem(TOKEN_KEY,v);}
+  function clearToken(){localStorage.removeItem(TOKEN_KEY);}
+  function msg(text,type){const e=$("customChatAuthMsg");if(!e)return;e.className="customChatAuthMsg "+(type||"");e.textContent=text||"";}
+
   async function api(path,options){
     options=options||{};
-    let lastError=null;
-    for(const base of CHAT_API_BASES){
-      for(let attempt=0;attempt<2;attempt++){
-        const controller=new AbortController();
-        const timeout=setTimeout(()=>controller.abort(),10000);
-        const req={credentials:"include",cache:"no-store",signal:controller.signal,headers:Object.assign({"Content-Type":"application/json","Cache-Control":"no-cache"},options.headers||{}),method:options.method||"GET"};
-        if(options.body!==undefined)req.body=options.body;
-        try{
-          const res=await fetch(base+path,req);
-          let data={};try{data=await res.json();}catch(e){}
-          if(!res.ok){
-            if(res.status===404&&base===location.origin)break;
-            throw new Error(data.error||("El servidor respondió con error ("+res.status+")."));
-          }
-          return data;
-        }catch(e){
-          lastError=e;
-          if(attempt===0)await new Promise(resolve=>setTimeout(resolve,700));
-        }finally{clearTimeout(timeout);}
+    const headers=Object.assign({"Content-Type":"application/json"},options.headers||{});
+    const t=token();if(t)headers.Authorization="Bearer "+t;
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),9000);
+    try{
+      const res=await fetch(CHAT_API_URL+path,{
+        method:options.method||"GET",body:options.body,headers,
+        credentials:"omit",cache:"no-store",signal:controller.signal
+      });
+      let data={};try{data=await res.json();}catch(e){}
+      if(!res.ok){
+        if(res.status===401&&path!=="/api/login"&&path!=="/api/register"&&path!=="/api/admin/login"){
+          clearToken();currentUser=null;showAuth();msg("Tu sesión terminó. Volvé a ingresar.","error");
+        }
+        throw new Error(data.error||("El servidor respondió con error ("+res.status+")."));
       }
-    }
-    if(lastError&&lastError.name==="AbortError")throw new Error("El servidor del chat tardó demasiado en responder. Probá nuevamente.");
-    if(lastError&&/Failed to fetch|NetworkError|Load failed/i.test(lastError.message||""))throw new Error("El servidor del chat no está respondiendo. El reproductor no está afectado.");
-    throw lastError||new Error("No se pudo conectar con el servidor del chat.");
+      return data;
+    }catch(e){
+      if(e.name==="AbortError")throw new Error("El chat tardó demasiado en responder. Probá nuevamente.");
+      if(/Failed to fetch|NetworkError|Load failed/i.test(e.message||""))throw new Error("No se pudo conectar con el servidor del chat.");
+      throw e;
+    }finally{clearTimeout(timer);}
   }
-  function setAuthMode(mode){
-    authMode=mode;
-    const admin=mode==="admin";
+
+  function showAuth(){
+    $("customChatAuth")?.classList.remove("hidden");
+    $("customChatApp")?.classList.add("hidden");
+  }
+  function showApp(user){
+    currentUser=user;
+    $("customChatAuth")?.classList.add("hidden");
+    $("customChatApp")?.classList.remove("hidden");
+    $("customChatUser").textContent=user.nick||"Usuario";
+    $("customChatRole").textContent=user.isAdmin?"ADMINISTRADOR":"USUARIO";
+    $("customChatRole").classList.toggle("admin",!!user.isAdmin);
+    $("customChatCrown").classList.toggle("hidden",!user.isAdmin);
+    $("customChatAdminPanel").classList.toggle("hidden",!user.isAdmin);
+    refreshMessages();refreshOnline();startTimers();
+  }
+
+  function setMode(next){
+    mode=next;
+    const admin=next==="admin",register=next==="register";
     $("customLoginTab").classList.toggle("active",!admin);
     $("customAdminTab").classList.toggle("active",admin);
     $("customUserAuth").classList.toggle("hidden",admin);
     $("customAdminAuth").classList.toggle("hidden",!admin);
-    if(admin){$("customAdminPin").focus();}
-    setAuthMsg("");
-  }
-  function setUserMode(register){
-    authMode=register?"register":"login";
     $("customUserLoginTab").classList.toggle("active",!register);
     $("customRegisterTab").classList.toggle("active",register);
     $("customChatNick").classList.toggle("hidden",!register);
     $("customChatPassword2").classList.toggle("hidden",!register);
-    $("customChatAuthBtn").textContent=register?"CREAR CUENTA":"INICIAR SESIÓN";
+    $("customChatAuthBtn").textContent=register?"CREAR CUENTA":"ENTRAR AL CHAT";
     $("customChatPassword").autocomplete=register?"new-password":"current-password";
-    setAuthMsg("");
+    msg("");
+    if(admin)$("customAdminPin").focus();else $("customChatEmail").focus();
   }
+
+  function badNick(nick){
+    return /MAGIC/i.test(nick);
+  }
+
   async function register(){
-    const nick=$("customChatNick").value.trim().replace(/\s+/g," ").slice(0,24);
+    const nick=$("customChatNick").value.trim().replace(/s+/g," ").slice(0,24);
     const email=$("customChatEmail").value.trim().toLowerCase();
-    const password=$("customChatPassword").value,password2=$("customChatPassword2").value;
-    if(nick.length<3){setAuthMsg("El nick debe tener al menos 3 caracteres.","error");return;}
-    if(nick.replace(/[^A-Za-z0-9]/g,"").toUpperCase()==="MAGICKIDS"){setAuthMsg("Ese nick está reservado para el administrador.","error");return;}
-    if(!email.includes("@")){setAuthMsg("Escribí un correo válido.","error");return;}
-    if(password.length<6){setAuthMsg("La contraseña debe tener al menos 6 caracteres.","error");return;}
-    if(password!==password2){setAuthMsg("Las contraseñas no coinciden.","error");return;}
-    const btn=$("customChatAuthBtn");btn.disabled=true;
-    try{const data=await api("/api/register",{method:"POST",body:JSON.stringify({nick:nick,email:email,password:password})});setAuthMsg("Cuenta creada. Entrando…","ok");setUserMode(false);await enterChat(data.user);}
-    catch(e){setAuthMsg(e.message||"No se pudo crear la cuenta.","error");}
-    finally{btn.disabled=false;}
+    const password=$("customChatPassword").value;
+    const password2=$("customChatPassword2").value;
+    if(nick.length<3)return msg("El nick debe tener al menos 3 caracteres.","error");
+    if(badNick(nick))return msg("Ese nick no está permitido. No podés usar MAGIC ni MAGIC KIDS.","error");
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return msg("Escribí un correo válido.","error");
+    if(password.length<6)return msg("La contraseña debe tener al menos 6 caracteres.","error");
+    if(password!==password2)return msg("Las contraseñas no coinciden.","error");
+    const b=$("customChatAuthBtn");b.disabled=true;
+    try{
+      const data=await api("/api/register",{method:"POST",body:JSON.stringify({nick,email,password})});
+      saveToken(data.token);msg("Cuenta creada. Entrando…","ok");showApp(data.user);
+    }catch(e){msg(e.message||"No se pudo crear la cuenta.","error");}
+    finally{b.disabled=false;}
   }
+
   async function login(){
     const email=$("customChatEmail").value.trim().toLowerCase(),password=$("customChatPassword").value;
-    if(!email||!password){setAuthMsg("Completá correo y contraseña.","error");return;}
-    const btn=$("customChatAuthBtn");btn.disabled=true;
-    try{const data=await api("/api/login",{method:"POST",body:JSON.stringify({email:email,password:password})});await enterChat(data.user);}
-    catch(e){setAuthMsg(e.message||"No se pudo iniciar sesión.","error");}
-    finally{btn.disabled=false;}
+    if(!email||!password)return msg("Completá correo y contraseña.","error");
+    const b=$("customChatAuthBtn");b.disabled=true;
+    try{
+      const data=await api("/api/login",{method:"POST",body:JSON.stringify({email,password})});
+      saveToken(data.token);showApp(data.user);
+    }catch(e){msg(e.message||"No se pudo entrar al chat.","error");}
+    finally{b.disabled=false;}
   }
+
   async function adminLogin(){
     const pin=$("customAdminPin").value.trim();
-    if(!/^\d{4}$/.test(pin)){setAuthMsg("Ingresá el PIN de 4 dígitos del panel privado.","error");return;}
-    const btn=$("customAdminLoginBtn");btn.disabled=true;
-    try{const data=await api("/api/admin/login",{method:"POST",body:JSON.stringify({pin:pin})});$("customAdminPin").value="";await enterChat(data.user);}
-    catch(e){setAuthMsg(e.message||"No se pudo ingresar como administrador.","error");}
-    finally{btn.disabled=false;}
+    if(!/^\d{4}$/.test(pin))return msg("Ingresá el PIN de 4 dígitos.","error");
+    const b=$("customAdminLoginBtn");b.disabled=true;
+    try{
+      const data=await api("/api/admin/login",{method:"POST",body:JSON.stringify({pin})});
+      saveToken(data.token);$("customAdminPin").value="";showApp(data.user);
+    }catch(e){msg(e.message||"No se pudo entrar como administrador.","error");}
+    finally{b.disabled=false;}
   }
-  async function enterChat(user){
-    currentUser=user;
-    $("customChatAuth").classList.add("hidden");
-    $("customChatApp").classList.remove("hidden");
-    $("customChatUser").textContent=user.nick;
-    $("customChatRole").textContent=user.isAdmin?"ADMIN ✓":"USUARIO";
-    $("customChatRole").classList.toggle("admin",!!user.isAdmin);
-    $("customChatCrown").classList.toggle("hidden",!user.isAdmin);
-    await refreshMessages();await refreshOnline();startTimers();
-  }
+
   function renderMessages(messages){
     const box=$("customChatMessages");
-    box.innerHTML=messages.map(function(m){
-      const mod=currentUser&&currentUser.isAdmin?'<span class="customChatMod"><button data-delete="'+m.id+'">BORRAR</button><button data-ban="'+esc(m.userId)+'">BANEAR</button></span>':"";
+    box.innerHTML=(messages||[]).map(m=>{
+      const mod=currentUser?.isAdmin?'<span class="customChatMod"><button data-delete="'+m.id+'">BORRAR</button><button data-ban="'+esc(m.userId)+'">BLOQUEAR</button></span>':"";
       const crown=m.isAdmin?'<span class="customChatCrownMini">👑</span>':"";
       return '<div class="customChatMsg"><div class="customChatMeta">'+crown+esc(m.nick)+" · "+new Date(m.createdAt).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})+mod+'</div><div class="customChatText">'+esc(m.text)+"</div></div>";
     }).join("");
     box.scrollTop=box.scrollHeight;
   }
+
   async function refreshMessages(){
     if(!currentUser)return;
-    try{const data=await api("/api/messages?limit=80");const signature=JSON.stringify(data.messages);if(signature!==lastMessagesSignature){lastMessagesSignature=signature;renderMessages(data.messages);}}catch(e){}
+    try{
+      const data=await api("/api/messages?limit=80"),signature=JSON.stringify(data.messages);
+      if(signature!==lastSignature){lastSignature=signature;renderMessages(data.messages);}
+    }catch(e){}
   }
   async function refreshOnline(){
     if(!currentUser)return;
@@ -122,47 +139,54 @@
   }
   function startTimers(){
     clearInterval(pollTimer);clearInterval(heartbeatTimer);
-    pollTimer=setInterval(refreshMessages,2000);
-    heartbeatTimer=setInterval(async function(){try{await api("/api/heartbeat",{method:"POST",body:"{}"});await refreshOnline();}catch(e){}},10000);
+    pollTimer=setInterval(refreshMessages,3500);
+    heartbeatTimer=setInterval(async()=>{try{await api("/api/heartbeat",{method:"POST",body:"{}"});await refreshOnline();}catch(e){}},15000);
   }
   async function send(){
-    if(!currentUser)return;
-    const input=$("customChatText"),text=input.value.trim();if(!text)return;
-    const btn=$("customChatSend");btn.disabled=true;
-    try{await api("/api/messages",{method:"POST",body:JSON.stringify({text:text})});input.value="";await refreshMessages();}
-    catch(e){setAuthMsg(e.message||"No se pudo enviar el mensaje.","error");}
-    finally{btn.disabled=false;}
+    const input=$("customChatText"),text=input.value.trim();
+    if(!currentUser||!text)return;
+    const b=$("customChatSend");b.disabled=true;
+    try{await api("/api/messages",{method:"POST",body:JSON.stringify({text})});input.value="";await refreshMessages();}
+    catch(e){msg(e.message||"No se pudo enviar el mensaje.","error");}
+    finally{b.disabled=false;}
+  }
+  async function moderate(action,id){
+    if(!currentUser?.isAdmin)return;
+    try{
+      await api("/api/admin/"+action,{method:"POST",body:JSON.stringify(action==="delete"?{id:Number(id)}:{userId:id})});
+      await refreshMessages();
+    }catch(e){msg(e.message||"No se pudo realizar la acción.","error");}
   }
   async function logout(){
     try{await api("/api/logout",{method:"POST",body:"{}"});}catch(e){}
-    clearInterval(pollTimer);clearInterval(heartbeatTimer);currentUser=null;lastMessagesSignature="";
-    $("customChatAuth").classList.remove("hidden");$("customChatApp").classList.add("hidden");
-    setUserMode(false);setAuthMsg("");
+    clearToken();clearInterval(pollTimer);clearInterval(heartbeatTimer);currentUser=null;lastSignature="";
+    showAuth();setMode("login");msg("");
   }
-  async function moderate(action,id){
-    if(!currentUser||!currentUser.isAdmin)return;
-    try{const payload=action==="delete"?{id:Number(id)}:{userId:id};await api("/api/admin/"+action,{method:"POST",body:JSON.stringify(payload)});await refreshMessages();}
-    catch(e){setAuthMsg(e.message||"No se pudo moderar.","error");}
+
+  async function restore(){
+    const t=token();if(!t)return;
+    try{const data=await api("/api/me");if(data.user)showApp(data.user);else clearToken();}
+    catch(e){clearToken();}
   }
-  async function init(){
-    setAuthMode("login");setUserMode(false);
-    // Verify the chat server independently before the user submits credentials.
-    // This touches only the chat API, never the player.
-    try{await api("/api/health");}catch(e){setAuthMsg(e.message||"El servidor del chat no está disponible en este momento.","error");}
-    $("customLoginTab").onclick=function(){setAuthMode("login");};
-    $("customAdminTab").onclick=function(){setAuthMode("admin");};
-    $("customUserLoginTab").onclick=function(){setUserMode(false);};
-    $("customRegisterTab").onclick=function(){setUserMode(true);};
-    $("customChatAuthBtn").onclick=function(){authMode==="register"?register():login();};
+
+  document.addEventListener("DOMContentLoaded",function(){
+    $("customLoginTab").onclick=()=>setMode("login");
+    $("customAdminTab").onclick=()=>setMode("admin");
+    $("customUserLoginTab").onclick=()=>setMode("login");
+    $("customRegisterTab").onclick=()=>setMode("register");
+    $("customChatAuthBtn").onclick=()=>mode==="register"?register():login();
     $("customAdminLoginBtn").onclick=adminLogin;
-    $("customChatPassword").addEventListener("keydown",function(e){if(e.key==="Enter")(authMode==="register"?register:login)();});
-    $("customChatPassword2").addEventListener("keydown",function(e){if(e.key==="Enter")register();});
-    $("customAdminPin").addEventListener("keydown",function(e){if(e.key==="Enter")adminLogin();});
+    $("customChatPassword").addEventListener("keydown",e=>{if(e.key==="Enter")mode==="register"?register():login();});
+    $("customChatPassword2").addEventListener("keydown",e=>{if(e.key==="Enter")register();});
+    $("customAdminPin").addEventListener("keydown",e=>{if(e.key==="Enter")adminLogin();});
     $("customChatSend").onclick=send;
-    $("customChatText").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();send();}});
+    $("customChatText").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();send();}});
     $("customChatLogout").onclick=logout;
-    $("customChatMessages").addEventListener("click",function(e){if(e.target.dataset.delete)moderate("delete",e.target.dataset.delete);if(e.target.dataset.ban)moderate("ban",e.target.dataset.ban);});
-    try{const data=await api("/api/me");if(data.user)await enterChat(data.user);}catch(e){}
-  }
-  document.addEventListener("DOMContentLoaded",init);
+    $("customChatMessages").addEventListener("click",e=>{
+      if(e.target.dataset.delete)moderate("delete",e.target.dataset.delete);
+      if(e.target.dataset.ban)moderate("ban",e.target.dataset.ban);
+    });
+    setMode("login");
+    restore();
+  });
 })();
