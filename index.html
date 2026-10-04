@@ -572,7 +572,26 @@ function setScheduledVideo(index,autoplay=true,seekTime=null){
   if(p&&p.catch)p.catch(()=>{video.muted=true;const q=video.play();if(q&&q.catch)q.catch(()=>{});});
   updateScheduledNowNext();
 }
-function playNextScheduled(){if(!scheduledMode||!scheduledVideos.length)return;setScheduledVideo((currentVideoIndex+1)%scheduledVideos.length,true);}
+async function playNextScheduled(){
+  if(!scheduledMode||!scheduledVideos.length)return;
+  try{
+    const r=await fetch(VIDEO_API+"/api/schedule",{cache:"no-store"});
+    if(r.ok){
+      const d=await r.json();
+      const fresh=Array.isArray(d.schedule)?d.schedule.filter(x=>x.object_key):[];
+      if(fresh.length){
+        const currentKey=String(scheduledVideos[currentVideoIndex]?.object_key||"");
+        const currentInFresh=fresh.findIndex(x=>String(x.object_key||"")===currentKey);
+        const nextIndex=currentInFresh>=0?(currentInFresh+1)%fresh.length:0;
+        scheduledVideos=fresh;
+        currentVideoIndex=nextIndex;
+        setScheduledVideo(nextIndex,true);
+        return;
+      }
+    }
+  }catch(e){}
+  setScheduledVideo((currentVideoIndex+1)%scheduledVideos.length,true);
+}
 function detectPlayingScheduledIndex(){
   const video=document.getElementById("magicVideo");
   if(!video||!scheduledVideos.length)return currentVideoIndex;
@@ -600,6 +619,23 @@ function showOffAir(show=true){
   const overlay=document.getElementById("offAirOverlay");if(!overlay)return;
   if(show){scheduledMode=false;magicStreamStarted=false;if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}destroyMagicHls();const v=document.getElementById("magicVideo");if(v){v.pause();v.removeAttribute("src");v.load();}overlay.classList.remove("hidden");setStreamState("offline","Estamos actualizando la programación…");}
   else overlay.classList.add("hidden");
+}
+let publicViewerId="";
+function getPublicViewerId(){
+  try{
+    publicViewerId=sessionStorage.getItem("mk_public_viewer")||"";
+    if(!publicViewerId){
+      publicViewerId=(crypto.randomUUID?crypto.randomUUID():("mk-"+Date.now()+"-"+Math.random().toString(36).slice(2)));
+      sessionStorage.setItem("mk_public_viewer",publicViewerId);
+    }
+  }catch(e){publicViewerId="mk-"+Date.now()+"-"+Math.random().toString(36).slice(2);}
+  return publicViewerId;
+}
+async function heartbeatPublicViewer(){
+  try{
+    const id=getPublicViewerId();
+    await fetch(VIDEO_API+"/api/viewers/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({viewerId:id}),cache:"no-store",keepalive:true});
+  }catch(e){}
 }
 async function fetchChannelControl(){
   try{
@@ -698,7 +734,7 @@ function updateNowNext(){
   nowEl.textContent=schedule[active][1];nowTimeEl.textContent=schedule[active][0];const nxt=schedule[nextIndex];nextEl.textContent=nxt[1];const nt=(nextAbs%1440+1440)%1440;nextTimeEl.textContent=String(Math.floor(nt/60)).padStart(2,"0")+":"+String(nt%60).padStart(2,"0");
 }
 document.addEventListener("DOMContentLoaded",async()=>{
-  await loadMagicSchedule();clock();fill();updateNowNext();setInterval(()=>{clock();updateNowNext()},1000);
+  await loadMagicSchedule();clock();fill();updateNowNext();heartbeatPublicViewer();setInterval(heartbeatPublicViewer,20000);setInterval(()=>{clock();updateNowNext()},1000);
   await loadScheduledPlayer();
   channelPollTimer=setInterval(()=>syncChannelState(),15000);setInterval(()=>syncScheduledToClock(),5000);
   setInterval(async()=>{
