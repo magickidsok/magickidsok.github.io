@@ -3,8 +3,11 @@
  * PROTECTED PLAYER RULE: never place or modify player/transmission logic here.
  */
 (function(){
+  // CHAT ONLY: the API lives in the dedicated Worker. The player never uses this file.
   const CHAT_API_URL="https://magickidsok-github-io.elmagickids.workers.dev";
-  const CHAT_API_BASES=[location.origin,CHAT_API_URL].filter(function(v,i,a){return v&&a.indexOf(v)===i;});
+  // Prioritize the dedicated chat server so a GitHub Pages 404 or slow page response
+  // cannot block registration/login.
+  const CHAT_API_BASES=[CHAT_API_URL,location.origin].filter(function(v,i,a){return v&&a.indexOf(v)===i;});
   let authMode="login",currentUser=null,pollTimer=null,heartbeatTimer=null,lastMessagesSignature="";
 
   const $=id=>document.getElementById(id);
@@ -17,25 +20,28 @@
     options=options||{};
     let lastError=null;
     for(const base of CHAT_API_BASES){
-      const controller=new AbortController();
-      const timeout=setTimeout(()=>controller.abort(),12000);
-      const req={credentials:"include",signal:controller.signal,headers:Object.assign({"Content-Type":"application/json"},options.headers||{}),method:options.method||"GET"};
-      if(options.body!==undefined)req.body=options.body;
-      try{
-        const res=await fetch(base+path,req);
-        let data={};try{data=await res.json();}catch(e){}
-        if(!res.ok){
-          if(res.status===404&&base===location.origin)continue;
-          throw new Error(data.error||("El servidor respondió con error ("+res.status+")."));
-        }
-        return data;
-      }catch(e){
-        lastError=e;
-      }finally{clearTimeout(timeout);}
+      for(let attempt=0;attempt<2;attempt++){
+        const controller=new AbortController();
+        const timeout=setTimeout(()=>controller.abort(),10000);
+        const req={credentials:"include",cache:"no-store",signal:controller.signal,headers:Object.assign({"Content-Type":"application/json","Cache-Control":"no-cache"},options.headers||{}),method:options.method||"GET"};
+        if(options.body!==undefined)req.body=options.body;
+        try{
+          const res=await fetch(base+path,req);
+          let data={};try{data=await res.json();}catch(e){}
+          if(!res.ok){
+            if(res.status===404&&base===location.origin)break;
+            throw new Error(data.error||("El servidor respondió con error ("+res.status+")."));
+          }
+          return data;
+        }catch(e){
+          lastError=e;
+          if(attempt===0)await new Promise(resolve=>setTimeout(resolve,700));
+        }finally{clearTimeout(timeout);}
+      }
     }
-    if(lastError&&lastError.name==="AbortError")throw new Error("El chat tardó demasiado en responder. Probá nuevamente.");
-    if(lastError&&lastError.message==="Failed to fetch")throw new Error("No se pudo conectar con el servidor del chat. Probá nuevamente en unos segundos.");
-    throw lastError||new Error("No se pudo conectar con el chat.");
+    if(lastError&&lastError.name==="AbortError")throw new Error("El servidor del chat tardó demasiado en responder. Probá nuevamente.");
+    if(lastError&&/Failed to fetch|NetworkError|Load failed/i.test(lastError.message||""))throw new Error("El servidor del chat no está respondiendo. El reproductor no está afectado.");
+    throw lastError||new Error("No se pudo conectar con el servidor del chat.");
   }
   function setAuthMode(mode){
     authMode=mode;
@@ -140,6 +146,9 @@
   }
   async function init(){
     setAuthMode("login");setUserMode(false);
+    // Verify the chat server independently before the user submits credentials.
+    // This touches only the chat API, never the player.
+    try{await api("/api/health");}catch(e){setAuthMsg(e.message||"El servidor del chat no está disponible en este momento.","error");}
     $("customLoginTab").onclick=function(){setAuthMode("login");};
     $("customAdminTab").onclick=function(){setAuthMode("admin");};
     $("customUserLoginTab").onclick=function(){setUserMode(false);};
