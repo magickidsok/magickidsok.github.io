@@ -203,7 +203,7 @@ async function register(request,env,origin){
 async function adminPinLogin(request,env,origin){
   if(!env.ADMIN_PIN)return json({error:"Falta configurar ADMIN_PIN en el Worker de Cloudflare."},500,origin);
   const b=await body(request),pin=String(b.pin||"").trim();
-  if(!/^\\d{4}$/.test(pin)||pin!==String(env.ADMIN_PIN).trim())return json({error:"Código incorrecto."},401,origin);
+  if(pin.length!==4||pin.split("").some(ch=>ch<"0"||ch>"9")||pin!==String(env.ADMIN_PIN).trim())return json({error:"Código incorrecto."},401,origin);
   const token=await makeAdminSession(env.SESSION_SECRET);
   return json({user:{id:"admin-pin",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin,{"Set-Cookie":setAdminSessionCookie(token)});
 }
