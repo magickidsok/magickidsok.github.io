@@ -5,13 +5,13 @@ const PASSWORD_ITERATIONS = 120000;
 
 function json(data,status,origin,extraHeaders){
   const h = new Headers(Object.assign({"Content-Type":"application/json; charset=utf-8"},extraHeaders||{}));
-  if(origin && /^https?:\\/\\//.test(origin)){h.set("Access-Control-Allow-Origin",origin);h.set("Access-Control-Allow-Credentials","true");h.set("Vary","Origin");}
+  if(origin && /^https?:\/\//.test(origin)){h.set("Access-Control-Allow-Origin",origin);h.set("Access-Control-Allow-Credentials","true");h.set("Vary","Origin");}
   return new Response(JSON.stringify(data),{status:status||200,headers:h});
 }
 function cors(request){
   const origin=request.headers.get("Origin")||"";
   const h={"Access-Control-Allow-Methods":"GET,POST,OPTIONS","Access-Control-Allow-Headers":"Content-Type","Access-Control-Allow-Credentials":"true","Access-Control-Max-Age":"86400","Vary":"Origin"};
-  if(origin && /^https?:\\/\\//.test(origin))h["Access-Control-Allow-Origin"]=origin;
+  if(origin && /^https?:\/\//.test(origin))h["Access-Control-Allow-Origin"]=origin;
   return new Response(null,{status:204,headers:h});
 }
 function bytesToB64(bytes){let s="";for(const b of bytes)s+=String.fromCharCode(b);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
@@ -222,9 +222,12 @@ export default {
     const origin=request.headers.get("Origin")||"";
     if(request.method==="OPTIONS")return cors(request);
     try{
-      await ensureSchema(env.DB);\n      await ensureVideoSchema(env.DB);
-      const path=new URL(request.url).pathname;\n      if(path.startsWith("/media/")&&request.method==="GET")return media(request,env);
-      if(path==="/api/health"&&request.method==="GET")return json({ok:true,service:"Magic Kids Chat API",database:true,sessionConfigured:!!env.SESSION_SECRET},200,origin);\n      if(path==="/")return json({ok:true,service:"Magic Kids Chat API"},200,origin);
+      await ensureSchema(env.DB);
+      await ensureVideoSchema(env.DB);
+      const path=new URL(request.url).pathname;
+      if(path.startsWith("/media/")&&request.method==="GET")return media(request,env);
+      if(path==="/api/health"&&request.method==="GET")return json({ok:true,service:"Magic Kids Chat API",database:true,sessionConfigured:!!env.SESSION_SECRET},200,origin);
+      if(path==="/")return json({ok:true,service:"Magic Kids Chat API"},200,origin);
       if(path==="/api/register"&&request.method==="POST")return register(request,env,origin);
       if(path==="/api/login"&&request.method==="POST")return login(request,env,origin);
       if(path==="/api/logout"&&request.method==="POST")return json({ok:true},200,origin,{"Set-Cookie":clearSessionCookie()});
