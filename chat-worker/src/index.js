@@ -322,7 +322,7 @@ async function media(request,env){
   }
 
   if(range){
-    const m=range.match(/^bytes=(\\d+)-(\\d*)$/);
+    const m=range.match(/^bytes=(\d+)-(\d*)$/);
     if(!m){
       const head=await bucket.head(key);
       const size=Number(head?.size||object.size||0);
