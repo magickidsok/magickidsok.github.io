@@ -26,7 +26,11 @@
 </aside>
 <main class="main">
 
-<div id="videos" class="tab">
+<div id="channelControl" class="panel" style="margin-bottom:14px;border:2px solid #7046ff">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+<div><div style="font-size:11px;color:#aaa5d1;text-transform:uppercase;letter-spacing:1px">Control maestro de Magic Kids</div><div id="channelStatus" style="font-size:27px;font-weight:900;margin-top:4px">🔴 DETENIDO</div><div id="channelHint" class="hint" style="margin-top:3px">El reproductor público está detenido.</div></div>
+<div class="row"><button id="startChannel" class="btn blue">▶ INICIAR CANAL</button><button id="stopChannel" class="btn red">⏹ DETENER CANAL</button><button id="restartChannel" class="btn">🔄 REINICIAR</button></div>
+</div></div><div id="videos" class="tab">
 <div class="hero"><h2>Biblioteca de videos</h2><p>Series y tandas guardadas permanentemente en Cloudflare R2.</p></div>
 <div class="panel"><div class="row" style="justify-content:space-between"><h3>Todos los videos</h3><button class="btn blue" onclick="showTab('upload')">+ Cargar varios</button></div>
 <div id="r2Warn"></div><div class="tableWrap"><table class="table"><thead><tr><th></th><th>Título</th><th>Tipo</th><th>Categoría</th><th>Archivo</th><th>Acciones</th></tr></thead><tbody id="videoRows"></tbody></table></div></div></div>
@@ -73,13 +77,16 @@
 </main></div></section></div>
 <script>
 const API="https://magickidsok-github-io.elmagickids.workers.dev";
-let videos=[],schedule=[];
+let videos=[],schedule=[],channel={status:"stopped",generation:0};
 const $=id=>document.getElementById(id);
 async function api(path,opt={}){const r=await fetch(API+path,{credentials:"include",...opt});let d={};try{d=await r.json()}catch(e){}if(!r.ok)throw Error(d.error||"No se pudo conectar con el panel.");return d}
-function showTab(id){document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));$(id).classList.remove("hidden");document.querySelectorAll(".side button").forEach(x=>x.classList.toggle("active",x.dataset.tab===id));if(id==="videos")loadVideos();if(id==="commercials"){loadVideos();}if(id==="schedule"){loadVideos();loadSchedule();}if(id==="categories")loadCategories()}
+function showTab(id){document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));$(id).classList.remove("hidden");document.querySelectorAll(".side button").forEach(x=>x.classList.toggle("active",x.dataset.tab===id));if(id==="videos")loadVideos();if(id==="commercials"){loadVideos();}if(id==="schedule"){loadVideos();loadSchedule();loadChannelState();}if(id==="categories")loadCategories()}
 window.showTab=showTab;
 async function boot(){try{const me=await api("/api/me");if(me.user?.isAdmin){$("login").classList.add("hidden");$("app").style.display="block";$("logout").classList.remove("hidden");await loadAll()}else throw Error("Esta cuenta no tiene permisos de administrador.")}catch(e){$("loginMsg").textContent=e.message}}
-async function loadAll(){await loadVideos();await loadCategories();await loadSchedule();renderCommercials();renderScheduleLibrary()}
+async function loadAll(){await loadVideos();await loadCategories();await loadSchedule();await loadChannelState();renderCommercials();renderScheduleLibrary()}
+async function loadChannelState(){try{const d=await api("/api/channel/state");channel=d;renderChannel()}catch(e){}}
+function renderChannel(){const live=channel.status==="live";$("channelStatus").textContent=live?"🟢 AL AIRE":"🔴 DETENIDO";$("channelStatus").style.color=live?"#91f5b5":"#ff7b96";$("channelHint").textContent=live?"El reproductor público está reproduciendo la programación.":"El reproductor público está detenido. Subí y ordená todo antes de iniciar."; }
+async function setChannel(action){try{const d=await api("/api/admin/channel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action})});channel=d;renderChannel();}catch(e){alert(e.message)}}
 async function loadVideos(){try{const d=await api("/api/videos");videos=d.videos||[];$("r2Warn").innerHTML=d.r2Configured?"":"<div class='warn'>⚠️ Falta conectar el binding VIDEOS de Cloudflare R2.</div>";renderVideos();fillQuick();renderCommercials();renderScheduleLibrary()}catch(e){$("videoRows").innerHTML="<tr><td colspan='6'>"+esc(e.message)+"</td></tr>"}}
 function renderVideos(){const type=v=>v.video_type==="commercial"?"<span class='kind commercial'>TANDA</span>":"<span class='kind'>SERIE</span>";$("videoRows").innerHTML=videos.map(v=>'<tr><td>🎞️</td><td><b>'+esc(v.title)+'</b></td><td>'+type(v)+'</td><td><span class="tag">'+esc(v.category||"Sin categoría")+'</span></td><td style="font-size:9px">'+esc(v.object_key)+'</td><td class="actions"><button class="btn red" onclick="delVideo('+v.id+')">Eliminar</button></td></tr>').join("")||'<tr><td colspan="6">Todavía no hay videos.</td></tr>'}
 function renderCommercials(){const cs=videos.filter(v=>v.video_type==="commercial");$("commercialLibrary").innerHTML=cs.map(v=>'<div class="libItem"><span>📢 '+esc(v.title)+'</span><button class="btn tiny" onclick="addVideoToSchedule('+v.id+')">+</button></div>').join("")||'<div class="hint">Todavía no hay tandas comerciales cargadas.</div>'}
@@ -94,6 +101,7 @@ async function loadSchedule(){try{const d=await api("/api/schedule");schedule=(d
 function addVideoToSchedule(id,time){const v=videos.find(x=>x.id===Number(id));if(!v)return;schedule.push({video_id:v.id,title:v.title,start_time:time||$("quickTime").value||"00:00",video_type:v.video_type});renderSchedule();autoSave()}
 window.addVideoToSchedule=addVideoToSchedule;
 $("quickAdd").onclick=()=>addVideoToSchedule($("quickVideo").value);
+$("startChannel").onclick=()=>setChannel("start");$("stopChannel").onclick=()=>setChannel("stop");$("restartChannel").onclick=()=>setChannel("restart");
 $("addTanda").onclick=async()=>{const cs=videos.filter(v=>v.video_type==="commercial");if(!cs.length){alert("Primero cargá los comerciales en Tandas comerciales.");return}for(const v of cs)schedule.push({video_id:v.id,title:v.title,start_time:$("quickTime").value||"00:00",video_type:"commercial"});renderSchedule();await autoSave()};
 $("saveSchedule").onclick=()=>saveSchedule(true);
 const MULTIPART_THRESHOLD=60*1024*1024;
