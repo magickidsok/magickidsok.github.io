@@ -391,7 +391,12 @@ async function ensureSchema(db){
   ]);
 }
 async function getUser(db,uid){return db.prepare("SELECT id,email,nick,nick_norm,password_salt,password_hash,role,banned,created_at,last_message_at,last_message_text,repeat_count FROM users WHERE id=?").bind(uid).first();}
-async function requireUser(request,env){const s=await readSession(request,env);if(!s)return null;return await getUser(env.DB,s.uid);}
+async function requireUser(request,env){
+  const s=await readSession(request,env);if(!s)return null;
+  const u=await getUser(env.DB,s.uid);
+  if(u&&u.nick_norm==="MAGICKIDS")return null;
+  return u;
+}
 async function requireChatUser(request,env){
   if(await readAdminSession(request,env))return {id:"admin-pin",email:"",nick:"MAGICKIDS",role:"admin",banned:0};
   return await requireUser(request,env);
@@ -446,6 +451,7 @@ async function login(request,env,origin){
   const b=await body(request),email=String(b.email||"").trim().toLowerCase(),password=String(b.password||"");
   const u=await env.DB.prepare("SELECT * FROM users WHERE email=?").bind(email).first();
   if(!u||!(await verifyPassword(password,u.password_salt,u.password_hash)))return json({error:"Correo o contraseña incorrectos."},401,origin);
+  if(u.nick_norm==="MAGICKIDS")return json({error:"MAGICKIDS ahora ingresa exclusivamente con el PIN de administrador."},403,origin);
   if(u.banned)return json({error:"Tu cuenta está bloqueada del chat."},403,origin);
   const token=await makeSession(u.id,env.SESSION_SECRET);
   return json({user:publicUser(u)},200,origin,{"Set-Cookie":setSessionCookie(token)});
