@@ -102,7 +102,8 @@ async function ensureVideoSchema(db){
 async function adminVideos(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   const rows=await env.DB.prepare("SELECT v.id,v.object_key,v.title,v.category_id,c.name AS category,v.thumbnail_key,v.video_type,v.created_at,v.updated_at FROM videos v LEFT JOIN video_categories c ON c.id=v.category_id ORDER BY v.id DESC").all();
-  return json({videos:rows.results||[],r2Configured:!!env.VIDEOS},200,origin);
+  const videos=await resolveScheduledR2Keys(env,rows.results||[]);
+  return json({videos,r2Configured:!!env.VIDEOS},200,origin);
 }
 async function adminRepairR2Keys(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
@@ -273,9 +274,10 @@ async function adminDeleteVideo(request,env,origin){
 async function ownPlaylist(request,env){
   await ensureVideoSchema(env.DB);
   const rows=await env.DB.prepare("SELECT s.position,s.start_time,v.title,v.object_key,v.video_type FROM video_schedule s JOIN videos v ON v.id=s.video_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
+  const scheduleRows=await resolveScheduledR2Keys(env,rows.results||[]);
   const origin=new URL(request.url).origin;
   const lines=["#EXTM3U","#EXT-X-VERSION:3","#EXT-X-PLAYLIST-TYPE:VOD"];
-  for(const x of (rows.results||[])){
+  for(const x of scheduleRows){
     lines.push("#EXTINF:-1,"+String(x.title||"Magic Kids").replace(/[\\r\\n]/g," "));
     lines.push(origin+"/media/"+String(x.object_key||"").split("/").map(encodeURIComponent).join("/"));
   }
@@ -285,9 +287,10 @@ async function ownPlaylist(request,env){
 async function appCurrentVideo(request,env){
   await ensureVideoSchema(env.DB);
   const row=await env.DB.prepare("SELECT v.title,v.object_key,v.video_type FROM video_schedule s JOIN videos v ON v.id=s.video_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC LIMIT 1").first();
-  if(!row?.object_key)return new Response("No hay video programado.",{status:404,headers:{"Access-Control-Allow-Origin":"*","Cache-Control":"no-store"}});
+  const resolved=(await resolveScheduledR2Keys(env,row?[row]:[]))[0];
+  if(!resolved?.object_key)return new Response("No hay video programado.",{status:404,headers:{"Access-Control-Allow-Origin":"*","Cache-Control":"no-store"}});
   const origin=new URL(request.url).origin;
-  const target=origin+"/media/"+String(row.object_key).split("/").map(encodeURIComponent).join("/");
+  const target=origin+"/media/"+String(resolved.object_key).split("/").map(encodeURIComponent).join("/");
   return Response.redirect(target,302);
 }
 async function adminM3u8(request,env,origin){
