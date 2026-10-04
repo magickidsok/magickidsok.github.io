@@ -116,7 +116,7 @@ async function adminUpload(request,env,origin){
   const uploaded=[];
   for(const file of files){
     const rawName=String(file.name||"video.mp4").split("/").pop();
-    const base=rawName.replace(/.[^.]+$/,"").replace(/[_-]+/g," ").replace(/s+/g," ").trim();
+    const base=rawName.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").replace(/\s+/g," ").trim();
     const title=(files.length===1&&requestedTitle?requestedTitle:base||"Video").slice(0,180);
     const name=rawName.replace(/[^A-Za-z0-9._-]/g,"_");
     const key="videos/"+Date.now()+"-"+crypto.randomUUID()+"-"+name;
