@@ -1,5 +1,7 @@
 const ALLOWED_ORIGINS = new Set(["https://magickidsok.online","https://www.magickidsok.online","https://magickidsok.github.io"]);
 const COOKIE = "MKCHAT_SESSION";
+const ADMIN_COOKIE = "MKADMIN_SESSION";
+const ADMIN_SESSION_SECONDS = 60 * 60 * 12;
 const SESSION_SECONDS = 60 * 60 * 24 * 14;
 const PASSWORD_ITERATIONS = 120000;
 
@@ -45,6 +47,16 @@ async function readSession(request,env){
   try{const body=parts[0],sig=b64ToBytes(parts[1]),expected=await hmac(env.SESSION_SECRET,body);if(!safeEq(sig,expected))return null;const data=decJson(body);if(!data.uid||!data.exp||data.exp<Math.floor(Date.now()/1000))return null;return data;}catch(e){return null;}
 }
 function setSessionCookie(token){return COOKIE+"="+token+"; Path=/; HttpOnly; Secure; SameSite=None; Max-Age="+SESSION_SECONDS;}
+function makeAdminSession(secret){return makeAdminSessionToken(secret);}
+async function makeAdminSessionToken(secret){const body=encJson({admin:1,exp:Math.floor(Date.now()/1000)+ADMIN_SESSION_SECONDS});return body+"."+bytesToB64(await hmac(secret,body));}
+async function readAdminSession(request,env){
+  const m=(request.headers.get("Cookie")||"").match(new RegExp("(?:^|;\\s*)"+ADMIN_COOKIE+"=([^;]+)"));
+  if(!m||!env.SESSION_SECRET)return false;
+  const parts=m[1].split(".");if(parts.length!==2)return false;
+  try{const body=parts[0],sig=b64ToBytes(parts[1]),expected=await hmac(env.SESSION_SECRET,body);if(!safeEq(sig,expected))return false;const data=decJson(body);return !!(data.admin&&data.exp&&data.exp>=Math.floor(Date.now()/1000));}catch(e){return false;}
+}
+function setAdminSessionCookie(token){return ADMIN_COOKIE+"="+token+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+ADMIN_SESSION_SECONDS;}
+function clearAdminSessionCookie(){return ADMIN_COOKIE+"=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0";}
 function clearSessionCookie(){return COOKIE+"=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0";}
 function normalizeNick(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]/g,"").toUpperCase();}
 function validNick(v){return /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 _.-]{3,24}$/.test(v);}
@@ -159,7 +171,7 @@ async function ensureSchema(db){
 }
 async function getUser(db,uid){return db.prepare("SELECT id,email,nick,nick_norm,password_salt,password_hash,role,banned,created_at,last_message_at,last_message_text,repeat_count FROM users WHERE id=?").bind(uid).first();}
 async function requireUser(request,env){const s=await readSession(request,env);if(!s)return null;return await getUser(env.DB,s.uid);}
-async function requireAdmin(request,env){const u=await requireUser(request,env);return u&&u.role==="admin"&&!u.banned?u:null;}
+async function requireAdmin(request,env){if(await readAdminSession(request,env))return {id:"admin-pin",email:"",nick:"MAGICKIDS",role:"admin",banned:0};const u=await requireUser(request,env);return u&&u.role==="admin"&&!u.banned?u:null;}
 function publicUser(u){return u?{id:u.id,email:u.email,nick:u.nick,isAdmin:u.role==="admin"&&!u.banned}:null;}
 
 async function register(request,env,origin){
@@ -187,6 +199,13 @@ async function register(request,env,origin){
     if(/UNIQUE|constraint/i.test(message))return json({error:"Ese correo o nick ya está registrado."},409,origin);
     return json({error:"No se pudo crear la cuenta. Revisá la configuración del chat."},500,origin);
   }
+}
+async function adminPinLogin(request,env,origin){
+  if(!env.ADMIN_PIN)return json({error:"Falta configurar ADMIN_PIN en el Worker de Cloudflare."},500,origin);
+  const b=await body(request),pin=String(b.pin||"").trim();
+  if(!/^\\d{4}$/.test(pin)||pin!==String(env.ADMIN_PIN).trim())return json({error:"Código incorrecto."},401,origin);
+  const token=await makeAdminSession(env.SESSION_SECRET);
+  return json({user:{id:"admin-pin",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin,{"Set-Cookie":setAdminSessionCookie(token)});
 }
 async function login(request,env,origin){
   const b=await body(request),email=String(b.email||"").trim().toLowerCase(),password=String(b.password||"");
@@ -246,9 +265,10 @@ export default {
       if(path==="/api/health"&&request.method==="GET")return json({ok:true,service:"Magic Kids Chat API",database:true,sessionConfigured:!!env.SESSION_SECRET},200,origin);
       if(path==="/")return json({ok:true,service:"Magic Kids Chat API"},200,origin);
       if(path==="/api/register"&&request.method==="POST")return register(request,env,origin);
+      if(path==="/api/admin/login"&&request.method==="POST")return adminPinLogin(request,env,origin);
       if(path==="/api/login"&&request.method==="POST")return login(request,env,origin);
-      if(path==="/api/logout"&&request.method==="POST")return json({ok:true},200,origin,{"Set-Cookie":clearSessionCookie()});
-      if(path==="/api/me"&&request.method==="GET"){const u=await requireUser(request,env);return json({user:publicUser(u)},200,origin);}
+      if(path==="/api/logout"&&request.method==="POST")return json({ok:true},200,origin,{"Set-Cookie":clearAdminSessionCookie()+", "+clearSessionCookie()});
+      if(path==="/api/me"&&request.method==="GET"){if(await readAdminSession(request,env))return json({user:{id:"admin-pin",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin);const u=await requireUser(request,env);return json({user:publicUser(u)},200,origin);}
       if(path==="/api/messages"&&request.method==="GET")return messages(request,env,origin);
       if(path==="/api/messages"&&request.method==="POST")return sendMessage(request,env,origin);
       if(path==="/api/heartbeat"&&request.method==="POST")return heartbeat(request,env,origin);
