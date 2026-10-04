@@ -187,6 +187,11 @@ async function adminDeleteVideo(request,env,origin){
   await env.DB.prepare("DELETE FROM videos WHERE id=?").bind(id).run();
   return json({ok:true},200,origin);
 }
+const MAGIC_M3U8_URL="https://kali.vdopanel.com:3007/hybrid/play.m3u8";
+async function adminM3u8(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  return json({ok:true,url:MAGIC_M3U8_URL,title:"Magic Kids — señal HLS para compartir",note:"Esta es la URL M3U8 de la señal en vivo actual."},200,origin);
+}
 async function channelState(request,env,origin){
   await ensureVideoSchema(env.DB);
   const state=await env.DB.prepare("SELECT status,generation,updated_at FROM channel_control WHERE id=1").first();
@@ -199,6 +204,7 @@ async function adminChannelControl(request,env,origin){
   let status="";
   if(action==="start")status="live";
   else if(action==="stop")status="stopped";
+  else if(action==="offair")status="offair";
   else if(action==="restart")status="live";
   else return json({error:"Acción inválida."},400,origin);
   const generation=Number(state?.generation||0)+(action==="restart"?1:0);
@@ -371,6 +377,7 @@ export default {
       if(path==="/api/admin/upload/abort"&&request.method==="POST")return adminUploadAbort(request,env,origin);
       if(path==="/api/admin/video/delete"&&request.method==="POST")return adminDeleteVideo(request,env,origin);
       if(path==="/api/channel/state"&&request.method==="GET")return channelState(request,env,origin);
+      if(path==="/api/admin/m3u8"&&request.method==="GET")return adminM3u8(request,env,origin);
       if(path==="/api/admin/channel"&&request.method==="POST")return adminChannelControl(request,env,origin);
       if(path==="/api/schedule"&&request.method==="GET")return publicSchedule(request,env,origin);
       if(path==="/api/admin/schedule"&&(request.method==="GET"||request.method==="POST"))return adminSchedule(request,env,origin);
