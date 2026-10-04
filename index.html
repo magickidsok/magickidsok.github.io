@@ -536,14 +536,18 @@ async function syncChannelState(){
   const changed=state.status!==knownChannelStatus||Number(state.generation)!==Number(knownChannelGeneration);
   knownChannelStatus=state.status;knownChannelGeneration=Number(state.generation||0);
   if(!changed)return;
-  if(state.status==="live"){showOffAir(false);await startControlledChannel(true);}
-  else stopScheduledPlayer();
+  if(state.status==="offair"){showOffAir(true);return;}
+  if(state.status==="live"){showOffAir(false);await startControlledChannel(true);return;}
+  stopScheduledPlayer();
 }
 async function loadScheduledPlayer(){
   const state=await fetchChannelControl();
-  if(!state||state.status!=="live"){stopScheduledPlayer();return false;}
+  if(!state)return false;
   knownChannelStatus=state.status;knownChannelGeneration=Number(state.generation||0);
-  if(state.status==="offair"){showOffAir(true);return false;} showOffAir(false); return await startControlledChannel(false);
+  if(state.status==="offair"){showOffAir(true);return false;}
+  if(state.status!=="live"){stopScheduledPlayer();return false;}
+  showOffAir(false);
+  return await startControlledChannel(false);
 }
 document.getElementById("retryStream")?.addEventListener("click",()=>{magicRetryAttempt=0;startLiveStream(true)});
 document.getElementById("magicVideo")?.addEventListener("playing",()=>{magicRetryAttempt=0;if(!scheduledMode)setStreamState("live")});
