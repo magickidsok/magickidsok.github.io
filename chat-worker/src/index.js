@@ -242,6 +242,14 @@ async function ownPlaylist(request,env){
   const h=new Headers({"Content-Type":"application/vnd.apple.mpegurl; charset=utf-8","Cache-Control":"no-store","Access-Control-Allow-Origin":"*"});
   return new Response(lines.join("\n")+"\n",{status:200,headers:h});
 }
+async function appCurrentVideo(request,env){
+  await ensureVideoSchema(env.DB);
+  const row=await env.DB.prepare("SELECT v.title,v.object_key,v.video_type FROM video_schedule s JOIN videos v ON v.id=s.video_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC LIMIT 1").first();
+  if(!row?.object_key)return new Response("No hay video programado.",{status:404,headers:{"Access-Control-Allow-Origin":"*","Cache-Control":"no-store"}});
+  const origin=new URL(request.url).origin;
+  const target=origin+"/media/"+String(row.object_key).split("/").map(encodeURIComponent).join("/");
+  return Response.redirect(target,302);
+}
 async function adminM3u8(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   const base=new URL(request.url).origin;
