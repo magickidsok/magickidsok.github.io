@@ -115,7 +115,7 @@ async function media(request,env){
   const object=await requireR2(env).get(key);
   if(!object)return new Response("Not found",{status:404});
   const h=new Headers();
-  object.writeHttpMetadata(h);h.set("Cache-Control","public, max-age=31536000");h.set("Accept-Ranges","bytes");
+  object.writeHttpMetadata(h);h.set("Cache-Control","public, max-age=31536000");h.set("Accept-Ranges","bytes");h.set("Access-Control-Allow-Origin","*");h.set("Access-Control-Allow-Methods","GET,HEAD,OPTIONS");
   const range=request.headers.get("Range");
   if(range && object.size){
     const m=range.match(/bytes=(\d+)-(\d*)/);
