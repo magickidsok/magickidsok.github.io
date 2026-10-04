@@ -523,7 +523,7 @@ export default {
         const filename=key.slice(key.lastIndexOf("/")+1);
         const listed=await bucket.list({prefix:"videos/",limit:1000});
         const matches=(listed.objects||[]).filter(o=>String(o.key||"").endsWith("/"+filename)||String(o.key||"")===key).map(o=>({key:o.key,size:o.size,uploaded:o.uploaded}));
-        return json({ok:true,exact:exact?{key,size:exact.size,uploaded:exact.uploaded,httpEtag:exact.httpEtag}:null,filename,matches,count:Number(listed.objects?.length||0),truncated:!!listed.truncated},200,origin);
+        return json({ok:true,exact:exact?{key,size:exact.size,uploaded:exact.uploaded,httpEtag:exact.httpEtag}:null,filename,matches,objects:(listed.objects||[]).map(o=>({key:o.key,size:o.size,uploaded:o.uploaded})),count:Number(listed.objects?.length||0),truncated:!!listed.truncated},200,origin);
       }
       if(path==="/api/health"&&request.method==="GET")return json({ok:true,service:"Magic Kids Chat API",database:true,sessionConfigured:!!env.SESSION_SECRET},200,origin);
       if(path==="/")return json({ok:true,service:"Magic Kids Chat API"},200,origin);
