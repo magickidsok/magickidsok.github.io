@@ -499,6 +499,7 @@ export default {
       if(path==="/api/admin/video/category-order"&&request.method==="POST")return adminVideoCategoryOrder(request,env,origin);
       if(path==="/api/channel/state"&&request.method==="GET")return channelState(request,env,origin);
       if(path==="/api/admin/m3u8"&&request.method==="GET")return adminM3u8(request,env,origin);
+      if(path==="/magic-kids-app.mp4"&&request.method==="GET")return appCurrentVideo(request,env);
       if(path==="/magic-kids.m3u8"&&request.method==="GET")return ownPlaylist(request,env);
       if(path==="/api/admin/channel"&&request.method==="POST")return adminChannelControl(request,env,origin);
       if(path==="/api/schedule"&&request.method==="GET")return publicSchedule(request,env,origin);
