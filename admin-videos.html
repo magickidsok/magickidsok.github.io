@@ -7,7 +7,7 @@
 .btn.activeState{background:linear-gradient(135deg,#18a957,#36df7b)!important;box-shadow:0 0 0 2px rgba(54,223,123,.25),0 8px 22px rgba(24,169,87,.25);color:#fff!important}</style>
 <style>
 .bulk{border:1px solid #713cff;background:#ffffff06;border-radius:14px;padding:16px;margin-bottom:14px}
-.bulk h3{margin:0 0 6px}.hint{font-size:11px;color:#aaa5d1;line-height:1.5}.bigFile{width:100%;padding:18px;border:2px dashed #7046ff;border-radius:14px;background:#7b39ff0b;color:#fff}.queue{margin-top:12px;max-height:260px;overflow:auto}.queueItem{display:flex;gap:10px;align-items:center;padding:8px;border-bottom:1px solid #ffffff10;font-size:11px}.queueItem .qname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qok{color:#91f5b5}.qerr{color:#ff7b96}.playlist{min-height:80px;padding:8px;border:2px dashed #7046ff;border-radius:12px}.playlist.dragover{background:#7b39ff18;border-color:#b47cff}.playItem{display:grid;grid-template-columns:28px 1fr 82px 36px;gap:8px;align-items:center;padding:9px;margin-bottom:6px;background:#ffffff09;border:1px solid #ffffff12;border-radius:9px;cursor:grab}.playItem.dragging{opacity:.45}.playItem .title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kind{display:inline-block;padding:3px 6px;border-radius:99px;font-size:8px;font-weight:900;margin-right:5px;background:#5720a6}.kind.commercial{background:#b83b12}.libGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:340px;overflow:auto}.libItem{display:flex;align-items:center;gap:7px;padding:8px;background:#ffffff07;border:1px solid #ffffff0d;border-radius:8px;font-size:10px}.libItem span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tiny{padding:6px 8px;font-size:9px}.dangerText{color:#ff7b96}@media(max-width:900px){.libGrid{grid-template-columns:1fr}.playItem{grid-template-columns:24px 1fr 72px 30px}}
+.bulk h3{margin:0 0 6px}.hint{font-size:11px;color:#aaa5d1;line-height:1.5}.bigFile{width:100%;padding:18px;border:2px dashed #7046ff;border-radius:14px;background:#7b39ff0b;color:#fff}.queue{margin-top:12px;max-height:260px;overflow:auto}.queueItem{display:flex;gap:10px;align-items:center;padding:8px;border-bottom:1px solid #ffffff10;font-size:11px}.queueItem .qname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qok{color:#91f5b5}.qerr{color:#ff7b96}.playlist{min-height:80px;padding:8px;border:2px dashed #7046ff;border-radius:12px}.playlist.dragover{background:#7b39ff18;border-color:#b47cff}.playItem{display:grid;grid-template-columns:28px 1fr 82px 36px;gap:8px;align-items:center;padding:9px;margin-bottom:6px;background:#ffffff09;border:1px solid #ffffff12;border-radius:9px;cursor:grab}.playItem.dragging{opacity:.45}.playItem .title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kind{display:inline-block;padding:3px 6px;border-radius:99px;font-size:8px;font-weight:900;margin-right:5px;background:#5720a6}.kind.commercial{background:#b83b12}.libGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:340px;overflow:auto}.libItem{display:flex;align-items:center;gap:7px;padding:8px;background:#ffffff07;border:1px solid #ffffff0d;border-radius:8px;font-size:10px}.libItem span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tiny{padding:6px 8px;font-size:9px}.dangerText{color:#ff7b96}@media(max-width:900px){.libGrid{grid-template-columns:1fr}.playItem{grid-template-columns:24px 1fr 72px 30px}} .categoryGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:14px}.categoryCard{display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,#17145a,#24106b);border:1px solid #713cff;border-radius:13px;cursor:pointer;transition:.15s}.categoryCard:hover{transform:translateY(-2px);border-color:#b47cff;background:linear-gradient(135deg,#211b70,#321078)}.categoryCard .folder{font-size:34px}.categoryCard .catInfo{min-width:0;flex:1}.categoryCard .catName{font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.categoryCard .catCount{font-size:10px;color:#aaa5d1;margin-top:3px}.categoryView{margin-top:14px;padding:14px;background:#0d0b39;border:1px solid #713cff;border-radius:14px}.categoryViewHead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.categoryVideos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.categoryVideo{display:flex;align-items:center;gap:8px;padding:9px;background:#ffffff07;border:1px solid #ffffff10;border-radius:9px;font-size:10px}.categoryVideo .cvTitle{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.categoryVideo .cvSize{color:#aaa5d1;font-size:9px}@media(max-width:900px){.categoryVideos{grid-template-columns:1fr}}
 </style><script id="mkFreshPage">(async function(){try{const local=document.querySelector('meta[name="mk-build"]')?.content||"";const r=await fetch((()=>{const u=new URL(location.href);u.searchParams.set("_mkfresh",Date.now());return u.toString();})(),{cache:"no-store",headers:{"Cache-Control":"no-cache"}});if(r.ok){const t=await r.text();const m=t.match(/<meta name="mk-build" content="([^"]+)">/);if(m&&m[1]&&local&&m[1]!==local){const u=new URL(location.href);u.searchParams.set("_fresh",Date.now());location.replace(u.toString());}}}catch(e){}})();</script><script id="mkRegisterSW">(function(){try{if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).catch(()=>{});}catch(e){}})();</script></head><body>
 <div class="wrap">
 <header class="top"><div class="brand"><img src="assets/magic-kids-logo.webp" alt="Magic Kids"><div><h1>Panel de Administración</h1><small>Gestión privada de videos, tandas y programación</small></div></div><button id="logout" class="btn red hidden">Cerrar sesión</button></header>
@@ -83,8 +83,25 @@
 </div></div></div>
 
 <div id="categories" class="tab hidden">
-<div class="hero"><h2>📁 Categorías</h2><p>Organizá Pokémon, Digimon, Dragon Ball, Naruto y tus series.</p></div>
-<div class="panel"><div class="row"><input id="newCat" class="field" placeholder="Nueva categoría"><button id="catBtn" class="btn">+ Crear categoría</button></div><div id="catList" style="margin-top:12px"></div></div>
+<div class="hero"><h2>📁 Categorías / Carpetas de series</h2><p>Creá una carpeta, abrila y cargá las series directamente adentro. También podés mover videos que ya están subidos sin tocar el archivo ni la programación.</p></div>
+<div class="panel">
+  <div class="row"><input id="newCat" class="field" placeholder="Nueva carpeta de series"><button id="catBtn" class="btn">+ CREAR CARPETA</button></div>
+  <div id="catList" class="categoryGrid"></div>
+  <div id="categoryView" class="categoryView hidden">
+    <div class="categoryViewHead">
+      <div><div id="categoryViewTitle" style="font-size:20px;font-weight:900"></div><div id="categoryViewHint" class="hint"></div></div>
+      <div class="row">
+        <button id="categoryUploadBtn" class="btn blue">⬆️ SUBIR SERIES AQUÍ</button>
+        <button id="categoryBackBtn" class="btn ghost">← VOLVER A CARPETAS</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <select id="categoryMoveSelect" class="field"><option value="">Mover un video existente a esta carpeta…</option></select>
+      <button id="categoryMoveBtn" class="btn">📁 MOVER AQUÍ</button>
+    </div>
+    <div id="categoryVideos" class="categoryVideos"></div>
+  </div>
+</div>
 </div>
 
 </main></div></section></div>
@@ -120,8 +137,11 @@ $("getM3u8").onclick=loadM3u8;$("copyM3u8").onclick=async()=>{const u=$("m3u8Url
 $("addTanda").onclick=async()=>{const cs=videos.filter(v=>v.video_type==="commercial");if(!cs.length){alert("Primero cargá los comerciales en Tandas comerciales.");return}for(const v of cs)schedule.push({video_id:v.id,title:v.title,start_time:$("quickTime").value||"00:00",video_type:"commercial"});renderSchedule();await autoSave()};
 $("saveSchedule").onclick=()=>saveSchedule(true);
 const MULTIPART_THRESHOLD=60*1024*1024;
-// Large videos use resumable R2 multipart uploads. 64 MiB keeps 1 GB files to ~16 parts.
-const MULTIPART_PART_SIZE=64*1024*1024;
+// R2 permite partes desde 5 MiB. Usamos 32 MiB y 4 partes simultáneas:
+// así una conexión de 600 Mbps puede aprovechar mucho mejor el ancho de banda
+// sin abrir una cantidad exagerada de conexiones.
+const MULTIPART_PART_SIZE=32*1024*1024;
+const MULTIPART_CONCURRENCY=4;
 const UPLOAD_RETRIES=3;
 const UPLOAD_TIMEOUT_MS=180000;
 function formatBytes(n){if(n<1024*1024)return Math.round(n/1024)+" KB";if(n<1024*1024*1024)return (n/1024/1024).toFixed(1)+" MB";return (n/1024/1024/1024).toFixed(2)+" GB"}
@@ -160,13 +180,35 @@ async function uploadLargeFile(file,type,categoryId,onProgress){
   const parts=[];
   try{
     const total=Math.ceil(file.size/MULTIPART_PART_SIZE);
-    for(let i=0;i<total;i++){
-      const partNumber=i+1,start=i*MULTIPART_PART_SIZE,end=Math.min(file.size,start+MULTIPART_PART_SIZE);
-      const blob=file.slice(start,end);
-      const d=await uploadPartXHR(API+"/api/admin/upload/part?key="+encodeURIComponent(init.key)+"&uploadId="+encodeURIComponent(init.uploadId)+"&partNumber="+partNumber,blob,(loaded)=>onProgress(start+loaded,file.size,partNumber,total));
-      if(!d.part?.etag)throw Error("Cloudflare no devolvió el ETag de la parte "+partNumber+".");
-      parts.push(d.part);
+    const uploadedParts=new Array(total);
+    const loadedParts=new Array(total).fill(0);
+    let nextIndex=0;
+    let fatal=null;
+    const report=()=>onProgress(loadedParts.reduce((a,b)=>a+b,0),file.size,Math.min(total,nextIndex||1),total);
+    async function worker(){
+      while(true){
+        if(fatal) return;
+        const i=nextIndex++;
+        if(i>=total) return;
+        const partNumber=i+1,start=i*MULTIPART_PART_SIZE,end=Math.min(file.size,start+MULTIPART_PART_SIZE);
+        const blob=file.slice(start,end);
+        try{
+          const d=await uploadPartXHR(
+            API+"/api/admin/upload/part?key="+encodeURIComponent(init.key)+"&uploadId="+encodeURIComponent(init.uploadId)+"&partNumber="+partNumber,
+            blob,
+            (loaded)=>{loadedParts[i]=loaded;onProgress(loadedParts.reduce((a,b)=>a+b,0),file.size,partNumber,total);}
+          );
+          if(!d.part?.etag)throw Error("Cloudflare no devolvió el ETag de la parte "+partNumber+".");
+          uploadedParts[i]=d.part;
+        }catch(e){
+          fatal=e;
+          return;
+        }
+      }
     }
+    await Promise.all(Array.from({length:Math.min(MULTIPART_CONCURRENCY,total)},()=>worker()));
+    if(fatal)throw fatal;
+    for(let i=0;i<uploadedParts.length;i++)parts.push(uploadedParts[i]);
     return await api("/api/admin/upload/complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:init.key,uploadId:init.uploadId,parts,title:file.name.replace(/\.[^.]+$/,""),categoryId,videoType:type})});
   }catch(e){
     try{await api("/api/admin/upload/abort",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:init.key,uploadId:init.uploadId})})}catch(_){}
@@ -187,7 +229,7 @@ async function uploadFiles(inputId,type,barId,msgId,queueId){
       if(f.size> MULTIPART_THRESHOLD){
         await uploadLargeFile(f,type,categoryId,(loaded,total,part,totalParts)=>{
           const pct=Math.min(100,Math.round(loaded/total*100));
-          row.lastElementChild.textContent=formatBytes(f.size)+" · "+pct+"% · parte "+part+"/"+totalParts;
+          row.lastElementChild.textContent=formatBytes(f.size)+" · "+pct+"% · hasta 4 partes simultáneas";
           const overall=Math.round(((i+loaded/total)/files.length)*100);
           $(barId).style.width=overall+"%";
           $(msgId).textContent="Subiendo "+(i+1)+" de "+files.length+": "+name+" ("+pct+"%)";
@@ -203,14 +245,77 @@ async function uploadFiles(inputId,type,barId,msgId,queueId){
       failed++;row.firstElementChild.textContent="❌";row.lastElementChild.textContent=e.message;row.lastElementChild.className="qerr";
     }
   }
-  input.value="";await loadVideos();
+  input.value="";await loadVideos();await loadCategories();
+  if(openCategoryId!==null){try{const d=await api("/api/admin/categories");renderCategoryView(openCategoryId,d.categories||[])}catch(e){}}
   $(msgId).textContent="Proceso terminado: "+ok+" cargados"+(failed?" · "+failed+" con error":"")+"."+(files.some(f=>f.size> MULTIPART_THRESHOLD)?" Los videos grandes se subieron por partes.":"");
 }
 function mirrorFolder(folderId,inputId){$(folderId).addEventListener("change",()=>{const dt=new DataTransfer();[...$(folderId).files].forEach(f=>dt.items.add(f));$(inputId).files=dt.files;});} mirrorFolder("seriesFolder","seriesFiles"); mirrorFolder("commercialFolder","commercialFiles");
 $("uploadSeriesBtn").onclick=()=>uploadFiles("seriesFiles","program","seriesBar","seriesMsg","seriesQueue");
 $("uploadCommercialBtn").onclick=()=>uploadFiles("commercialFiles","commercial","commercialBar","commercialMsg","commercialQueue");
-async function loadCategories(){try{const d=await api("/api/admin/categories");const opts='<option value="">Sin categoría</option>'+(d.categories||[]).map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join("");$("seriesCategory").innerHTML=opts;$("catList").innerHTML=(d.categories||[]).map(c=>'<div class="cat"><b>📁 '+esc(c.name)+'</b><span>'+videos.filter(v=>v.category_id===c.id).length+' videos</span></div>').join("")||"Sin categorías."}catch(e){}}
-$("catBtn").onclick=async()=>{const name=$("newCat").value.trim();if(!name)return;try{await api("/api/admin/categories",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});$("newCat").value="";await loadCategories()}catch(e){alert(e.message)}};
+let openCategoryId=null;
+async function loadCategories(){
+  try{
+    const d=await api("/api/admin/categories");
+    const categories=d.categories||[];
+    const opts='<option value="">Sin categoría</option>'+categories.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join("");
+    $("seriesCategory").innerHTML=opts;
+    $("catList").innerHTML=categories.map(c=>{
+      const count=videos.filter(v=>Number(v.category_id)===Number(c.id)).length;
+      return '<button type="button" class="categoryCard" onclick="openCategory('+c.id+')"><span class="folder">📁</span><span class="catInfo"><span class="catName">'+esc(c.name)+'</span><span class="catCount">'+count+' '+(count===1?"video":"videos")+'</span></span><span>›</span></button>';
+    }).join("")||'<div class="hint">Todavía no hay carpetas. Creá la primera arriba.</div>';
+    if(openCategoryId!==null)renderCategoryView(openCategoryId,categories);
+  }catch(e){}
+}
+function renderCategoryView(id,categories){
+  const c=(categories||[]).find(x=>Number(x.id)===Number(id));
+  if(!c){$("categoryView").classList.add("hidden");openCategoryId=null;return;}
+  openCategoryId=Number(id);
+  $("categoryView").classList.remove("hidden");
+  $("categoryViewTitle").textContent="📁 "+c.name;
+  const list=videos.filter(v=>Number(v.category_id)===Number(id));
+  $("categoryViewHint").textContent=list.length+" "+(list.length===1?"video guardado":"videos guardados")+" en esta carpeta. El archivo original y la programación no se modifican al moverlo.";
+  $("categoryVideos").innerHTML=list.map(v=>'<div class="categoryVideo"><span>🎬</span><span class="cvTitle">'+esc(v.title)+'</span><span class="cvSize">'+(v.video_type==="commercial"?"TANDA":"SERIE")+'</span><button class="btn tiny ghost" onclick="removeFromCategory('+v.id+')">Quitar</button></div>').join("")||'<div class="hint">La carpeta está vacía. Tocá “SUBIR SERIES AQUÍ” para cargar las primeras.</div>';
+  const others=videos.filter(v=>Number(v.category_id)!==Number(id));
+  $("categoryMoveSelect").innerHTML='<option value="">Mover un video existente a esta carpeta…</option>'+others.map(v=>'<option value="'+v.id+'">'+(v.video_type==="commercial"?"📢 ":"🎬 ")+esc(v.title)+'</option>').join("");
+}
+window.openCategory=async function(id){
+  const d=await api("/api/admin/categories");
+  renderCategoryView(id,d.categories||[]);
+  $("categoryView").scrollIntoView({behavior:"smooth",block:"start"});
+};
+$("categoryBackBtn").onclick=()=>{$("categoryView").classList.add("hidden");openCategoryId=null;};
+$("categoryUploadBtn").onclick=()=>{
+  $("seriesCategory").value=String(openCategoryId||"");
+  showTab("upload");
+  $("seriesFiles").focus();
+};
+$("categoryMoveBtn").onclick=async()=>{
+  const id=Number($("categoryMoveSelect").value||0);
+  if(!id||openCategoryId===null)return;
+  try{
+    await api("/api/admin/video/category",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,categoryId:openCategoryId})});
+    await loadVideos();
+    await loadCategories();
+    renderCategoryView(openCategoryId,(await api("/api/admin/categories")).categories||[]);
+  }catch(e){alert(e.message)}
+};
+window.removeFromCategory=async id=>{
+  try{
+    await api("/api/admin/video/category",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,categoryId:null})});
+    await loadVideos();
+    await loadCategories();
+    if(openCategoryId!==null)renderCategoryView(openCategoryId,(await api("/api/admin/categories")).categories||[]);
+  }catch(e){alert(e.message)}
+};
+$("catBtn").onclick=async()=>{
+  const name=$("newCat").value.trim();
+  if(!name)return;
+  try{
+    await api("/api/admin/categories",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
+    $("newCat").value="";
+    await loadCategories();
+  }catch(e){alert(e.message)}
+};
 window.delVideo=async id=>{if(!confirm("¿Eliminar este video? También se quitará de la programación."))return;try{await api("/api/admin/video/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});schedule=schedule.filter(x=>x.video_id!==Number(id));await loadVideos();renderSchedule();await autoSave()}catch(e){alert(e.message)}};
 $("loginBtn").onclick=async()=>{const msg=$("loginMsg");msg.textContent="Ingresando…";try{await api("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:$("pin").value})});await boot()}catch(e){msg.textContent=e.message}};
 $("togglePin").onclick=()=>{const input=$("pin"),btn=$("togglePin");const visible=input.type==="text";input.type=visible?"password":"text";btn.textContent=visible?"👁️":"🙈";btn.title=visible?"Mostrar código":"Ocultar código";btn.setAttribute("aria-label",visible?"Mostrar código":"Ocultar código")};
