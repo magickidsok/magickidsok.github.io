@@ -86,9 +86,11 @@ async function ensureVideoSchema(db){
   if(!(cols.results||[]).some(x=>x.name==="category_position")){
     await db.prepare("ALTER TABLE videos ADD COLUMN category_position INTEGER NOT NULL DEFAULT 0").run();
   }
-  await db.prepare("CREATE TABLE IF NOT EXISTS channel_control (id INTEGER PRIMARY KEY CHECK(id=1),status TEXT NOT NULL DEFAULT 'stopped',generation INTEGER NOT NULL DEFAULT 0,updated_at INTEGER NOT NULL)").run();
+  await db.prepare("CREATE TABLE IF NOT EXISTS channel_control (id INTEGER PRIMARY KEY CHECK(id=1),status TEXT NOT NULL DEFAULT 'stopped',generation INTEGER NOT NULL DEFAULT 0,updated_at INTEGER NOT NULL,started_at INTEGER NOT NULL DEFAULT 0)").run();
+  const cc=await db.prepare("PRAGMA table_info(channel_control)").all();
+  if(!(cc.results||[]).some(x=>x.name==="started_at")) await db.prepare("ALTER TABLE channel_control ADD COLUMN started_at INTEGER NOT NULL DEFAULT 0").run();
   const state=await db.prepare("SELECT id FROM channel_control WHERE id=1").first();
-  if(!state)await db.prepare("INSERT INTO channel_control(id,status,generation,updated_at) VALUES(1,'stopped',0,?)").bind(Date.now()).run();
+  if(!state)await db.prepare("INSERT INTO channel_control(id,status,generation,updated_at,started_at) VALUES(1,'stopped',0,?,0)").bind(Date.now()).run();
 }
 async function adminVideos(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
@@ -248,7 +250,7 @@ async function adminM3u8(request,env,origin){
 async function channelState(request,env,origin){
   await ensureVideoSchema(env.DB);
   const state=await env.DB.prepare("SELECT status,generation,updated_at FROM channel_control WHERE id=1").first();
-  return json({status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0)},200,origin);
+  return json({status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0),startedAt:Number(state?.started_at||0)},200,origin);
 }
 async function adminChannelControl(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
@@ -261,7 +263,9 @@ async function adminChannelControl(request,env,origin){
   else if(action==="restart")status="live";
   else return json({error:"Acción inválida."},400,origin);
   const generation=Number(state?.generation||0)+(action==="restart"?1:0);
-  await env.DB.prepare("UPDATE channel_control SET status=?,generation=?,updated_at=? WHERE id=1").bind(status,generation,Date.now()).run();
+  const now=Date.now();
+  const startedAt=(action==="start"||action==="restart")?now:Number((await env.DB.prepare("SELECT started_at FROM channel_control WHERE id=1").first())?.started_at||0);
+  await env.DB.prepare("UPDATE channel_control SET status=?,generation=?,updated_at=?,started_at=? WHERE id=1").bind(status,generation,now,startedAt).run();
   return channelState(request,env,origin);
 }
 async function publicSchedule(request,env,origin){
@@ -283,7 +287,7 @@ async function adminSchedule(request,env,origin){
   }
   // Bump the public channel generation so every open player detects
   // a programming change without requiring a page refresh.
-  await env.DB.prepare("UPDATE channel_control SET generation=generation+1,updated_at=? WHERE id=1").bind(Date.now()).run();
+  await env.DB.prepare("UPDATE channel_control SET generation=generation+1,updated_at=?,started_at=? WHERE id=1").bind(Date.now(),Date.now()).run();
   return publicSchedule(request,env,origin);
 }
 async function media(request,env){
