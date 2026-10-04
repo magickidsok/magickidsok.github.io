@@ -110,21 +110,32 @@ async function adminRepairR2Keys(request,env,origin){
   const listed=await bucket.list({prefix:"videos/",limit:1000});
   const objects=listed.objects||[];
   const rows=await env.DB.prepare("SELECT id,object_key,title FROM videos ORDER BY id").all();
-  const repaired=[],missing=[];
+  const dbRows=rows.results||[];
+  const used=new Set(), repaired=[], missing=[];
   const uuidRe=/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
-  for(const row of (rows.results||[])){
-    const key=String(row.object_key||"");
-    const m=key.match(uuidRe);
-    if(!m){missing.push({id:row.id,title:row.title,reason:"sin UUID en object_key"});continue;}
-    const uuid=m[0].toLowerCase();
-    const match=objects.find(o=>String(o.key||"").toLowerCase().includes(uuid));
-    if(!match){missing.push({id:row.id,title:row.title,reason:"objeto R2 no encontrado"});continue;}
-    if(match.key!==key){
-      await env.DB.prepare("UPDATE videos SET object_key=?,updated_at=? WHERE id=?").bind(match.key,Date.now(),row.id).run();
-      repaired.push({id:row.id,title:row.title,from:key,to:match.key});
+  const update=(row,match)=>{
+    used.add(match.key);
+    if(match.key!==row.object_key){
+      repaired.push({id:row.id,title:row.title,from:row.object_key,to:match.key});
+      return env.DB.prepare("UPDATE videos SET object_key=?,updated_at=? WHERE id=?").bind(match.key,Date.now(),row.id).run();
     }
+    return null;
+  };
+  const pending=[];
+  for(const row of dbRows){
+    const m=String(row.object_key||"").match(uuidRe);
+    if(!m){pending.push(row);continue;}
+    const uuid=m[0].toLowerCase();
+    const match=objects.find(o=>!used.has(o.key)&&String(o.key||"").toLowerCase().includes(uuid));
+    if(match)await update(row,match);else pending.push(row);
   }
-  return json({ok:true,repaired,missing,checked:Number(rows.results?.length||0),r2Objects:Number(objects.length||0)},200,origin);
+  const remainingObjects=objects.filter(o=>!used.has(o.key));
+  if(pending.length===1&&remainingObjects.length===1){
+    await update(pending[0],remainingObjects[0]);
+  }else{
+    for(const row of pending)missing.push({id:row.id,title:row.title,reason:"No se pudo identificar de forma segura el objeto R2"});
+  }
+  return json({ok:true,repaired,missing,checked:dbRows.length,r2Objects:objects.length},200,origin);
 }
 async function adminCategories(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
