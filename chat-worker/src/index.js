@@ -1,4 +1,4 @@
-const ALLOWED_ORIGINS = new Set(["https://magickidsok.online","https://www.magickidsok.online","https://magickidsok.github.io"]);
+const ALLOWED_ORIGINS = new Set(["https://magickidsok.online","https://www.magickidsok.online","http://magickidsok.online","http://www.magickidsok.online","https://magickidsok.github.io","https://magickidsok-github-io.elmagickids.workers.dev"]);
 const COOKIE = "MKCHAT_SESSION";
 const ADMIN_COOKIE = "MKADMIN_SESSION";
 const ADMIN_SESSION_SECONDS = 60 * 60 * 12;
