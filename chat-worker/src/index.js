@@ -48,18 +48,24 @@ function safeEq(a,b){if(a.length!==b.length)return false;let x=0;for(let i=0;i<a
 async function hmac(secret,payload){const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);return new Uint8Array(await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(payload)));}
 async function makeSession(uid,secret){const body=encJson({uid:uid,exp:Math.floor(Date.now()/1000)+SESSION_SECONDS});return body+"."+bytesToB64(await hmac(secret,body));}
 async function readSession(request,env){
-  const m=(request.headers.get("Cookie")||"").match(new RegExp("(?:^|;\\s*)"+COOKIE+"=([^;]+)"));
-  if(!m||!env.SESSION_SECRET)return null;
-  const parts=m[1].split(".");if(parts.length!==2)return null;
+  const token=readAuthToken(request,COOKIE);
+  if(!token||!env.SESSION_SECRET)return null;
+  const parts=token.split(".");if(parts.length!==2)return null;
   try{const body=parts[0],sig=b64ToBytes(parts[1]),expected=await hmac(env.SESSION_SECRET,body);if(!safeEq(sig,expected))return null;const data=decJson(body);if(!data.uid||!data.exp||data.exp<Math.floor(Date.now()/1000))return null;return data;}catch(e){return null;}
 }
 function setSessionCookie(token){return COOKIE+"="+token+"; Path=/; HttpOnly; Secure; SameSite=None; Max-Age="+SESSION_SECONDS;}
+function readAuthToken(request,name){
+  const auth=String(request.headers.get("Authorization")||"");
+  if(/^Bearer\s+/i.test(auth))return auth.replace(/^Bearer\s+/i,"").trim();
+  const m=(request.headers.get("Cookie")||"").match(new RegExp("(?:^|;\\s*)"+name+"=([^;]+)"));
+  return m?m[1]:"";
+}
 function makeAdminSession(secret){return makeAdminSessionToken(secret);}
 async function makeAdminSessionToken(secret){const body=encJson({admin:1,exp:Math.floor(Date.now()/1000)+ADMIN_SESSION_SECONDS});return body+"."+bytesToB64(await hmac(secret,body));}
 async function readAdminSession(request,env){
-  const m=(request.headers.get("Cookie")||"").match(new RegExp("(?:^|;\\s*)"+ADMIN_COOKIE+"=([^;]+)"));
-  if(!m||!env.SESSION_SECRET)return false;
-  const parts=m[1].split(".");if(parts.length!==2)return false;
+  const token=readAuthToken(request,ADMIN_COOKIE);
+  if(!token||!env.SESSION_SECRET)return false;
+  const parts=token.split(".");if(parts.length!==2)return false;
   try{const body=parts[0],sig=b64ToBytes(parts[1]),expected=await hmac(env.SESSION_SECRET,body);if(!safeEq(sig,expected))return false;const data=decJson(body);return !!(data.admin&&data.exp&&data.exp>=Math.floor(Date.now()/1000));}catch(e){return false;}
 }
 function setAdminSessionCookie(token){return ADMIN_COOKIE+"="+token+"; Path=/; HttpOnly; Secure; SameSite=None; Max-Age="+ADMIN_SESSION_SECONDS;}
@@ -499,6 +505,7 @@ async function register(request,env,origin){
   }
   const b=await body(request),email=String(b.email||"").trim().toLowerCase(),nick=String(b.nick||"").trim().replace(/\s+/g," ").slice(0,24),password=String(b.password||"");
   if(!validNick(nick))return json({error:"El nick debe tener entre 3 y 24 caracteres."},400,origin);
+  if(normalizeNick(nick).includes("MAGIC"))return json({error:"Ese nick está reservado. No se permite usar MAGIC ni MAGIC KIDS."},409,origin);
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json({error:"El correo electrónico no es válido."},400,origin);
   if(password.length<6)return json({error:"La contraseña debe tener al menos 6 caracteres."},400,origin);
   const norm=normalizeNick(nick);
@@ -510,7 +517,7 @@ async function register(request,env,origin){
   try{
     const token=await makeSession(uid,env.SESSION_SECRET);
     await env.DB.prepare("INSERT INTO users (id,email,nick,nick_norm,password_salt,password_hash,role,banned,created_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(uid,email,nick,norm,pass.salt,pass.hash,role,0,now).run();
-    return json({user:publicUser({id:uid,email:email,nick:nick,role:role,banned:0})},200,origin,{"Set-Cookie":setSessionCookie(token)});
+    return json({user:publicUser({id:uid,email:email,nick:nick,role:role,banned:0}),token:token},200,origin,{"Set-Cookie":setSessionCookie(token)});
   }catch(e){
     console.error("register error",e);
     const message=String(e&&e.message||"");
@@ -520,10 +527,11 @@ async function register(request,env,origin){
 }
 async function adminPinLogin(request,env,origin){
   if(!env.ADMIN_PIN)return json({error:"Falta configurar ADMIN_PIN en el Worker de Cloudflare."},500,origin);
+  if(!env.SESSION_SECRET)return json({error:"Falta configurar SESSION_SECRET en el Worker de Cloudflare."},500,origin);
   const b=await body(request),pin=String(b.pin||"").trim();
   if(pin.length!==4||pin.split("").some(ch=>ch<"0"||ch>"9")||pin!==String(env.ADMIN_PIN).trim())return json({error:"Código incorrecto."},401,origin);
   const token=await makeAdminSession(env.SESSION_SECRET);
-  return json({user:{id:"admin-pin",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin,{"Set-Cookie":setAdminSessionCookie(token)});
+  return json({user:{id:"admin-pin",email:"",nick:"MAGICKIDS",isAdmin:true},token:token},200,origin,{"Set-Cookie":setAdminSessionCookie(token)});
 }
 async function adminMasterLogin(request,env,origin){
   if(!env.ADMIN_MASTER_CODE)return json({error:"Falta configurar ADMIN_MASTER_CODE en el Worker de Cloudflare."},500,origin);
@@ -531,16 +539,16 @@ async function adminMasterLogin(request,env,origin){
   const master=String(env.ADMIN_MASTER_CODE).trim();
   if(!code||code!==master)return json({error:"Código maestro incorrecto."},401,origin);
   const token=await makeAdminSession(env.SESSION_SECRET);
-  return json({user:{id:"admin-master",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin,{"Set-Cookie":setAdminSessionCookie(token)});
+  return json({user:{id:"admin-master",email:"",nick:"MAGICKIDS",isAdmin:true},token:token},200,origin,{"Set-Cookie":setAdminSessionCookie(token)});
 }
 async function login(request,env,origin){
   const b=await body(request),email=String(b.email||"").trim().toLowerCase(),password=String(b.password||"");
   const u=await env.DB.prepare("SELECT * FROM users WHERE email=?").bind(email).first();
   if(!u||!(await verifyPassword(password,u.password_salt,u.password_hash)))return json({error:"Correo o contraseña incorrectos."},401,origin);
-  if(u.nick_norm==="MAGICKIDS")return json({error:"MAGICKIDS ahora ingresa exclusivamente con el PIN de administrador."},403,origin);
+  if(u.nick_norm==="MAGICKIDS"||String(u.nick_norm||"").includes("MAGIC"))return json({error:"Ese usuario no puede ingresar al chat con ese nick. MAGIC está reservado."},403,origin);
   if(u.banned)return json({error:"Tu cuenta está bloqueada del chat."},403,origin);
   const token=await makeSession(u.id,env.SESSION_SECRET);
-  return json({user:publicUser(u)},200,origin,{"Set-Cookie":setSessionCookie(token)});
+  return json({user:publicUser(u),token:token},200,origin,{"Set-Cookie":setSessionCookie(token)});
 }
 async function messages(request,env,origin){
   if(!await requireChatUser(request,env))return json({error:"Sesión requerida."},401,origin);
