@@ -177,6 +177,22 @@ async function adminUploadAbort(request,env,origin){
   try{await requireR2(env).resumeMultipartUpload(key,uploadId).abort();return json({ok:true},200,origin);}
   catch(e){return json({error:"No se pudo cancelar la subida."},400,origin);}
 }
+async function adminVideoCategory(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const b=await body(request);
+  const id=Number(b.id||0);
+  const categoryId=b.categoryId===null||b.categoryId===""?null:Number(b.categoryId||0)||null;
+  if(!id)return json({error:"Video inválido."},400,origin);
+  const video=await env.DB.prepare("SELECT id FROM videos WHERE id=?").bind(id).first();
+  if(!video)return json({error:"Video no encontrado."},404,origin);
+  if(categoryId!==null){
+    const cat=await env.DB.prepare("SELECT id FROM video_categories WHERE id=?").bind(categoryId).first();
+    if(!cat)return json({error:"Carpeta no encontrada."},404,origin);
+  }
+  await env.DB.prepare("UPDATE videos SET category_id=?,updated_at=? WHERE id=?").bind(categoryId,Date.now(),id).run();
+  return adminVideos(request,env,origin);
+}
+
 async function adminDeleteVideo(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   const id=Number((await body(request)).id);if(!id)return json({error:"Video inválido."},400,origin);
@@ -441,6 +457,7 @@ export default {
       if(path==="/api/admin/upload/complete"&&request.method==="POST")return adminUploadComplete(request,env,origin);
       if(path==="/api/admin/upload/abort"&&request.method==="POST")return adminUploadAbort(request,env,origin);
       if(path==="/api/admin/video/delete"&&request.method==="POST")return adminDeleteVideo(request,env,origin);
+      if(path==="/api/admin/video/category"&&request.method==="POST")return adminVideoCategory(request,env,origin);
       if(path==="/api/channel/state"&&request.method==="GET")return channelState(request,env,origin);
       if(path==="/api/admin/m3u8"&&request.method==="GET")return adminM3u8(request,env,origin);
       if(path==="/magic-kids.m3u8"&&request.method==="GET")return ownPlaylist(request,env);
