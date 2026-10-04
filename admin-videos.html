@@ -42,7 +42,7 @@
 <div id="upload" class="tab hidden">
 <div class="hero"><h2>⬆️ Cargar varias series</h2><p>Podés seleccionar muchos MP4 o directamente una carpeta completa. El nombre del archivo se usa como título.</p></div>
 <div class="panel">
-<div class="bulk"><h3>📁 Seleccionar carpeta de series</h3><div class="hint">Seleccioná varios videos de una sola vez o una carpeta completa. Los videos de más de 60 MB se suben automáticamente por partes de 50 MB, así podés cargar series de 250 MB, 300 MB o más sin dividirlas manualmente.</div>
+<div class="bulk"><h3>📁 Seleccionar carpeta de series</h3><div class="hint">Seleccioná varios videos de una sola vez o una carpeta completa. Los videos de más de 60 MB se suben automáticamente por partes de 64 MB, así podés cargar series de 250 MB, 300 MB o más sin dividirlas manualmente.</div>
 <input id="seriesFiles" class="bigFile" type="file" accept="video/mp4,video/*" multiple><div class="row" style="margin-top:8px"><label class="btn" style="cursor:pointer">📁 ELEGIR CARPETA<input id="seriesFolder" type="file" accept="video/mp4,video/*" multiple webkitdirectory directory style="display:none"></label><span class="hint">o seleccioná varios archivos con Ctrl/Shift</span></div></div>
 <div class="row"><select id="seriesCategory" class="field"><option value="">Sin categoría</option></select><button id="uploadSeriesBtn" class="btn blue">SUBIR SERIES SELECCIONADAS</button></div>
 <div class="progress"><i id="seriesBar"></i></div><div id="seriesMsg" class="msg"></div><div id="seriesQueue" class="queue"></div>
@@ -51,7 +51,7 @@
 <div id="commercials" class="tab hidden">
 <div class="hero"><h2>📢 Tandas comerciales</h2><p>Subilas una sola vez y después insertá la tanda completa donde quieras en la programación.</p></div>
 <div class="panel">
-<div class="bulk"><h3>📁 Cargar varias tandas / publicidades</h3><div class="hint">Seleccioná varios comerciales de una sola vez o una carpeta completa. Los archivos grandes también se suben por partes automáticamente.</div>
+<div class="bulk"><h3>📁 Cargar varias tandas / publicidades</h3><div class="hint">Seleccioná varios comerciales de una sola vez o una carpeta completa. Los archivos grandes también se suben por partes automáticamente, incluso videos de 1 GB o más.</div>
 <input id="commercialFiles" class="bigFile" type="file" accept="video/mp4,video/*" multiple><div class="row" style="margin-top:8px"><label class="btn" style="cursor:pointer">📁 ELEGIR CARPETA<input id="commercialFolder" type="file" accept="video/mp4,video/*" multiple webkitdirectory directory style="display:none"></label><span class="hint">o seleccioná varios archivos con Ctrl/Shift</span></div></div>
 <button id="uploadCommercialBtn" class="btn blue">SUBIR TANDAS SELECCIONADAS</button>
 <div class="progress"><i id="commercialBar"></i></div><div id="commercialMsg" class="msg"></div><div id="commercialQueue" class="queue"></div>
@@ -111,18 +111,40 @@ $("getM3u8").onclick=loadM3u8;$("copyM3u8").onclick=async()=>{const u=$("m3u8Url
 $("addTanda").onclick=async()=>{const cs=videos.filter(v=>v.video_type==="commercial");if(!cs.length){alert("Primero cargá los comerciales en Tandas comerciales.");return}for(const v of cs)schedule.push({video_id:v.id,title:v.title,start_time:$("quickTime").value||"00:00",video_type:"commercial"});renderSchedule();await autoSave()};
 $("saveSchedule").onclick=()=>saveSchedule(true);
 const MULTIPART_THRESHOLD=60*1024*1024;
-const MULTIPART_PART_SIZE=50*1024*1024;
+// Large videos use resumable R2 multipart uploads. 64 MiB keeps 1 GB files to ~16 parts.
+const MULTIPART_PART_SIZE=64*1024*1024;
+const UPLOAD_RETRIES=3;
+const UPLOAD_TIMEOUT_MS=180000;
 function formatBytes(n){if(n<1024*1024)return Math.round(n/1024)+" KB";if(n<1024*1024*1024)return (n/1024/1024).toFixed(1)+" MB";return (n/1024/1024/1024).toFixed(2)+" GB"}
-function uploadPartXHR(url,blob,onProgress){
-  return new Promise((resolve,reject)=>{
-    const xhr=new XMLHttpRequest();xhr.open("PUT",url,true);xhr.withCredentials=true;
-    xhr.setRequestHeader("Content-Type","application/octet-stream");
-    xhr.upload.onprogress=e=>{if(e.lengthComputable)onProgress(e.loaded,e.total)};
-    xhr.onload=()=>{let d={};try{d=JSON.parse(xhr.responseText||"{}")}catch(e){};if(xhr.status>=200&&xhr.status<300)resolve(d);else reject(Error(d.error||"Error HTTP "+xhr.status))};
-    xhr.onerror=()=>reject(Error("Error de conexión durante la subida."));
-    xhr.ontimeout=()=>reject(Error("Tiempo de espera agotado."));
-    xhr.send(blob);
-  });
+async function uploadPartXHR(url,blob,onProgress){
+  let lastError=Error("No se pudo subir la parte.");
+  for(let attempt=1;attempt<=UPLOAD_RETRIES;attempt++){
+    try{
+      const result=await new Promise((resolve,reject)=>{
+        const xhr=new XMLHttpRequest();
+        xhr.open("PUT",url,true);xhr.withCredentials=true;
+        xhr.timeout=UPLOAD_TIMEOUT_MS;
+        xhr.setRequestHeader("Content-Type","application/octet-stream");
+        xhr.upload.onprogress=e=>{if(e.lengthComputable)onProgress(e.loaded,e.total)};
+        xhr.onload=()=>{
+          let d={};try{d=JSON.parse(xhr.responseText||"{}")}catch(e){}
+          if(xhr.status>=200&&xhr.status<300)resolve(d);
+          else reject(Error(d.error||"Error HTTP "+xhr.status));
+        };
+        xhr.onerror=()=>reject(Error("Error de conexión durante la subida."));
+        xhr.ontimeout=()=>reject(Error("Tiempo de espera agotado."));
+        xhr.send(blob);
+      });
+      return result;
+    }catch(e){
+      lastError=e;
+      if(attempt<UPLOAD_RETRIES){
+        onProgress(0,blob.size);
+        await new Promise(r=>setTimeout(r,1500*attempt));
+      }
+    }
+  }
+  throw lastError;
 }
 async function uploadLargeFile(file,type,categoryId,onProgress){
   const init=await api("/api/admin/upload/initiate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:file.name,contentType:file.type||"video/mp4"})});
