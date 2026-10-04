@@ -384,6 +384,23 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
   .magicPlayerSyncLabel{display:none}
 }
 #screen:fullscreen .playerLogoOverlay{top:18px!important;right:18px!important;width:clamp(74px,8vw,112px)!important}
+</style><style id="magic-share-social-style">
+.magicShareSection{margin-top:16px;display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.magicShareCard{padding:19px;background:rgba(3,19,65,.78);border:1px solid var(--line);border-radius:19px;box-shadow:0 14px 38px rgba(0,0,0,.18)}
+.magicShareCard h2{margin:0 0 5px;font-size:19px}
+.magicShareCard p{margin:0;color:#bdd3ed;font-size:11px;line-height:1.55}
+.magicShareBtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:13px;border:0;border-radius:11px;padding:11px 16px;background:linear-gradient(135deg,#1788ff,#0d5cc8);color:#fff;font-size:11px;font-weight:1000;cursor:pointer;box-shadow:0 9px 22px rgba(13,107,231,.2)}
+.magicShareBtn:hover{filter:brightness(1.08)}
+.magicShareOptions{display:none;flex-wrap:wrap;gap:7px;margin-top:10px}
+.magicShareOptions.show{display:flex}
+.magicShareOptions a,.magicShareOptions button{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:rgba(255,255,255,.05);color:#fff;border-radius:9px;padding:8px 10px;font-size:9px;font-weight:900;cursor:pointer}
+.magicShareOptions a:hover,.magicShareOptions button:hover{background:rgba(26,132,255,.18)}
+.magicSocialLinks{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}
+.magicSocialLink{display:inline-flex;align-items:center;gap:7px;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-size:10px;font-weight:1000}
+.magicSocialLink.instagram{background:linear-gradient(135deg,rgba(131,58,180,.28),rgba(225,48,108,.2))}
+.magicSocialLink.tiktok{background:rgba(255,255,255,.07)}
+.magicSocialLink:hover{background:rgba(26,132,255,.18)}
+@media(max-width:700px){.magicShareSection{grid-template-columns:1fr;gap:12px}.magicShareCard{padding:15px}}
 </style></head><body><script id="magic-stars-script">
 (function(){
   function initMagicStars(){
@@ -453,7 +470,28 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
     <button id="playerFull" class="magicPlayerControl" type="button" aria-label="Pantalla completa" title="Pantalla completa">⛶</button>
   </div>
 </div>
-<div class="magicSyncStatusRow"><span>● SINCRONIZADO CON LA PROGRAMACIÓN</span></div></div><aside class="card donateBox"><div class="heart">♥</div><h2>APOYA AL CANAL MAGIC CON TU DONACION $</h2><p>Tu aporte está destinado a impulsar las acciones necesarias para que Magic Kids vuelva a la televisión argentina lo más pronto posible.</p><div class="bank"><small>BANCO BRUBANK</small><strong>MAGICKIDS.OK</strong><span>A NOMBRE DE MARCELO GOMEZ</span><button id="copyHome">COPIAR ALIAS</button></div><a class="btn red" href="donar.html">VER DATOS DE DONACIÓN</a></aside></section><section class="tiles"><a class="tile" href="programacion.html"><b>▦</b><div><strong>Programación</strong><span>Horarios y series</span></div><i>›</i></a><a class="tile" href="donar.html"><b>♥</b><div><strong>Apoyar Magic Kids</strong><span>Alias de la campaña</span></div><i>›</i></a></section><section class="nowNext" aria-label="Programación en tiempo real"><div><small>AHORA</small><strong id="nowShow">Calculando…</strong><span id="nowTime">--:--</span></div><div class="nextArrow">→</div><div><small>PRÓXIMO</small><strong id="nextShow">Calculando…</strong><span id="nextTime">--:--</span></div></section><section class="grid"><div class="card"><div class="row"><h2>La programación</h2><a class="link" href="programacion.html">Ver todo →</a></div><div id="schedule" class="schedule"></div></div><div class="card chatCard">
+<div class="magicSyncStatusRow"><span>● SINCRONIZADO CON LA PROGRAMACIÓN</span></div></div><aside class="card donateBox"><div class="heart">♥</div><h2>APOYA AL CANAL MAGIC CON TU DONACION $</h2><p>Tu aporte está destinado a impulsar las acciones necesarias para que Magic Kids vuelva a la televisión argentina lo más pronto posible.</p><div class="bank"><small>BANCO BRUBANK</small><strong>MAGICKIDS.OK</strong><span>A NOMBRE DE MARCELO GOMEZ</span><button id="copyHome">COPIAR ALIAS</button></div><a class="btn red" href="donar.html">VER DATOS DE DONACIÓN</a></aside></section><section class="tiles"><a class="tile" href="programacion.html"><b>▦</b><div><strong>Programación</strong><span>Horarios y series</span></div><i>›</i></a><a class="tile" href="donar.html"><b>♥</b><div><strong>Apoyar Magic Kids</strong><span>Alias de la campaña</span></div><i>›</i></a></section><section id="magicShareSection" class="magicShareSection" aria-label="Compartir y redes sociales">
+  <div class="magicShareCard">
+    <h2>📲 COMPARTÍ MAGIC KIDS</h2>
+    <p>Compartí la página oficial de Magic Kids con tus amigos y en tus redes sociales.</p>
+    <button id="magicShareBtn" class="magicShareBtn" type="button">↗ COMPARTIR PÁGINA</button>
+    <div id="magicShareOptions" class="magicShareOptions" aria-label="Opciones para compartir">
+      <a id="magicShareWhatsApp" target="_blank" rel="noopener" href="#">WhatsApp</a>
+      <a id="magicShareFacebook" target="_blank" rel="noopener" href="#">Facebook</a>
+      <a id="magicShareX" target="_blank" rel="noopener" href="#">X</a>
+      <a id="magicShareTelegram" target="_blank" rel="noopener" href="#">Telegram</a>
+      <button id="magicCopyShare" type="button">COPIAR ENLACE</button>
+    </div>
+  </div>
+  <div class="magicShareCard">
+    <h2>🌐 SEGUÍ A MAGIC KIDS</h2>
+    <p>Encontranos en nuestras redes sociales:</p>
+    <div class="magicSocialLinks">
+      <a class="magicSocialLink instagram" href="https://www.instagram.com/ELMAGICTVOK/" target="_blank" rel="noopener noreferrer">◎ Instagram · ELMAGICTVOK</a>
+      <a class="magicSocialLink tiktok" href="https://www.tiktok.com/@ELMAGICTVOK" target="_blank" rel="noopener noreferrer">♪ TikTok · ELMAGICTVOK</a>
+    </div>
+  </div>
+</section><section class="nowNext" aria-label="Programación en tiempo real"><div><small>AHORA</small><strong id="nowShow">Calculando…</strong><span id="nowTime">--:--</span></div><div class="nextArrow">→</div><div><small>PRÓXIMO</small><strong id="nextShow">Calculando…</strong><span id="nextTime">--:--</span></div></section><section class="grid"><div class="card"><div class="row"><h2>La programación</h2><a class="link" href="programacion.html">Ver todo →</a></div><div id="schedule" class="schedule"></div></div><div class="card chatCard">
   <h2>💬 Chat Magic Kids</h2>
   <p class="chatIntro">Entrá con tu cuenta. Elegí <b>USUARIO</b> para el chat público o <b>ADMINISTRADOR</b> para usar tu PIN privado.</p>
   <div id="customChatAuth" class="customChatAuth">
@@ -913,5 +951,47 @@ window.addEventListener("appinstalled",()=>{
     }
   }
   document.addEventListener("mousemove",e=>sparkle(e.clientX,e.clientY),{passive:true});
+})();
+</script><script id="magic-share-social-script">
+(function(){
+  const shareBtn=document.getElementById("magicShareBtn");
+  const options=document.getElementById("magicShareOptions");
+  if(!shareBtn)return;
+  const pageUrl=window.location.href.split("#")[0];
+  const shareText="Mirá Magic Kids en vivo y conocé toda la programación.";
+  const encodedUrl=encodeURIComponent(pageUrl);
+  const encodedText=encodeURIComponent(shareText);
+  const wa=document.getElementById("magicShareWhatsApp");
+  const fb=document.getElementById("magicShareFacebook");
+  const x=document.getElementById("magicShareX");
+  const tg=document.getElementById("magicShareTelegram");
+  if(wa)wa.href="https://wa.me/?text="+encodeURIComponent(shareText+" "+pageUrl);
+  if(fb)fb.href="https://www.facebook.com/sharer/sharer.php?u="+encodedUrl;
+  if(x)x.href="https://twitter.com/intent/tweet?text="+encodedText+"&url="+encodedUrl;
+  if(tg)tg.href="https://t.me/share/url?url="+encodedUrl+"&text="+encodedText;
+  shareBtn.addEventListener("click",async()=>{
+    const data={title:"Magic Kids | Sitio Oficial",text:shareText,url:pageUrl};
+    if(navigator.share){
+      try{
+        if(!navigator.canShare||navigator.canShare(data)){
+          await navigator.share(data);
+          return;
+        }
+      }catch(e){
+        if(e&&e.name==="AbortError")return;
+      }
+    }
+    options?.classList.toggle("show");
+  });
+  document.getElementById("magicCopyShare")?.addEventListener("click",async()=>{
+    const btn=document.getElementById("magicCopyShare");
+    try{
+      await navigator.clipboard.writeText(pageUrl);
+      btn.textContent="ENLACE COPIADO";
+      setTimeout(()=>btn.textContent="COPIAR ENLACE",1600);
+    }catch(e){
+      window.prompt("Copiá este enlace:",pageUrl);
+    }
+  });
 })();
 </script></body></html>
