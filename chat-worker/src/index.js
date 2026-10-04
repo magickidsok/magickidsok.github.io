@@ -457,7 +457,7 @@ async function login(request,env,origin){
   return json({user:publicUser(u)},200,origin,{"Set-Cookie":setSessionCookie(token)});
 }
 async function messages(request,env,origin){
-  if(!await requireUser(request,env))return json({error:"Sesión requerida."},401,origin);
+  if(!await requireChatUser(request,env))return json({error:"Sesión requerida."},401,origin);
   const u=new URL(request.url),limit=Math.min(100,Math.max(10,Number(u.searchParams.get("limit")||80)));
   const rows=await env.DB.prepare("SELECT id,user_id,nick,is_admin,text,created_at FROM messages ORDER BY id DESC LIMIT ?").bind(limit).all();
   return json({messages:(rows.results||[]).reverse().map(function(r){return {id:r.id,userId:r.user_id,nick:r.nick,isAdmin:r.user_id==="admin-pin"&&!!r.is_admin,text:r.text,createdAt:r.created_at};})},200,origin);
