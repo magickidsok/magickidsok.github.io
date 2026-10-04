@@ -83,6 +83,9 @@ async function ensureVideoSchema(db){
   if(!(cols.results||[]).some(x=>x.name==="video_type")){
     await db.prepare("ALTER TABLE videos ADD COLUMN video_type TEXT NOT NULL DEFAULT 'program'").run();
   }
+  await db.prepare("CREATE TABLE IF NOT EXISTS channel_control (id INTEGER PRIMARY KEY CHECK(id=1),status TEXT NOT NULL DEFAULT 'stopped',generation INTEGER NOT NULL DEFAULT 0,updated_at INTEGER NOT NULL)").run();
+  const state=await db.prepare("SELECT id FROM channel_control WHERE id=1").first();
+  if(!state)await db.prepare("INSERT INTO channel_control(id,status,generation,updated_at) VALUES(1,'stopped',0,?)").bind(Date.now()).run();
 }
 async function adminVideos(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
@@ -184,10 +187,29 @@ async function adminDeleteVideo(request,env,origin){
   await env.DB.prepare("DELETE FROM videos WHERE id=?").bind(id).run();
   return json({ok:true},200,origin);
 }
+async function channelState(request,env,origin){
+  await ensureVideoSchema(env.DB);
+  const state=await env.DB.prepare("SELECT status,generation,updated_at FROM channel_control WHERE id=1").first();
+  return json({status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0)},200,origin);
+}
+async function adminChannelControl(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const b=await body(request),action=String(b.action||"").toLowerCase();
+  const state=await env.DB.prepare("SELECT generation FROM channel_control WHERE id=1").first();
+  let status="";
+  if(action==="start")status="live";
+  else if(action==="stop")status="stopped";
+  else if(action==="restart")status="live";
+  else return json({error:"Acción inválida."},400,origin);
+  const generation=Number(state?.generation||0)+(action==="restart"?1:0);
+  await env.DB.prepare("UPDATE channel_control SET status=?,generation=?,updated_at=? WHERE id=1").bind(status,generation,Date.now()).run();
+  return channelState(request,env,origin);
+}
 async function publicSchedule(request,env,origin){
   await ensureVideoSchema(env.DB);
   const rows=await env.DB.prepare("SELECT s.id,s.video_id,s.start_time,s.position,s.enabled,v.title,v.object_key,v.thumbnail_key,v.video_type,c.name AS category FROM video_schedule s JOIN videos v ON v.id=s.video_id LEFT JOIN video_categories c ON c.id=v.category_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
-  return json({schedule:rows.results||[]},200,origin);
+  const state=await env.DB.prepare("SELECT status,generation,updated_at FROM channel_control WHERE id=1").first();
+  return json({schedule:rows.results||[],channel:{status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0)}},200,origin);
 }
 async function adminSchedule(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
@@ -348,6 +370,8 @@ export default {
       if(path==="/api/admin/upload/complete"&&request.method==="POST")return adminUploadComplete(request,env,origin);
       if(path==="/api/admin/upload/abort"&&request.method==="POST")return adminUploadAbort(request,env,origin);
       if(path==="/api/admin/video/delete"&&request.method==="POST")return adminDeleteVideo(request,env,origin);
+      if(path==="/api/channel/state"&&request.method==="GET")return channelState(request,env,origin);
+      if(path==="/api/admin/channel"&&request.method==="POST")return adminChannelControl(request,env,origin);
       if(path==="/api/schedule"&&request.method==="GET")return publicSchedule(request,env,origin);
       if(path==="/api/admin/schedule"&&(request.method==="GET"||request.method==="POST"))return adminSchedule(request,env,origin);
       return json({error:"Ruta no encontrada."},404,origin);
