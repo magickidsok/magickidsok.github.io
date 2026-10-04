@@ -83,6 +83,9 @@ async function ensureVideoSchema(db){
   if(!(cols.results||[]).some(x=>x.name==="video_type")){
     await db.prepare("ALTER TABLE videos ADD COLUMN video_type TEXT NOT NULL DEFAULT 'program'").run();
   }
+  if(!(cols.results||[]).some(x=>x.name==="category_position")){
+    await db.prepare("ALTER TABLE videos ADD COLUMN category_position INTEGER NOT NULL DEFAULT 0").run();
+  }
   await db.prepare("CREATE TABLE IF NOT EXISTS channel_control (id INTEGER PRIMARY KEY CHECK(id=1),status TEXT NOT NULL DEFAULT 'stopped',generation INTEGER NOT NULL DEFAULT 0,updated_at INTEGER NOT NULL)").run();
   const state=await db.prepare("SELECT id FROM channel_control WHERE id=1").first();
   if(!state)await db.prepare("INSERT INTO channel_control(id,status,generation,updated_at) VALUES(1,'stopped',0,?)").bind(Date.now()).run();
@@ -190,6 +193,22 @@ async function adminVideoCategory(request,env,origin){
     if(!cat)return json({error:"Carpeta no encontrada."},404,origin);
   }
   await env.DB.prepare("UPDATE videos SET category_id=?,updated_at=? WHERE id=?").bind(categoryId,Date.now(),id).run();
+  return adminVideos(request,env,origin);
+}
+
+async function adminVideoCategoryOrder(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const b=await body(request);
+  const categoryId=Number(b.categoryId||0);
+  const videoIds=Array.isArray(b.videoIds)?b.videoIds.map(Number).filter(Number.isInteger):[];
+  if(!categoryId||!videoIds.length)return json({error:"Orden de carpeta inválido."},400,origin);
+  const cat=await env.DB.prepare("SELECT id FROM video_categories WHERE id=?").bind(categoryId).first();
+  if(!cat)return json({error:"Carpeta no encontrada."},404,origin);
+  const unique=[...new Set(videoIds)];
+  let pos=0;
+  for(const id of unique){
+    await env.DB.prepare("UPDATE videos SET category_position=?,updated_at=? WHERE id=? AND category_id=?").bind(pos++,Date.now(),id,categoryId).run();
+  }
   return adminVideos(request,env,origin);
 }
 
@@ -458,6 +477,7 @@ export default {
       if(path==="/api/admin/upload/abort"&&request.method==="POST")return adminUploadAbort(request,env,origin);
       if(path==="/api/admin/video/delete"&&request.method==="POST")return adminDeleteVideo(request,env,origin);
       if(path==="/api/admin/video/category"&&request.method==="POST")return adminVideoCategory(request,env,origin);
+      if(path==="/api/admin/video/category-order"&&request.method==="POST")return adminVideoCategoryOrder(request,env,origin);
       if(path==="/api/channel/state"&&request.method==="GET")return channelState(request,env,origin);
       if(path==="/api/admin/m3u8"&&request.method==="GET")return adminM3u8(request,env,origin);
       if(path==="/magic-kids.m3u8"&&request.method==="GET")return ownPlaylist(request,env);
