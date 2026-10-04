@@ -523,12 +523,28 @@ function setScheduledVideo(index,autoplay=true){
   updateScheduledNowNext();
 }
 function playNextScheduled(){if(!scheduledMode||!scheduledVideos.length)return;setScheduledVideo((currentVideoIndex+1)%scheduledVideos.length,true);}
+function detectPlayingScheduledIndex(){
+  const video=document.getElementById("magicVideo");
+  if(!video||!scheduledVideos.length)return currentVideoIndex;
+  const current=String(video.currentSrc||video.src||"");
+  if(!current)return currentVideoIndex;
+  const found=scheduledVideos.findIndex(item=>scheduledVideoUrl(item)===current);
+  if(found>=0&&found!==currentVideoIndex)currentVideoIndex=found;
+  return currentVideoIndex;
+}
 function updateScheduledNowNext(){
   const nowEl=document.getElementById("nowShow"),nextEl=document.getElementById("nextShow"),nowTimeEl=document.getElementById("nowTime"),nextTimeEl=document.getElementById("nextTime");
-  if(!nowEl||!nextEl||!scheduledVideos.length)return;
-  const cur=scheduledVideos[currentVideoIndex>=0?currentVideoIndex:0],next=scheduledVideos[(currentVideoIndex+1)%scheduledVideos.length];
-  nowEl.textContent=cur.title||"Video";nowTimeEl.textContent=cur.start_time||"--:--";
-  nextEl.textContent=next.title||"Video";nextTimeEl.textContent=next.start_time||"--:--";
+  if(!nowEl||!nextEl)return;
+  if(!scheduledVideos.length){
+    nowEl.textContent="Sin programación";nextEl.textContent="Esperando video";nowTimeEl.textContent="--:--";nextTimeEl.textContent="--:--";return;
+  }
+  const idx=detectPlayingScheduledIndex();
+  const cur=scheduledVideos[idx>=0?idx:0];
+  const next=scheduledVideos[((idx>=0?idx:0)+1)%scheduledVideos.length];
+  nowEl.textContent=cur.title||"Video";
+  nowTimeEl.textContent=cur.start_time||"--:--";
+  nextEl.textContent=next.title||"Video";
+  nextTimeEl.textContent=next.start_time||"--:--";
 }
 function showOffAir(show=true){
   const overlay=document.getElementById("offAirOverlay");if(!overlay)return;
@@ -590,6 +606,9 @@ document.getElementById("magicVideo")?.addEventListener("playing",()=>{magicRetr
 document.getElementById("magicVideo")?.addEventListener("error",()=>{setStreamState("offline","La señal tuvo una interrupción. Reintentando automáticamente…");scheduleStreamRetry();});
 document.getElementById("magicVideo")?.addEventListener("stalled",()=>{if(scheduledMode)scheduleStreamRetry();});
 document.getElementById("magicVideo")?.addEventListener("waiting",()=>{if(scheduledMode)scheduleStreamRetry();});
+document.getElementById("magicVideo")?.addEventListener("play",()=>{if(scheduledMode){detectPlayingScheduledIndex();updateScheduledNowNext();}});
+document.getElementById("magicVideo")?.addEventListener("loadedmetadata",()=>{if(scheduledMode){detectPlayingScheduledIndex();updateScheduledNowNext();}});
+document.getElementById("magicVideo")?.addEventListener("playing",()=>{if(scheduledMode){detectPlayingScheduledIndex();updateScheduledNowNext();}});
 document.getElementById("magicVideo")?.addEventListener("ended",()=>{if(scheduledMode)playNextScheduled();});
 
 window.addEventListener("offline",()=>setStreamState("offline","Sin conexión a Internet."));
