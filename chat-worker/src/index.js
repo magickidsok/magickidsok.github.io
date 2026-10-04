@@ -264,7 +264,7 @@ async function adminM3u8(request,env,origin){
 }
 async function channelState(request,env,origin){
   await ensureVideoSchema(env.DB);
-  const state=await env.DB.prepare("SELECT status,generation,updated_at FROM channel_control WHERE id=1").first();
+  const state=await env.DB.prepare("SELECT status,generation,updated_at,started_at FROM channel_control WHERE id=1").first();
   return json({status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0),startedAt:Number(state?.started_at||0)},200,origin);
 }
 async function adminChannelControl(request,env,origin){
@@ -330,20 +330,26 @@ async function media(request,env){
   if(!key)return new Response("Not found",{status:404});
   const bucket=requireR2(env);
   const range=request.headers.get("Range");
-  // Pass the browser Range header directly to R2. This avoids downloading
-  // the complete video before serving a partial response.
-  let object=await bucket.get(key,{range:range?request.headers:undefined});
-  if(!object){
-    if(range){
-      const head=await bucket.head(key);
-      if(!head)return new Response("Not found",{status:404});
-      return new Response("Requested range is not satisfiable.",{
-        status:416,
-        headers:{"Content-Range":"bytes */"+String(head.size||0),"Accept-Ranges":"bytes","Access-Control-Allow-Origin":"*"}
-      });
-    }
-    return new Response("Not found",{status:404});
+  let rangeStart=null,rangeEnd=null,totalSize=null;
+  if(range){
+    const head=await bucket.head(key);
+    if(!head)return new Response("Not found",{status:404});
+    totalSize=Number(head.size||0);
+    const m=range.match(/^bytes=(\d+)-(\d*)$/);
+    if(!m||!totalSize)return new Response("Requested range is not satisfiable.",{
+      status:416,
+      headers:{"Content-Range":"bytes */"+String(totalSize||0),"Accept-Ranges":"bytes","Access-Control-Allow-Origin":"*"}
+    });
+    rangeStart=Number(m[1]);
+    rangeEnd=m[2]?Number(m[2]):totalSize-1;
+    rangeEnd=Math.min(rangeEnd,totalSize-1);
+    if(rangeStart<0||rangeStart>=totalSize||rangeEnd<rangeStart)return new Response("Requested range is not satisfiable.",{
+      status:416,
+      headers:{"Content-Range":"bytes */"+String(totalSize),"Accept-Ranges":"bytes","Access-Control-Allow-Origin":"*"}
+    });
   }
+  const object=await bucket.get(key,range?{range:{offset:rangeStart,length:rangeEnd-rangeStart+1}}:undefined);
+  if(!object)return new Response("Not found",{status:404});
   const h=new Headers();
   object.writeHttpMetadata(h);
   if(!h.get("Content-Type"))h.set("Content-Type","video/mp4");
