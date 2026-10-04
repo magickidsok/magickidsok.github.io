@@ -267,7 +267,7 @@ export default {
       if(path==="/api/register"&&request.method==="POST")return register(request,env,origin);
       if(path==="/api/admin/login"&&request.method==="POST")return adminPinLogin(request,env,origin);
       if(path==="/api/login"&&request.method==="POST")return login(request,env,origin);
-      if(path==="/api/logout"&&request.method==="POST")return json({ok:true},200,origin,{"Set-Cookie":clearAdminSessionCookie()+", "+clearSessionCookie()});
+      if(path==="/api/logout"&&request.method==="POST")return json({ok:true},200,origin,{"Set-Cookie":clearAdminSessionCookie()});
       if(path==="/api/me"&&request.method==="GET"){if(await readAdminSession(request,env))return json({user:{id:"admin-pin",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin);const u=await requireUser(request,env);return json({user:publicUser(u)},200,origin);}
       if(path==="/api/messages"&&request.method==="GET")return messages(request,env,origin);
       if(path==="/api/messages"&&request.method==="POST")return sendMessage(request,env,origin);
