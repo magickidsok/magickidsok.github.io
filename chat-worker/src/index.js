@@ -132,7 +132,7 @@ async function adminRepairR2Keys(request,env,origin){
       const titleNorm=String(row.title||"").toLowerCase().replace(/[^a-z0-9]+/g,"");
       match=objects.find(o=>{
         if(used.has(o.key))return false;
-        const base=String(o.key||"").split("/").pop().replace(/\\.[^.]+$/,"");
+        const base=String(o.key||"").split("/").pop().replace(/\.[^.]+$/,"");
         return titleNorm && String(base).toLowerCase().replace(/[^a-z0-9]+/g,"")===titleNorm;
       });
     }
@@ -354,7 +354,7 @@ async function resolveScheduledR2Keys(env,rows){
     if(!match){
       const titleNorm=norm(row.title);
       match=objects.find(o=>{
-        const base=String(o.key||"").split("/").pop().replace(/\\.[^.]+$/,"");
+        const base=String(o.key||"").split("/").pop().replace(/\.[^.]+$/,"");
         return titleNorm && norm(base)===titleNorm;
       });
     }
