@@ -502,16 +502,47 @@ function updateScheduledNowNext(){
   nowEl.textContent=cur.title||"Video";nowTimeEl.textContent=cur.start_time||"--:--";
   nextEl.textContent=next.title||"Video";nextTimeEl.textContent=next.start_time||"--:--";
 }
-async function loadScheduledPlayer(){
+async function fetchChannelControl(){
   try{
-    const r=await fetch(VIDEO_API+"/api/schedule",{cache:"no-store"});if(!r.ok)throw new Error();
-    const d=await r.json();scheduledVideos=Array.isArray(d.schedule)?d.schedule.filter(x=>x.object_key):[];
-    if(scheduledVideos.length){
-      setScheduledVideo(chooseScheduledIndex(),true);
-      return true;
-    }
-  }catch(e){}
-  return false;
+    const r=await fetch(VIDEO_API+"/api/channel/state",{cache:"no-store"});
+    if(!r.ok)throw new Error();
+    return await r.json();
+  }catch(e){return null}
+}
+function stopScheduledPlayer(){
+  const video=document.getElementById("magicVideo");if(!video)return;
+  scheduledMode=false;currentVideoIndex=-1;magicStreamStarted=false;
+  if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}
+  destroyMagicHls();video.pause();video.removeAttribute("src");video.load();video.autoplay=false;
+  setStreamState("offline","El canal está detenido.");
+  const nowEl=document.getElementById("nowShow"),nextEl=document.getElementById("nextShow"),nowTimeEl=document.getElementById("nowTime"),nextTimeEl=document.getElementById("nextTime");
+  if(nowEl)nowEl.textContent="CANAL DETENIDO";if(nextEl)nextEl.textContent="Esperando inicio";if(nowTimeEl)nowTimeEl.textContent="--:--";if(nextTimeEl)nextTimeEl.textContent="--:--";
+}
+async function startControlledChannel(forceRestart=false){
+  const state=await fetchChannelControl();
+  if(!state||state.status!=="live"){stopScheduledPlayer();return false;}
+  const r=await fetch(VIDEO_API+"/api/schedule",{cache:"no-store"});if(!r.ok)throw new Error();
+  const d=await r.json();scheduledVideos=Array.isArray(d.schedule)?d.schedule.filter(x=>x.object_key):[];
+  if(scheduledVideos.length){
+    setScheduledVideo(forceRestart?0:chooseScheduledIndex(),true);
+    return true;
+  }
+  startLiveStream();return true;
+}
+let channelPollTimer=null,knownChannelGeneration=-1,knownChannelStatus="";
+async function syncChannelState(){
+  const state=await fetchChannelControl();if(!state)return;
+  const changed=state.status!==knownChannelStatus||Number(state.generation)!==Number(knownChannelGeneration);
+  knownChannelStatus=state.status;knownChannelGeneration=Number(state.generation||0);
+  if(!changed)return;
+  if(state.status==="live")await startControlledChannel(true);
+  else stopScheduledPlayer();
+}
+async function loadScheduledPlayer(){
+  const state=await fetchChannelControl();
+  if(!state||state.status!=="live"){stopScheduledPlayer();return false;}
+  knownChannelStatus=state.status;knownChannelGeneration=Number(state.generation||0);
+  return await startControlledChannel(false);
 }
 document.getElementById("retryStream")?.addEventListener("click",()=>{magicRetryAttempt=0;startLiveStream(true)});
 document.getElementById("magicVideo")?.addEventListener("playing",()=>{magicRetryAttempt=0;if(!scheduledMode)setStreamState("live")});
@@ -533,7 +564,8 @@ function updateNowNext(){
 }
 document.addEventListener("DOMContentLoaded",async()=>{
   await loadMagicSchedule();clock();fill();updateNowNext();setInterval(()=>{clock();updateNowNext()},1000);
-  const hasScheduled=await loadScheduledPlayer();if(!hasScheduled)startLiveStream();
+  await loadScheduledPlayer();
+  channelPollTimer=setInterval(()=>syncChannelState(),5000);
   document.getElementById("full")?.addEventListener("click",()=>document.getElementById("screen")?.requestFullscreen?.());
   document.getElementById("copyHome")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copyHome").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copyHome").textContent="COPIAR ALIAS",1600)}catch(e){}});
 });</script><script id="custom-chat-script">
