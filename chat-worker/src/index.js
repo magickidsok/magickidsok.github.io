@@ -246,25 +246,66 @@ async function adminSchedule(request,env,origin){
   return publicSchedule(request,env,origin);
 }
 async function media(request,env){
-  const key=decodeURIComponent(new URL(request.url).pathname.replace(/^\/media\//,""));
+  const url=new URL(request.url);
+  const key=decodeURIComponent(url.pathname.replace(/^\/media\//,""));
   if(!key)return new Response("Not found",{status:404});
-  const object=await requireR2(env).get(key);
-  if(!object)return new Response("Not found",{status:404});
-  const h=new Headers();
-  object.writeHttpMetadata(h);h.set("Cache-Control","public, max-age=31536000");h.set("Accept-Ranges","bytes");h.set("Access-Control-Allow-Origin","*");h.set("Access-Control-Allow-Methods","GET,HEAD,OPTIONS");
+  const bucket=requireR2(env);
   const range=request.headers.get("Range");
-  if(range && object.size){
-    const m=range.match(/bytes=(\d+)-(\d*)/);
-    if(m){
-      const start=Number(m[1]),end=m[2]?Number(m[2]):object.size-1;
-      if(start<object.size && start<=end){
-        const part=await requireR2(env).get(key,{range:{offset:start,length:end-start+1}});
-        h.set("Content-Range","bytes "+start+"-"+end+"/"+object.size);h.set("Content-Length",String(end-start+1));
-        return new Response(part.body,{status:206,headers:h});
-      }
+  // Pass the browser Range header directly to R2. This avoids downloading
+  // the complete video before serving a partial response.
+  let object=await bucket.get(key,{range:range?request.headers:undefined,onlyIf:request.headers});
+  if(!object){
+    if(range){
+      const head=await bucket.head(key);
+      if(!head)return new Response("Not found",{status:404});
+      return new Response("Requested range is not satisfiable.",{
+        status:416,
+        headers:{"Content-Range":"bytes */"+String(head.size||0),"Accept-Ranges":"bytes","Access-Control-Allow-Origin":"*"}
+      });
     }
+    return new Response("Not found",{status:404});
   }
-  h.set("Content-Length",String(object.size||0));return new Response(object.body,{headers:h});
+  const h=new Headers();
+  object.writeHttpMetadata(h);
+  h.set("Cache-Control","public, max-age=31536000, immutable");
+  h.set("Accept-Ranges","bytes");
+  h.set("Access-Control-Allow-Origin","*");
+  h.set("Access-Control-Allow-Methods","GET,HEAD,OPTIONS");
+  h.set("Access-Control-Expose-Headers","Content-Length,Content-Range,Accept-Ranges,ETag");
+  if(object.httpEtag)h.set("ETag",object.httpEtag);
+
+  if(request.method==="HEAD"){
+    h.set("Content-Length",String(object.size||0));
+    return new Response(null,{status:200,headers:h});
+  }
+
+  if(range){
+    const m=range.match(/^bytes=(\\d+)-(\\d*)$/);
+    if(!m){
+      const head=await bucket.head(key);
+      const size=Number(head?.size||object.size||0);
+      return new Response("Requested range is not satisfiable.",{
+        status:416,
+        headers:{...Object.fromEntries(h),"Content-Range":"bytes */"+size}
+      });
+    }
+    const start=Number(m[1]);
+    const requestedEnd=m[2]?Number(m[2]):Number(object.size)-1;
+    const size=Number(object.size||0);
+    const end=Math.min(requestedEnd,size-1);
+    if(!size||start<0||start>=size||end<start){
+      return new Response("Requested range is not satisfiable.",{
+        status:416,
+        headers:{...Object.fromEntries(h),"Content-Range":"bytes */"+size}
+      });
+    }
+    h.set("Content-Range","bytes "+start+"-"+end+"/"+size);
+    h.set("Content-Length",String(end-start+1));
+    return new Response(object.body,{status:206,headers:h});
+  }
+
+  h.set("Content-Length",String(object.size||0));
+  return new Response(object.body,{status:200,headers:h});
 }
 
 async function ensureSchema(db){
