@@ -6,7 +6,14 @@ const SESSION_SECONDS = 60 * 60 * 24 * 14;
 const PASSWORD_ITERATIONS = 120000;
 
 function allowedOrigin(origin){
-  return ALLOWED_ORIGINS.has(String(origin||""))?String(origin):"";
+  const value=String(origin||"").trim();
+  if(ALLOWED_ORIGINS.has(value))return value;
+  try{
+    const host=new URL(value).hostname.toLowerCase();
+    if(host==="magickidsok.online"||host==="www.magickidsok.online")return value;
+    if(host.endsWith(".github.io")&&host==="magickidsok.github.io")return value;
+  }catch(e){}
+  return "";
 }
 function json(data,status,origin,extraHeaders){
   const h=new Headers(Object.assign({
