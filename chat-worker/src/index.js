@@ -294,7 +294,7 @@ async function media(request,env){
   const range=request.headers.get("Range");
   // Pass the browser Range header directly to R2. This avoids downloading
   // the complete video before serving a partial response.
-  let object=await bucket.get(key,{range:range?request.headers:undefined,onlyIf:request.headers});
+  let object=await bucket.get(key,{range:range?request.headers:undefined});
   if(!object){
     if(range){
       const head=await bucket.head(key);
@@ -308,6 +308,7 @@ async function media(request,env){
   }
   const h=new Headers();
   object.writeHttpMetadata(h);
+  if(!h.get("Content-Type"))h.set("Content-Type","video/mp4");
   h.set("Cache-Control","public, max-age=31536000, immutable");
   h.set("Accept-Ranges","bytes");
   h.set("Access-Control-Allow-Origin","*");
