@@ -75,14 +75,18 @@ function requireR2(env){if(!env.VIDEOS)throw new Error("R2 no configurado: falta
 async function ensureVideoSchema(db){
   await db.batch([
     db.prepare("CREATE TABLE IF NOT EXISTS video_categories (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,created_at INTEGER NOT NULL)"),
-    db.prepare("CREATE TABLE IF NOT EXISTS videos (id INTEGER PRIMARY KEY AUTOINCREMENT,object_key TEXT NOT NULL UNIQUE,title TEXT NOT NULL,category_id INTEGER,thumbnail_key TEXT,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS videos (id INTEGER PRIMARY KEY AUTOINCREMENT,object_key TEXT NOT NULL UNIQUE,title TEXT NOT NULL,category_id INTEGER,thumbnail_key TEXT,video_type TEXT NOT NULL DEFAULT 'program',created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS video_schedule (id INTEGER PRIMARY KEY AUTOINCREMENT,video_id INTEGER NOT NULL,start_time TEXT NOT NULL,position INTEGER NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,created_at INTEGER NOT NULL)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_position ON video_schedule(position)")
   ]);
+  const cols=await db.prepare("PRAGMA table_info(videos)").all();
+  if(!(cols.results||[]).some(x=>x.name==="video_type")){
+    await db.prepare("ALTER TABLE videos ADD COLUMN video_type TEXT NOT NULL DEFAULT 'program'").run();
+  }
 }
 async function adminVideos(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
-  const rows=await env.DB.prepare("SELECT v.id,v.object_key,v.title,v.category_id,c.name AS category,v.thumbnail_key,v.created_at,v.updated_at FROM videos v LEFT JOIN video_categories c ON c.id=v.category_id ORDER BY v.id DESC").all();
+  const rows=await env.DB.prepare("SELECT v.id,v.object_key,v.title,v.category_id,c.name AS category,v.thumbnail_key,v.video_type,v.created_at,v.updated_at FROM videos v LEFT JOIN video_categories c ON c.id=v.category_id ORDER BY v.id DESC").all();
   return json({videos:rows.results||[],r2Configured:!!env.VIDEOS},200,origin);
 }
 async function adminCategories(request,env,origin){
@@ -99,16 +103,30 @@ async function adminCategories(request,env,origin){
 async function adminUpload(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   const bucket=requireR2(env);
-  const form=await request.formData(),file=form.get("file"),title=String(form.get("title")||"").trim().slice(0,180),categoryId=Number(form.get("categoryId")||0)||null;
-  if(!file||typeof file.arrayBuffer!=="function")return json({error:"Seleccioná un video."},400,origin);
-  if(!title)return json({error:"El título es obligatorio."},400,origin);
-  const name=String(file.name||"video.mp4").replace(/[^A-Za-z0-9._-]/g,"_");
-  const key="videos/"+Date.now()+"-"+crypto.randomUUID()+"-"+name;
-  const data=await file.arrayBuffer();
-  await bucket.put(key,data,{httpMetadata:{contentType:file.type||"video/mp4",cacheControl:"public, max-age=31536000"}});
-  const now=Date.now();
-  const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,created_at,updated_at) VALUES(?,?,?,?,?)").bind(key,title,categoryId,now,now).run();
-  return json({ok:true,id:result.meta?.last_row_id||null,key,title},201,origin);
+  const form=await request.formData();
+  const files=form.getAll("files").filter(f=>f&&typeof f.arrayBuffer==="function");
+  if(!files.length){
+    const one=form.get("file");
+    if(one&&typeof one.arrayBuffer==="function")files.push(one);
+  }
+  if(!files.length)return json({error:"Seleccioná uno o más videos."},400,origin);
+  const categoryId=Number(form.get("categoryId")||0)||null;
+  const videoType=String(form.get("videoType")||"program")==="commercial"?"commercial":"program";
+  const requestedTitle=String(form.get("title")||"").trim().slice(0,180);
+  const uploaded=[];
+  for(const file of files){
+    const rawName=String(file.name||"video.mp4").split("/").pop();
+    const base=rawName.replace(/.[^.]+$/,"").replace(/[_-]+/g," ").replace(/s+/g," ").trim();
+    const title=(files.length===1&&requestedTitle?requestedTitle:base||"Video").slice(0,180);
+    const name=rawName.replace(/[^A-Za-z0-9._-]/g,"_");
+    const key="videos/"+Date.now()+"-"+crypto.randomUUID()+"-"+name;
+    const data=await file.arrayBuffer();
+    await bucket.put(key,data,{httpMetadata:{contentType:file.type||"video/mp4",cacheControl:"public, max-age=31536000"}});
+    const now=Date.now();
+    const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,video_type,created_at,updated_at) VALUES(?,?,?,?,?,?)").bind(key,title,categoryId,videoType,now,now).run();
+    uploaded.push({id:result.meta?.last_row_id||null,key,title,videoType});
+  }
+  return json({ok:true,count:uploaded.length,uploaded},201,origin);
 }
 async function adminDeleteVideo(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
@@ -122,7 +140,7 @@ async function adminDeleteVideo(request,env,origin){
 }
 async function publicSchedule(request,env,origin){
   await ensureVideoSchema(env.DB);
-  const rows=await env.DB.prepare("SELECT s.id,s.video_id,s.start_time,s.position,s.enabled,v.title,v.object_key,v.thumbnail_key,c.name AS category FROM video_schedule s JOIN videos v ON v.id=s.video_id LEFT JOIN video_categories c ON c.id=v.category_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
+  const rows=await env.DB.prepare("SELECT s.id,s.video_id,s.start_time,s.position,s.enabled,v.title,v.object_key,v.thumbnail_key,v.video_type,c.name AS category FROM video_schedule s JOIN videos v ON v.id=s.video_id LEFT JOIN video_categories c ON c.id=v.category_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
   return json({schedule:rows.results||[]},200,origin);
 }
 async function adminSchedule(request,env,origin){
