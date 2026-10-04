@@ -129,7 +129,9 @@ async function adminUpload(request,env,origin){
     const data=await file.arrayBuffer();
     await bucket.put(key,data,{httpMetadata:{contentType:file.type||"video/mp4",cacheControl:"public, max-age=31536000"}});
     const now=Date.now();
-    const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,video_type,created_at,updated_at) VALUES(?,?,?,?,?,?)").bind(key,title,categoryId,videoType,now,now).run();
+    const nextPosRow=categoryId?await env.DB.prepare("SELECT COALESCE(MAX(category_position),-1)+1 AS next_pos FROM videos WHERE category_id=?").bind(categoryId).first():{next_pos:0};
+    const categoryPosition=Number(nextPosRow?.next_pos||0);
+    const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,category_position,video_type,created_at,updated_at) VALUES(?,?,?,?,?,?,?)").bind(key,title,categoryId,categoryPosition,videoType,now,now).run();
     uploaded.push({id:result.meta?.last_row_id||null,key,title,videoType});
   }
   return json({ok:true,count:uploaded.length,uploaded},201,origin);
@@ -169,7 +171,9 @@ async function adminUploadComplete(request,env,origin){
     const categoryId=Number(b.categoryId||0)||null;
     const title=String(b.title||"Video").trim().slice(0,180)||"Video";
     const now=Date.now();
-    const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,video_type,created_at,updated_at) VALUES(?,?,?,?,?,?)").bind(key,title,categoryId,videoType,now,now).run();
+    const nextPosRow=categoryId?await env.DB.prepare("SELECT COALESCE(MAX(category_position),-1)+1 AS next_pos FROM videos WHERE category_id=?").bind(categoryId).first():{next_pos:0};
+    const categoryPosition=Number(nextPosRow?.next_pos||0);
+    const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,category_position,video_type,created_at,updated_at) VALUES(?,?,?,?,?,?,?)").bind(key,title,categoryId,categoryPosition,videoType,now,now).run();
     return json({ok:true,id:result.meta?.last_row_id||null,key,title,videoType,etag:object.httpEtag},201,origin);
   }catch(e){return json({error:"No se pudo completar la subida: "+String(e&&e.message||e)},400,origin);}
 }
@@ -192,7 +196,9 @@ async function adminVideoCategory(request,env,origin){
     const cat=await env.DB.prepare("SELECT id FROM video_categories WHERE id=?").bind(categoryId).first();
     if(!cat)return json({error:"Carpeta no encontrada."},404,origin);
   }
-  await env.DB.prepare("UPDATE videos SET category_id=?,updated_at=? WHERE id=?").bind(categoryId,Date.now(),id).run();
+  const nextPosRow=categoryId?await env.DB.prepare("SELECT COALESCE(MAX(category_position),-1)+1 AS next_pos FROM videos WHERE category_id=?").bind(categoryId).first():{next_pos:0};
+  const categoryPosition=Number(nextPosRow?.next_pos||0);
+  await env.DB.prepare("UPDATE videos SET category_id=?,category_position=?,updated_at=? WHERE id=?").bind(categoryId,categoryPosition,Date.now(),id).run();
   return adminVideos(request,env,origin);
 }
 
