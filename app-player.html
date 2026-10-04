@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-store,no-cache,must-revalidate,max-age=0">
+<meta name="theme-color" content="#03164b">
+<title>Magic Kids TV</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#03164b;color:#fff;font-family:Arial,Segoe UI,sans-serif}
+body{background:#03164b url("assets/magic-kids-stars.svg?v=db6db9bd8e7052115d3e66459050370406c7092a") center top/1600px 900px repeat-y fixed}
+.wrap{width:100%;max-width:760px;margin:0 auto;padding:10px}
+.logo{width:min(210px,58vw);height:auto;display:block;margin:4px auto 10px}
+.player{position:relative;background:#000;border:1px solid rgba(139,203,255,.25);border-radius:14px;overflow:hidden;box-shadow:0 12px 35px rgba(0,0,0,.4);aspect-ratio:16/9}
+video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.watermark{position:absolute;z-index:5;top:8px;right:8px;width:72px;pointer-events:none}
+.status{margin:9px 2px 0;text-align:center;font-size:12px;font-weight:800;color:#d9eaff;min-height:17px}
+.controls{display:flex;gap:8px;margin-top:8px}
+button{flex:1;border:1px solid rgba(139,203,255,.22);border-radius:9px;background:rgba(255,255,255,.07);color:#fff;padding:10px;font-weight:800}
+button.primary{background:#1687f5}
+.now{margin-top:9px;padding:10px 12px;border-radius:10px;background:rgba(3,20,67,.78);border:1px solid rgba(139,203,255,.18);text-align:center;font-size:12px}
+.off{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;text-align:center;padding:20px;background:rgba(10,4,25,.96)}
+.off.show{display:flex}.off strong{font-size:27px}.off span{display:block;margin-top:8px;color:#d7e3f3}
+</style>
+</head>
+<body>
+<div class="wrap">
+<img class="logo" src="assets/magic-kids-logo.webp" alt="Magic Kids">
+<div class="player" id="player">
+  <video id="video" playsinline preload="auto" controls controlsList="nodownload nofullscreen"></video>
+  <img class="watermark" src="assets/magic-kids-logo.webp" alt="">
+  <div class="off" id="off"><div><strong>FUERA DE AIRE</strong><span>Estamos actualizando la programación.</span></div></div>
+</div>
+<div class="status" id="status">Cargando programación…</div>
+<div class="controls">
+  <button class="primary" id="play">▶ REPRODUCIR</button>
+  <button id="mute">🔊 SONIDO</button>
+  <button id="full">⛶ PANTALLA COMPLETA</button>
+</div>
+<div class="now" id="now">Magic Kids TV</div>
+</div>
+<script>
+const API="https://magickidsok-github-io.elmagickids.workers.dev";
+const video=document.getElementById("video"),statusEl=document.getElementById("status"),nowEl=document.getElementById("now"),off=document.getElementById("off");
+let items=[],durations=[],current=-1,startedAt=0,playing=false,syncTimer=null;
+
+function mediaUrl(key){return API+"/media/"+String(key||"").split("/").map(encodeURIComponent).join("/");}
+function setStatus(t){statusEl.textContent=t||"";}
+function showOff(show){off.classList.toggle("show",!!show);}
+function setNow(i){
+  const x=items[i]; if(!x){nowEl.textContent="Sin programación";return;}
+  const n=items[(i+1)%items.length];
+  nowEl.textContent="AHORA: "+(x.title||"Magic Kids")+(n?"  •  SIGUIENTE: "+(n.title||"Magic Kids"):"");
+}
+async function channelState(){
+  const r=await fetch(API+"/api/channel/state",{cache:"no-store"});
+  if(!r.ok)throw new Error("channel");
+  return r.json();
+}
+async function loadSchedule(){
+  const r=await fetch(API+"/api/schedule",{cache:"no-store"});
+  if(!r.ok)throw new Error("schedule");
+  const d=await r.json();
+  items=Array.isArray(d.schedule)?d.schedule.filter(x=>x&&x.object_key):[];
+}
+async function getDuration(item){
+  const key=String(item.object_key||"");
+  if(!key)return 0;
+  const src=mediaUrl(key);
+  return new Promise(resolve=>{
+    const v=document.createElement("video");
+    let done=false;
+    const finish=x=>{if(done)return;done=true;v.removeAttribute("src");v.load();resolve(Number.isFinite(x)&&x>0?x:0);};
+    v.preload="metadata";
+    v.onloadedmetadata=()=>finish(v.duration);
+    v.onerror=()=>finish(0);
+    v.src=src;
+    setTimeout(()=>finish(0),15000);
+  });
+}
+async function prepare(){
+  durations=await Promise.all(items.map(getDuration));
+}
+function timelinePosition(){
+  if(!startedAt||!items.length||durations.some(x=>!x))return null;
+  const total=durations.reduce((a,b)=>a+b,0);
+  if(!total)return null;
+  let elapsed=((Date.now()-startedAt)/1000)%total;
+  if(elapsed<0)elapsed+=total;
+  for(let i=0;i<durations.length;i++){
+    if(elapsed<durations[i])return {i,time:elapsed};
+    elapsed-=durations[i];
+  }
+  return {i:0,time:0};
+}
+async function loadAt(i,time=0,autoplay=true){
+  if(!items.length)return;
+  current=(i+items.length)%items.length;
+  const item=items[current];
+  video.src=mediaUrl(item.object_key);
+  video.load();
+  const seek=()=>{
+    try{if(Number.isFinite(time)&&time>0)video.currentTime=time;}catch(e){}
+  };
+  if(video.readyState>=1)seek();else video.addEventListener("loadedmetadata",seek,{once:true});
+  setNow(current);
+  setStatus("PROGRAMADO • "+(item.title||"Magic Kids"));
+  if(autoplay){
+    const p=video.play();
+    if(p&&p.catch)p.catch(()=>{video.muted=true;const q=video.play();if(q&&q.catch)q.catch(()=>{});});
+  }
+}
+async function start(){
+  try{
+    const state=await channelState();
+    if(state.status!=="live"){
+      showOff(true);setStatus("FUERA DE AIRE");return;
+    }
+    showOff(false);
+    await loadSchedule();
+    if(!items.length){setStatus("No hay videos programados.");return;}
+    startedAt=Number(state.startedAt||state.updatedAt||Date.now());
+    await prepare();
+    const pos=timelinePosition();
+    if(pos)await loadAt(pos.i,pos.time,true);
+    else await loadAt(0,0,true);
+    playing=true;
+  }catch(e){setStatus("No se pudo cargar la programación. Reintentando…");}
+}
+video.addEventListener("ended",()=>{if(items.length)loadAt((current+1)%items.length,0,true);});
+video.addEventListener("error",()=>{if(items.length)setTimeout(()=>loadAt(current,video.currentTime||0,true),3000);});
+video.addEventListener("playing",()=>{playing=true;});
+document.getElementById("play").onclick=async()=>{if(video.paused){try{await video.play();}catch(e){video.muted=true;try{await video.play();}catch(_){} }}else video.pause();};
+document.getElementById("mute").onclick=()=>{video.muted=!video.muted;document.getElementById("mute").textContent=video.muted?"🔇 SIN SONIDO":"🔊 SONIDO";};
+document.getElementById("full").onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.getElementById("player").requestFullscreen();}catch(e){}};
+async function resync(){
+  try{
+    const state=await channelState();
+    if(state.status!=="live"){showOff(true);video.pause();return;}
+    showOff(false);
+    const newStart=Number(state.startedAt||state.updatedAt||0);
+    if(newStart&&newStart!==startedAt){
+      startedAt=newStart;await loadSchedule();await prepare();
+      const pos=timelinePosition();if(pos)await loadAt(pos.i,pos.time,true);
+      return;
+    }
+    const pos=timelinePosition();
+    if(!pos||!playing)return;
+    if(pos.i!==current){await loadAt(pos.i,pos.time,true);return;}
+    if(video.readyState>=1&&Math.abs((video.currentTime||0)-pos.time)>5)try{video.currentTime=pos.time;}catch(e){}
+  }catch(e){}
+}
+start();
+syncTimer=setInterval(resync,15000);
+</script>
+</body>
+</html>
