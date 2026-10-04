@@ -700,7 +700,7 @@ function updateNowNext(){
 document.addEventListener("DOMContentLoaded",async()=>{
   await loadMagicSchedule();clock();fill();updateNowNext();setInterval(()=>{clock();updateNowNext()},1000);
   await loadScheduledPlayer();
-  channelPollTimer=setInterval(()=>syncChannelState(),15000);
+  channelPollTimer=setInterval(()=>syncChannelState(),15000);setInterval(()=>syncScheduledToClock(),5000);
   setInterval(async()=>{
     try{
       const state=await fetchChannelControl();
