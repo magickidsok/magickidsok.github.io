@@ -55,8 +55,8 @@ async function readAdminSession(request,env){
   const parts=m[1].split(".");if(parts.length!==2)return false;
   try{const body=parts[0],sig=b64ToBytes(parts[1]),expected=await hmac(env.SESSION_SECRET,body);if(!safeEq(sig,expected))return false;const data=decJson(body);return !!(data.admin&&data.exp&&data.exp>=Math.floor(Date.now()/1000));}catch(e){return false;}
 }
-function setAdminSessionCookie(token){return ADMIN_COOKIE+"="+token+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+ADMIN_SESSION_SECONDS;}
-function clearAdminSessionCookie(){return ADMIN_COOKIE+"=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0";}
+function setAdminSessionCookie(token){return ADMIN_COOKIE+"="+token+"; Path=/; HttpOnly; Secure; SameSite=None; Max-Age="+ADMIN_SESSION_SECONDS;}
+function clearAdminSessionCookie(){return ADMIN_COOKIE+"=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0";}
 function clearSessionCookie(){return COOKIE+"=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0";}
 function normalizeNick(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]/g,"").toUpperCase();}
 function validNick(v){return /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 _.-]{3,24}$/.test(v);}
