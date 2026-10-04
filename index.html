@@ -469,6 +469,8 @@ async function loadMagicSchedule(){
 const VIDEO_API="https://magickidsok-github-io.elmagickids.workers.dev";
 let magicHls=null, magicRetryTimer=null, magicRetryAttempt=0, magicStreamStarted=false;
 let scheduledMode=false, currentVideoIndex=-1, scheduledVideos=[];
+let channelStartedAt=0;
+const videoDurationCache=new Map();
 
 function setStreamState(state,msg){
   const badge=document.getElementById("streamBadge"),label=document.getElementById("streamLabel"),status=document.getElementById("status"),retry=document.getElementById("retryStream");
@@ -511,7 +513,49 @@ function startLiveStream(isRetry=false){
 function cleanMediaKey(key){return String(key||"").split("/").map(encodeURIComponent).join("/");}
 function scheduledVideoUrl(item){return VIDEO_API+"/media/"+cleanMediaKey(item.object_key);}
 function chooseScheduledIndex(){return scheduledVideos.length?0:-1;}
-function setScheduledVideo(index,autoplay=true){
+function loadVideoDuration(item){
+  const key=String(item?.object_key||"");
+  if(!key)return Promise.resolve(0);
+  if(videoDurationCache.has(key))return Promise.resolve(videoDurationCache.get(key));
+  return new Promise(resolve=>{
+    const v=document.createElement("video");
+    let done=false;
+    const finish=()=>{
+      if(done)return;done=true;
+      const d=Number(v.duration);
+      v.removeAttribute("src");v.load();
+      const value=Number.isFinite(d)&&d>0?d:0;
+      if(value)videoDurationCache.set(key,value);
+      resolve(value);
+    };
+    v.preload="metadata";v.muted=true;v.playsInline=true;v.crossOrigin="anonymous";
+    v.addEventListener("loadedmetadata",finish,{once:true});
+    v.addEventListener("error",finish,{once:true});
+    v.src=scheduledVideoUrl(item);
+    v.load();
+    setTimeout(finish,8000);
+  });
+}
+async function prepareSynchronizedTimeline(){
+  const durations=[];
+  for(let i=0;i<scheduledVideos.length;i+=4){
+    const batch=scheduledVideos.slice(i,i+4).map(loadVideoDuration);
+    durations.push(...await Promise.all(batch));
+  }
+  return durations;
+}
+function synchronizedPosition(startedAt,durations){
+  const total=durations.reduce((a,b)=>a+(Number.isFinite(b)?b:0),0);
+  if(!startedAt||!total)return null;
+  let elapsed=Math.max(0,(Date.now()-startedAt)/1000)%total;
+  for(let i=0;i<durations.length;i++){
+    const d=Number(durations[i]||0);
+    if(d>0&&elapsed<d)return {index:i,time:elapsed};
+    elapsed-=d;
+  }
+  return {index:0,time:0};
+}
+function setScheduledVideo(index,autoplay=true,seekTime=null){
   const video=document.getElementById("magicVideo");if(!video||!scheduledVideos.length)return;
   if(index<0)index=0;if(index>=scheduledVideos.length)index=0;
   currentVideoIndex=index;scheduledMode=true;magicStreamStarted=false;
@@ -519,6 +563,10 @@ function setScheduledVideo(index,autoplay=true){
   const item=scheduledVideos[index];
   video.pause();video.removeAttribute("src");video.load();video.crossOrigin="anonymous";video.muted=false;video.autoplay=autoplay;video.controls=true;video.playsInline=true;
   video.src=scheduledVideoUrl(item);video.load();
+  if(Number.isFinite(seekTime)&&seekTime>0){
+    const seek=()=>{try{if(Number.isFinite(video.duration)&&seekTime<video.duration-0.2)video.currentTime=seekTime;}catch(e){}};
+    if(video.readyState>=1)seek();else video.addEventListener("loadedmetadata",seek,{once:true});
+  }
   setStreamState("scheduled",item.title||"Magic Kids");
   const p=autoplay?video.play():null;
   if(p&&p.catch)p.catch(()=>{video.muted=true;const q=video.play();if(q&&q.catch)q.catch(()=>{});});
@@ -575,13 +623,32 @@ async function startControlledChannel(forceRestart=false){
   if(!state||state.status!=="live"){if(state?.status==="offair")showOffAir(true);else stopScheduledPlayer();return false;}
   const r=await fetch(VIDEO_API+"/api/schedule",{cache:"no-store"});if(!r.ok)throw new Error();
   const d=await r.json();scheduledVideos=Array.isArray(d.schedule)?d.schedule.filter(x=>x.object_key):[];
+  channelStartedAt=Number(state.startedAt||0);
   if(scheduledVideos.length){
-    setScheduledVideo(forceRestart?0:chooseScheduledIndex(),true);
+    const durations=await prepareSynchronizedTimeline();
+    const pos=synchronizedPosition(channelStartedAt,durations);
+    if(pos)setScheduledVideo(pos.index,true,pos.time);
+    else setScheduledVideo(chooseScheduledIndex(),true);
     return true;
   }
   stopScheduledPlayer();
   setStreamState("offline","No hay videos programados.");
   return false;
+}
+async function syncScheduledToClock(){
+  if(!scheduledMode||!scheduledVideos.length||!channelStartedAt)return;
+  const durations=scheduledVideos.map(x=>videoDurationCache.get(String(x.object_key||""))||0);
+  const pos=synchronizedPosition(channelStartedAt,durations);
+  if(!pos)return;
+  const video=document.getElementById("magicVideo");
+  if(!video)return;
+  if(pos.index!==currentVideoIndex){
+    setScheduledVideo(pos.index,true,pos.time);
+    return;
+  }
+  if(video.readyState>=1&&Math.abs(Number(video.currentTime||0)-pos.time)>4){
+    try{video.currentTime=pos.time;}catch(e){}
+  }
 }
 let channelPollTimer=null,knownChannelGeneration=-1,knownChannelStatus="";
 let magicStallTimer=null;
@@ -591,7 +658,8 @@ async function syncChannelState(){
   const state=await fetchChannelControl();if(!state)return;
   const changed=state.status!==knownChannelStatus||Number(state.generation)!==Number(knownChannelGeneration);
   knownChannelStatus=state.status;knownChannelGeneration=Number(state.generation||0);
-  if(!changed)return;
+  channelStartedAt=Number(state.startedAt||channelStartedAt||0);
+  if(!changed){if(state.status==="live")await syncScheduledToClock();return;}
   if(state.status==="offair"){showOffAir(true);return;}
   if(state.status==="live"){showOffAir(false);await startControlledChannel(true);return;}
   stopScheduledPlayer();
