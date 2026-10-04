@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://magickidsok.online/sitemap.xml
+Disallow: /admin-videos.html
