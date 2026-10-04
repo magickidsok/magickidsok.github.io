@@ -623,7 +623,7 @@ async function startControlledChannel(forceRestart=false){
   if(!state||state.status!=="live"){if(state?.status==="offair")showOffAir(true);else stopScheduledPlayer();return false;}
   const r=await fetch(VIDEO_API+"/api/schedule",{cache:"no-store"});if(!r.ok)throw new Error();
   const d=await r.json();scheduledVideos=Array.isArray(d.schedule)?d.schedule.filter(x=>x.object_key):[];
-  channelStartedAt=Number(state.startedAt||0);
+  channelStartedAt=Number(state.startedAt||state.updatedAt||0);
   if(scheduledVideos.length){
     const durations=await prepareSynchronizedTimeline();
     const pos=synchronizedPosition(channelStartedAt,durations);
@@ -658,7 +658,7 @@ async function syncChannelState(){
   const state=await fetchChannelControl();if(!state)return;
   const changed=state.status!==knownChannelStatus||Number(state.generation)!==Number(knownChannelGeneration);
   knownChannelStatus=state.status;knownChannelGeneration=Number(state.generation||0);
-  channelStartedAt=Number(state.startedAt||channelStartedAt||0);
+  channelStartedAt=Number(state.startedAt||state.updatedAt||channelStartedAt||0);
   if(!changed){if(state.status==="live")await syncScheduledToClock();return;}
   if(state.status==="offair"){showOffAir(true);return;}
   if(state.status==="live"){showOffAir(false);await startControlledChannel(true);return;}
