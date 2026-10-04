@@ -876,7 +876,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   await loadScheduledPlayer();
   channelPollTimer=setInterval(()=>syncChannelState(),15000);setInterval(()=>syncScheduledToClock(),5000);
   document.getElementById("copyHome")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copyHome").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copyHome").textContent="COPIAR ALIAS",1600)}catch(e){}});
-});</script><script src="assets/chat.js?v=2026.10.04.20"></script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script>
+});</script><script src="assets/chat.js?v=2026.10.04.21"></script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script>
 let magicPwaPrompt=null;
 window.addEventListener("beforeinstallprompt",e=>{
   e.preventDefault();
