@@ -4,6 +4,14 @@
 .brand::before{content:"";display:block;width:100%;aspect-ratio:1.92/1;background:url("assets/magic-kids-logo.webp") center/contain no-repeat}
 .mini{width:180px;height:74px;background:url("assets/magic-kids-logo.webp") center/contain no-repeat;font-size:0;-webkit-text-stroke:0}
 .mini>*{display:none!important}
+
+.offAirOverlay{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(10,4,25,.94);padding:20px;box-sizing:border-box}
+.offAirOverlay.hidden{display:none}
+.offAirBox{max-width:760px;text-align:center;padding:34px 28px;border:2px solid #7b3cff;border-radius:18px;background:rgba(18,8,42,.97);box-shadow:0 0 35px rgba(123,60,255,.22)}
+.offAirTitle{font-size:clamp(30px,5vw,58px);font-weight:900;color:#fff;margin-bottom:14px}
+.offAirText{font-size:clamp(18px,2.5vw,30px);font-weight:800;line-height:1.35;color:#fff}
+.offAirIg{margin-top:22px;font-size:18px;color:#ddd}
+.offAirIg b{color:#fff}
 </style><script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.20"></script><style>.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}.screen .status{position:absolute;left:0;right:0;bottom:8px;text-align:center;text-shadow:0 1px 5px #000;pointer-events:none}</style><style>.nowNext{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin-top:16px;padding:15px 18px;border-radius:17px;background:linear-gradient(100deg,rgba(8,59,142,.85),rgba(126,18,27,.82));border:1px solid rgba(139,203,255,.2);box-shadow:0 12px 34px rgba(0,0,0,.18)}.nowNext>div:not(.nextArrow){min-width:0}.nowNext small{display:block;color:#8fd1ff;font-size:9px;letter-spacing:1px;font-weight:1000}.nowNext strong{display:block;font-size:16px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowNext span{display:block;color:#d4e3f3;font-size:10px;margin-top:3px}.nextArrow{font-size:27px;font-weight:900;color:#ffd21b}.nowNext>div:last-child{text-align:right}@media(max-width:600px){.nowNext{grid-template-columns:1fr;gap:7px}.nowNext>div:last-child{text-align:left}.nextArrow{display:none}.nowNext strong{white-space:normal}}</style><style>
 .chatCard{padding:20px;min-height:100%;display:flex;flex-direction:column}.chatIntro{color:#bfd4ec;font-size:12px;line-height:1.55;margin:8px 0 12px}.chatLogin{display:grid;grid-template-columns:1fr auto;gap:7px}.chatLogin input,.chatCompose input{width:100%;border:1px solid rgba(130,196,255,.2);background:#04194a;color:#fff;border-radius:10px;padding:10px 11px;outline:none}.blueBtn{background:linear-gradient(135deg,#1788ff,#0d5cc8);color:#fff;border:0;cursor:pointer;margin:0}.hidden{display:none!important}.chatApp{display:flex;flex-direction:column;min-height:390px}.chatTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.chatTop span{font-size:10px;color:#9dccf5;font-weight:900}.chatOnlineCount{display:inline-flex;align-items:center;white-space:nowrap;color:#76e88e!important;background:rgba(57,205,101,.1);border:1px solid rgba(57,205,101,.2);padding:4px 7px;border-radius:999px;font-size:9px!important}.chatAdminStatus{display:inline-flex;align-items:center;white-space:nowrap;color:#b7c7da;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);padding:4px 7px;border-radius:999px;font-size:9px;font-weight:900}.chatAdminStatus.admin{color:#79f0a0;background:rgba(57,205,101,.12);border-color:rgba(57,205,101,.28)}.miniBtn{border:1px solid rgba(125,192,255,.2);background:rgba(255,255,255,.05);color:#fff;border-radius:8px;padding:7px 8px;font-size:9px;font-weight:900;cursor:pointer}.chatMessages{flex:1;overflow:auto;min-height:220px;max-height:270px;padding:6px 3px;display:flex;flex-direction:column;gap:6px}.msg{padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.045);border:1px solid rgba(145,205,255,.08)}.msg .meta{font-size:9px;color:#75c5ff;font-weight:900;margin-bottom:2px}.msg .txt{font-size:12px;color:#e4effc;word-break:break-word}.msg .mod{float:right;display:flex;gap:4px}.mod button{border:0;border-radius:6px;padding:3px 5px;font-size:8px;color:#fff;background:#7f1d26;cursor:pointer}.chatCompose{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:8px}.chatHint{font-size:9px;color:#7e9fbe;margin-top:7px}.adminPanel{margin-top:10px;border-top:1px solid rgba(146,203,255,.14);padding-top:10px}.adminHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}.adminHead strong{font-size:12px}.adminUser{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);padding:7px;border-radius:8px;margin-bottom:5px}.adminUser span{font-size:10px}.banBtn{background:#b91725}.kickBtn{background:#7f1d26}.adminHelp{font-size:9px;line-height:1.4;color:#819fbc}code{color:#9dd5ff}@media(max-width:600px){.chatLogin,.chatCompose{grid-template-columns:1fr}.chatApp{min-height:320px}}
 </style><style id="registered-chat-style">
@@ -371,7 +379,7 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
   else initMagicStars();
 })();
 </script><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="active" href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="donate" href="donar.html">DONAR</a><a href="descargar-aplicacion.html" class="downloadAppNav"><span class="androidIcon">●</span> DESCARGAR APLICACION</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div><div class="donorTicker" aria-label="Donadores de Magic Kids"><div class="donorTickerTrack"><div class="donorTickerGroup"><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span></div><div class="donorTickerGroup"><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span></div></div></div></header><div class="alert"><span class="dot"></span><b>MAGIC KIDS EN VIVO</b><span>Sitio web oficial de Magic Kids: señal en vivo, programación y comunidad online.</span></div><button id="installPwa" class="pwaInstall"><span>📲</span> INSTALAR MAGIC KIDS</button><section class="hero"><div class="card player"><div class="row"><h1>Magic Kids <em>EN VIVO</em></h1><span class="live">● LIVE</span></div><div class="screen" id="screen">
-  <video id="magicVideo" autoplay muted playsinline controls preload="auto"></video>
+  <div id="offAirOverlay" class="offAirOverlay hidden"><div class="offAirBox"><div class="offAirTitle">FUERA DE AIRE</div><div class="offAirText">ESTAMOS ACTUALIZANDO LA PROGRAMACION<br>EN INSTANTES VOLVEMOS</div><div class="offAirIg">📸 INSTAGRAM: <b>ELMAGICTVOK</b></div></div></div><video id="magicVideo" autoplay muted playsinline controls preload="auto"></video>
   <img class="playerLogoOverlay" src="assets/magic-player-logo.webp" alt="Magic Kids" aria-hidden="true"><div class="streamBadge" id="streamBadge"><span class="streamDot"></span><b id="streamLabel">CONECTANDO</b></div>
   <div class="status" id="status">Conectando Magic Kids…</div>
   <button class="retryBtn hidden" id="retryStream">↻ REINTENTAR</button>
@@ -502,6 +510,11 @@ function updateScheduledNowNext(){
   nowEl.textContent=cur.title||"Video";nowTimeEl.textContent=cur.start_time||"--:--";
   nextEl.textContent=next.title||"Video";nextTimeEl.textContent=next.start_time||"--:--";
 }
+function showOffAir(show=true){
+  const overlay=document.getElementById("offAirOverlay");if(!overlay)return;
+  if(show){scheduledMode=false;magicStreamStarted=false;if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}destroyMagicHls();const v=document.getElementById("magicVideo");if(v){v.pause();v.removeAttribute("src");v.load();}overlay.classList.remove("hidden");setStreamState("offline","Estamos actualizando la programación…");}
+  else overlay.classList.add("hidden");
+}
 async function fetchChannelControl(){
   try{
     const r=await fetch(VIDEO_API+"/api/channel/state",{cache:"no-store"});
@@ -520,7 +533,7 @@ function stopScheduledPlayer(){
 }
 async function startControlledChannel(forceRestart=false){
   const state=await fetchChannelControl();
-  if(!state||state.status!=="live"){stopScheduledPlayer();return false;}
+  if(!state||state.status!=="live"){if(state?.status==="offair")showOffAir(true);else if(state.status==="offair")showOffAir(true); else stopScheduledPlayer();return false;}
   const r=await fetch(VIDEO_API+"/api/schedule",{cache:"no-store"});if(!r.ok)throw new Error();
   const d=await r.json();scheduledVideos=Array.isArray(d.schedule)?d.schedule.filter(x=>x.object_key):[];
   if(scheduledVideos.length){
@@ -535,14 +548,14 @@ async function syncChannelState(){
   const changed=state.status!==knownChannelStatus||Number(state.generation)!==Number(knownChannelGeneration);
   knownChannelStatus=state.status;knownChannelGeneration=Number(state.generation||0);
   if(!changed)return;
-  if(state.status==="live")await startControlledChannel(true);
+  if(state.status==="live"){showOffAir(false);await startControlledChannel(true);}
   else stopScheduledPlayer();
 }
 async function loadScheduledPlayer(){
   const state=await fetchChannelControl();
   if(!state||state.status!=="live"){stopScheduledPlayer();return false;}
   knownChannelStatus=state.status;knownChannelGeneration=Number(state.generation||0);
-  return await startControlledChannel(false);
+  if(state.status==="offair"){showOffAir(true);return false;} showOffAir(false); return await startControlledChannel(false);
 }
 document.getElementById("retryStream")?.addEventListener("click",()=>{magicRetryAttempt=0;startLiveStream(true)});
 document.getElementById("magicVideo")?.addEventListener("playing",()=>{magicRetryAttempt=0;if(!scheduledMode)setStreamState("live")});
