@@ -127,7 +127,15 @@ async function adminRepairR2Keys(request,env,origin){
     const m=String(row.object_key||"").match(uuidRe);
     if(!m){pending.push(row);continue;}
     const uuid=m[0].toLowerCase();
-    const match=objects.find(o=>!used.has(o.key)&&String(o.key||"").toLowerCase().includes(uuid));
+    let match=objects.find(o=>!used.has(o.key)&&String(o.key||"").toLowerCase().includes(uuid));
+    if(!match){
+      const titleNorm=String(row.title||"").toLowerCase().replace(/[^a-z0-9]+/g,"");
+      match=objects.find(o=>{
+        if(used.has(o.key))return false;
+        const base=String(o.key||"").split("/").pop().replace(/\\.[^.]+$/,"");
+        return titleNorm && String(base).toLowerCase().replace(/[^a-z0-9]+/g,"")===titleNorm;
+      });
+    }
     if(match)await update(row,match);else pending.push(row);
   }
   const remainingObjects=objects.filter(o=>!used.has(o.key));
@@ -336,12 +344,20 @@ async function resolveScheduledR2Keys(env,rows){
   const listed=await bucket.list({prefix:"videos/",limit:1000});
   const objects=listed.objects||[];
   const uuidRe=/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+  const norm=(s)=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"");
   return listRows.map(row=>{
     if(!missing.includes(row))return row;
-    const m=String(row.object_key||"").match(uuidRe);
-    if(!m)return row;
-    const uuid=m[0].toLowerCase();
-    const match=objects.find(o=>String(o.key||"").toLowerCase().includes(uuid));
+    const key=String(row.object_key||"");
+    const m=key.match(uuidRe);
+    const uuid=m?m[0].toLowerCase():"";
+    let match=uuid?objects.find(o=>String(o.key||"").toLowerCase().includes(uuid)):null;
+    if(!match){
+      const titleNorm=norm(row.title);
+      match=objects.find(o=>{
+        const base=String(o.key||"").split("/").pop().replace(/\\.[^.]+$/,"");
+        return titleNorm && norm(base)===titleNorm;
+      });
+    }
     return match?{...row,object_key:match.key}:row;
   });
 }
