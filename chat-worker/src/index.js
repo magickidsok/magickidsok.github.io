@@ -329,12 +329,29 @@ async function media(request,env){
   const key=decodeURIComponent(url.pathname.replace(/^\/media\//,""));
   if(!key)return new Response("Not found",{status:404});
   const bucket=requireR2(env);
+
+  // First try the exact database key. If an old DB reference points to a
+  // renamed/reuploaded object, fall back to the same filename in R2.
+  let resolvedKey=key;
+  let exactHead=await bucket.head(resolvedKey);
+  if(!exactHead){
+    const slash=key.lastIndexOf("/");
+    const filename=slash>=0?key.slice(slash+1):key;
+    try{
+      const listed=await bucket.list({prefix:"videos/",limit:1000});
+      const matches=(listed.objects||[]).filter(o=>String(o.key||"").endsWith("/"+filename));
+      if(matches.length){
+        matches.sort((a,b)=>String(b.key).localeCompare(String(a.key)));
+        resolvedKey=matches[0].key;
+        exactHead=await bucket.head(resolvedKey);
+      }
+    }catch(e){}
+  }
+  if(!exactHead)return new Response("Not found",{status:404});
+
   const range=request.headers.get("Range");
-  let rangeStart=null,rangeEnd=null,totalSize=null;
+  let rangeStart=null,rangeEnd=null,totalSize=Number(exactHead.size||0);
   if(range){
-    const head=await bucket.head(key);
-    if(!head)return new Response("Not found",{status:404});
-    totalSize=Number(head.size||0);
     const m=range.match(/^bytes=(\d+)-(\d*)$/);
     if(!m||!totalSize)return new Response("Requested range is not satisfiable.",{
       status:416,
@@ -348,7 +365,8 @@ async function media(request,env){
       headers:{"Content-Range":"bytes */"+String(totalSize),"Accept-Ranges":"bytes","Access-Control-Allow-Origin":"*"}
     });
   }
-  const object=await bucket.get(key,range?{range:{offset:rangeStart,length:rangeEnd-rangeStart+1}}:undefined);
+
+  const object=await bucket.get(resolvedKey,range?{range:{offset:rangeStart,length:rangeEnd-rangeStart+1}}:undefined);
   if(!object)return new Response("Not found",{status:404});
   const h=new Headers();
   object.writeHttpMetadata(h);
@@ -361,7 +379,11 @@ async function media(request,env){
   if(object.httpEtag)h.set("ETag",object.httpEtag);
 
   if(request.method==="HEAD"){
-    h.set("Content-Length",String(object.size||0));
+    h.set("Content-Length",String(range?rangeEnd-rangeStart+1:object.size||totalSize));
+    if(range){
+      h.set("Content-Range","bytes "+rangeStart+"-"+rangeEnd+"/"+totalSize);
+      return new Response(null,{status:206,headers:h});
+    }
     return new Response(null,{status:200,headers:h});
   }
 
@@ -371,7 +393,7 @@ async function media(request,env){
     return new Response(object.body,{status:206,headers:h});
   }
 
-  h.set("Content-Length",String(object.size||0));
+  h.set("Content-Length",String(object.size||totalSize));
   return new Response(object.body,{status:200,headers:h});
 }
 
