@@ -6,3 +6,7 @@ compatibility_date = "2026-10-03"
 binding = "DB"
 database_name = "magic-kids-chat-db"
 database_id = "5546268a-d1b2-4ce3-bf91-4a5f1c1e09ec"
+
+[[r2_buckets]]
+binding = "VIDEOS"
+bucket_name = "magic-kids-videos"
