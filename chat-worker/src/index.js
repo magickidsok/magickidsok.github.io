@@ -104,6 +104,28 @@ async function adminVideos(request,env,origin){
   const rows=await env.DB.prepare("SELECT v.id,v.object_key,v.title,v.category_id,c.name AS category,v.thumbnail_key,v.video_type,v.created_at,v.updated_at FROM videos v LEFT JOIN video_categories c ON c.id=v.category_id ORDER BY v.id DESC").all();
   return json({videos:rows.results||[],r2Configured:!!env.VIDEOS},200,origin);
 }
+async function adminRepairR2Keys(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const bucket=requireR2(env);
+  const listed=await bucket.list({prefix:"videos/",limit:1000});
+  const objects=listed.objects||[];
+  const rows=await env.DB.prepare("SELECT id,object_key,title FROM videos ORDER BY id").all();
+  const repaired=[],missing=[];
+  const uuidRe=/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+  for(const row of (rows.results||[])){
+    const key=String(row.object_key||"");
+    const m=key.match(uuidRe);
+    if(!m){missing.push({id:row.id,title:row.title,reason:"sin UUID en object_key"});continue;}
+    const uuid=m[0].toLowerCase();
+    const match=objects.find(o=>String(o.key||"").toLowerCase().includes(uuid));
+    if(!match){missing.push({id:row.id,title:row.title,reason:"objeto R2 no encontrado"});continue;}
+    if(match.key!==key){
+      await env.DB.prepare("UPDATE videos SET object_key=?,updated_at=? WHERE id=?").bind(match.key,Date.now(),row.id).run();
+      repaired.push({id:row.id,title:row.title,from:key,to:match.key});
+    }
+  }
+  return json({ok:true,repaired,missing,checked:Number(rows.results?.length||0),r2Objects:Number(objects.length||0)},200,origin);
+}
 async function adminCategories(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   if(request.method==="GET"){
@@ -515,16 +537,6 @@ export default {
       await ensureVideoSchema(env.DB);
       const path=new URL(request.url).pathname;
       if(path.startsWith("/media/")&&(request.method==="GET"||request.method==="HEAD"))return media(request,env);
-      if(path==="/api/debug/r2"&&request.method==="GET"){
-        const key=String(new URL(request.url).searchParams.get("key")||"");
-        if(!key.startsWith("videos/"))return json({error:"key inválida"},400,origin);
-        const bucket=requireR2(env);
-        const exact=await bucket.head(key);
-        const filename=key.slice(key.lastIndexOf("/")+1);
-        const listed=await bucket.list({prefix:"videos/",limit:1000});
-        const matches=(listed.objects||[]).filter(o=>String(o.key||"").endsWith("/"+filename)||String(o.key||"")===key).map(o=>({key:o.key,size:o.size,uploaded:o.uploaded}));
-        return json({ok:true,exact:exact?{key,size:exact.size,uploaded:exact.uploaded,httpEtag:exact.httpEtag}:null,filename,matches,objects:(listed.objects||[]).map(o=>({key:o.key,size:o.size,uploaded:o.uploaded})),count:Number(listed.objects?.length||0),truncated:!!listed.truncated},200,origin);
-      }
       if(path==="/api/health"&&request.method==="GET")return json({ok:true,service:"Magic Kids Chat API",database:true,sessionConfigured:!!env.SESSION_SECRET},200,origin);
       if(path==="/")return json({ok:true,service:"Magic Kids Chat API"},200,origin);
       if(path==="/api/register"&&request.method==="POST")return register(request,env,origin);
@@ -540,6 +552,7 @@ export default {
       if(path==="/api/admin/delete"&&request.method==="POST")return adminDelete(request,env,origin);
       if(path==="/api/admin/ban"&&request.method==="POST")return adminBan(request,env,origin);
       if(path==="/api/videos"&&request.method==="GET")return adminVideos(request,env,origin);
+      if(path==="/api/admin/repair-r2-keys"&&request.method==="POST")return adminRepairR2Keys(request,env,origin);
       if(path==="/api/admin/categories"&&request.method==="GET")return adminCategories(request,env,origin);
       if(path==="/api/admin/categories"&&request.method==="POST")return adminCategories(request,env,origin);
       if(path==="/api/admin/upload"&&request.method==="POST")return adminUpload(request,env,origin);
