@@ -515,6 +515,16 @@ export default {
       await ensureVideoSchema(env.DB);
       const path=new URL(request.url).pathname;
       if(path.startsWith("/media/")&&(request.method==="GET"||request.method==="HEAD"))return media(request,env);
+      if(path==="/api/debug/r2"&&request.method==="GET"){
+        const key=String(new URL(request.url).searchParams.get("key")||"");
+        if(!key.startsWith("videos/"))return json({error:"key inválida"},400,origin);
+        const bucket=requireR2(env);
+        const exact=await bucket.head(key);
+        const filename=key.slice(key.lastIndexOf("/")+1);
+        const listed=await bucket.list({prefix:"videos/",limit:1000});
+        const matches=(listed.objects||[]).filter(o=>String(o.key||"").endsWith("/"+filename)||String(o.key||"")===key).map(o=>({key:o.key,size:o.size,uploaded:o.uploaded}));
+        return json({ok:true,exact:exact?{key,size:exact.size,uploaded:exact.uploaded,httpEtag:exact.httpEtag}:null,filename,matches,count:Number(listed.objects?.length||0),truncated:!!listed.truncated},200,origin);
+      }
       if(path==="/api/health"&&request.method==="GET")return json({ok:true,service:"Magic Kids Chat API",database:true,sessionConfigured:!!env.SESSION_SECRET},200,origin);
       if(path==="/")return json({ok:true,service:"Magic Kids Chat API"},200,origin);
       if(path==="/api/register"&&request.method==="POST")return register(request,env,origin);
