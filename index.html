@@ -481,6 +481,7 @@ async function loadMagicSchedule(){
     if(d.channel)lastScheduleChannelState=d.channel;
     if(Array.isArray(d.schedule)&&d.schedule.length){
       schedule=d.schedule.map(x=>[x.start_time,x.title,x.object_key,x.video_id]);
+      scheduledVideos=d.schedule.filter(x=>x&&x.object_key);
       fill();updateNowNext();
     }
   }catch(e){}
