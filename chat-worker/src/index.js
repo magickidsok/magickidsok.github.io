@@ -77,7 +77,7 @@ async function ensureVideoSchema(db){
     db.prepare("CREATE TABLE IF NOT EXISTS video_categories (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,created_at INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS videos (id INTEGER PRIMARY KEY AUTOINCREMENT,object_key TEXT NOT NULL UNIQUE,title TEXT NOT NULL,category_id INTEGER,thumbnail_key TEXT,video_type TEXT NOT NULL DEFAULT 'program',created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS video_schedule (id INTEGER PRIMARY KEY AUTOINCREMENT,video_id INTEGER NOT NULL,start_time TEXT NOT NULL,position INTEGER NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,created_at INTEGER NOT NULL)"),
-    db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_position ON video_schedule(position)")
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_position ON video_schedule(position)"),db.prepare("CREATE TABLE IF NOT EXISTS viewer_presence (viewer_id TEXT PRIMARY KEY,last_seen INTEGER NOT NULL)")
   ]);
   const cols=await db.prepare("PRAGMA table_info(videos)").all();
   if(!(cols.results||[]).some(x=>x.name==="video_type")){
@@ -295,8 +295,27 @@ async function adminSchedule(request,env,origin){
   }
   // Bump the public channel generation so every open player detects
   // a programming change without requiring a page refresh.
-  await env.DB.prepare("UPDATE channel_control SET generation=generation+1,updated_at=?,started_at=? WHERE id=1").bind(Date.now(),Date.now()).run();
+  await env.DB.prepare("UPDATE channel_control SET updated_at=? WHERE id=1").bind(Date.now()).run();
   return publicSchedule(request,env,origin);
+}
+async function viewerHeartbeat(request,env,origin){
+  await ensureVideoSchema(env.DB);
+  const b=await body(request),id=String(b.viewerId||"").trim().slice(0,80);
+  if(!id)return json({error:"viewerId requerido."},400,origin);
+  const now=Date.now();
+  const old=await env.DB.prepare("SELECT viewer_id FROM viewer_presence WHERE viewer_id=?").bind(id).first();
+  if(old)await env.DB.prepare("UPDATE viewer_presence SET last_seen=? WHERE viewer_id=?").bind(now,id).run();
+  else await env.DB.prepare("INSERT INTO viewer_presence(viewer_id,last_seen) VALUES(?,?)").bind(id,now).run();
+  await env.DB.prepare("DELETE FROM viewer_presence WHERE last_seen<?").bind(now-60000).run();
+  return json({ok:true},200,origin);
+}
+async function adminViewerCount(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  await ensureVideoSchema(env.DB);
+  const now=Date.now();
+  await env.DB.prepare("DELETE FROM viewer_presence WHERE last_seen<?").bind(now-60000).run();
+  const row=await env.DB.prepare("SELECT COUNT(*) AS count FROM viewer_presence WHERE last_seen>=?").bind(now-45000).first();
+  return json({ok:true,count:Number(row?.count||0),updatedAt:now},200,origin);
 }
 async function media(request,env){
   const url=new URL(request.url);
@@ -503,6 +522,8 @@ export default {
       if(path==="/magic-kids.m3u8"&&request.method==="GET")return ownPlaylist(request,env);
       if(path==="/api/admin/channel"&&request.method==="POST")return adminChannelControl(request,env,origin);
       if(path==="/api/schedule"&&request.method==="GET")return publicSchedule(request,env,origin);
+      if(path==="/api/viewers/heartbeat"&&request.method==="POST")return viewerHeartbeat(request,env,origin);
+      if(path==="/api/admin/viewers"&&request.method==="GET")return adminViewerCount(request,env,origin);
       if(path==="/api/admin/schedule"&&(request.method==="GET"||request.method==="POST"))return adminSchedule(request,env,origin);
       return json({error:"Ruta no encontrada."},404,origin);
     }catch(e){return json({error:"Error interno del chat."},500,origin);}
