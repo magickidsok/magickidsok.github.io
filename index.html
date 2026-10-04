@@ -415,17 +415,30 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
   <button class="retryBtn hidden" id="retryStream">↻ REINTENTAR</button>
 </div><div class="controls"><button id="mute">🔊 Sonido</button><button id="full">⛶ Pantalla completa</button></div></div><aside class="card donateBox"><div class="heart">♥</div><h2>Apoyá a sostener Magic Kids</h2><p>Tu aporte está destinado a impulsar las acciones necesarias para que Magic Kids vuelva a la televisión argentina lo más pronto posible.</p><div class="bank"><small>BANCO BRUBANK</small><strong>MAGICKIDS.OK</strong><span>A NOMBRE DE MARCELO GOMEZ</span><button id="copyHome">COPIAR ALIAS</button></div><a class="btn red" href="donar.html">VER DATOS DE DONACIÓN</a></aside></section><section class="tiles"><a class="tile" href="programacion.html"><b>▦</b><div><strong>Programación</strong><span>Horarios y series</span></div><i>›</i></a><a class="tile" href="donar.html"><b>♥</b><div><strong>Apoyar Magic Kids</strong><span>Alias de la campaña</span></div><i>›</i></a></section><section class="nowNext" aria-label="Programación en tiempo real"><div><small>AHORA</small><strong id="nowShow">Calculando…</strong><span id="nowTime">--:--</span></div><div class="nextArrow">→</div><div><small>PRÓXIMO</small><strong id="nextShow">Calculando…</strong><span id="nextTime">--:--</span></div></section><section class="grid"><div class="card"><div class="row"><h2>La programación</h2><a class="link" href="programacion.html">Ver todo →</a></div><div id="schedule" class="schedule"></div></div><div class="card chatCard">
   <h2>💬 Chat Magic Kids</h2>
-  <p class="chatIntro">Registrate gratis para participar. Cada usuario tiene un nick único. <b>MAGICKIDS</b> está reservado para el administrador.</p>
+  <p class="chatIntro">Participá con tu cuenta. <b>MAGICKIDS</b> es exclusivo del administrador y solo puede ingresar con el PIN de 4 dígitos del panel privado.</p>
   <div id="customChatAuth" class="customChatAuth">
     <div class="customChatTabs">
-      <button id="customLoginTab" class="customChatTab active">INICIAR SESIÓN</button>
-      <button id="customRegisterTab" class="customChatTab">REGISTRARME</button>
+      <button id="customLoginTab" class="customChatTab active">USUARIO</button>
+      <button id="customAdminTab" class="customChatTab">ADMINISTRADOR</button>
     </div>
-    <input id="customChatNick" class="customChatField hidden" maxlength="24" placeholder="Tu nick" autocomplete="nickname">
-    <input id="customChatEmail" class="customChatField" type="email" maxlength="120" placeholder="Correo electrónico" autocomplete="email">
-    <input id="customChatPassword" class="customChatField" type="password" maxlength="128" placeholder="Contraseña" autocomplete="current-password">
-    <input id="customChatPassword2" class="customChatField hidden" type="password" maxlength="128" placeholder="Repetí la contraseña" autocomplete="new-password">
-    <button id="customChatAuthBtn" class="btn blueBtn">INICIAR SESIÓN</button>
+    <div id="customUserAuth">
+      <div class="customChatSubtabs">
+        <button id="customUserLoginTab" class="customChatSubtab active">INICIAR SESIÓN</button>
+        <button id="customRegisterTab" class="customChatSubtab">REGISTRARME</button>
+      </div>
+      <input id="customChatNick" class="customChatField hidden" maxlength="24" placeholder="Tu nick" autocomplete="nickname">
+      <input id="customChatEmail" class="customChatField" type="email" maxlength="120" placeholder="Correo electrónico" autocomplete="email">
+      <input id="customChatPassword" class="customChatField" type="password" maxlength="128" placeholder="Contraseña" autocomplete="current-password">
+      <input id="customChatPassword2" class="customChatField hidden" type="password" maxlength="128" placeholder="Repetí la contraseña" autocomplete="new-password">
+      <button id="customChatAuthBtn" class="btn blueBtn">INICIAR SESIÓN</button>
+    </div>
+    <div id="customAdminAuth" class="customAdminAuth hidden">
+      <div class="customAdminLock">👑</div>
+      <strong>Acceso exclusivo del administrador</strong>
+      <span>Usá el mismo código de 4 dígitos del panel privado de videos.</span>
+      <input id="customAdminPin" class="customChatField" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="one-time-code" placeholder="PIN de 4 dígitos">
+      <button id="customAdminLoginBtn" class="btn blueBtn">INGRESAR COMO ADMIN</button>
+    </div>
     <div id="customChatAuthMsg" class="customChatAuthMsg"></div>
   </div>
   <div id="customChatApp" class="customChatApp hidden">
@@ -439,7 +452,6 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
       </div>
       <div class="customChatActions">
         <span id="customChatRole" class="customChatRole">USUARIO</span>
-        <button id="customChatAdminBtn" class="miniBtn hidden">MODO ADMIN ✓</button>
         <button id="customChatLogout" class="miniBtn">SALIR</button>
       </div>
     </div>
@@ -757,24 +769,36 @@ document.addEventListener("DOMContentLoaded",async()=>{
 });</script><script id="custom-chat-script">
 (function(){
   const CHAT_API_URL="https://magickidsok-github-io.elmagickids.workers.dev";
-  let loginMode=true,currentUser=null,pollTimer=null,heartbeatTimer=null,lastMessagesSignature="";
+  let authMode="login",currentUser=null,pollTimer=null,heartbeatTimer=null,lastMessagesSignature="";
 
   const $=id=>document.getElementById(id);
   function esc(v){return String(v??"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
-  function setAuthMsg(msg,type){const el=$("customChatAuthMsg");if(!el)return;el.className="customChatAuthMsg"+(type?" "+type:"");el.textContent=msg||"";}
+  function setAuthMsg(msg,type){
+    const el=$("customChatAuthMsg");if(!el)return;
+    el.className="customChatAuthMsg"+(type?" "+type:"");el.textContent=msg||"";
+  }
   async function api(path,options){
     options=options||{};
-    if(CHAT_API_URL.indexOf("REEMPLAZAR-")>=0)throw new Error("El backend del chat todavía no fue conectado.");
-    const req={credentials:"include",headers:Object.assign({},options.headers||{}),method:options.method||"GET"};
+    const req={credentials:"include",headers:Object.assign({"Content-Type":"application/json"},options.headers||{}),method:options.method||"GET"};
     if(options.body!==undefined)req.body=options.body;
     const res=await fetch(CHAT_API_URL+path,req);
     let data={};try{data=await res.json();}catch(e){}
     if(!res.ok)throw new Error(data.error||"No se pudo conectar con el chat.");
     return data;
   }
-  function setMode(register){
-    loginMode=!register;
-    $("customLoginTab").classList.toggle("active",!register);
+  function setAuthMode(mode){
+    authMode=mode;
+    const admin=mode==="admin";
+    $("customLoginTab").classList.toggle("active",!admin);
+    $("customAdminTab").classList.toggle("active",admin);
+    $("customUserAuth").classList.toggle("hidden",admin);
+    $("customAdminAuth").classList.toggle("hidden",!admin);
+    if(admin){$("customAdminPin").focus();}
+    setAuthMsg("");
+  }
+  function setUserMode(register){
+    authMode=register?"register":"login";
+    $("customUserLoginTab").classList.toggle("active",!register);
     $("customRegisterTab").classList.toggle("active",register);
     $("customChatNick").classList.toggle("hidden",!register);
     $("customChatPassword2").classList.toggle("hidden",!register);
@@ -785,24 +809,31 @@ document.addEventListener("DOMContentLoaded",async()=>{
   async function register(){
     const nick=$("customChatNick").value.trim().replace(/\s+/g," ").slice(0,24);
     const email=$("customChatEmail").value.trim().toLowerCase();
-    const password=$("customChatPassword").value;
-    const password2=$("customChatPassword2").value;
+    const password=$("customChatPassword").value,password2=$("customChatPassword2").value;
     if(nick.length<3){setAuthMsg("El nick debe tener al menos 3 caracteres.","error");return;}
+    if(nick.replace(/[^A-Za-z0-9]/g,"").toUpperCase()==="MAGICKIDS"){setAuthMsg("Ese nick está reservado para el administrador.","error");return;}
     if(!email.includes("@")){setAuthMsg("Escribí un correo válido.","error");return;}
     if(password.length<6){setAuthMsg("La contraseña debe tener al menos 6 caracteres.","error");return;}
     if(password!==password2){setAuthMsg("Las contraseñas no coinciden.","error");return;}
     const btn=$("customChatAuthBtn");btn.disabled=true;
-    try{await api("/api/register",{method:"POST",body:JSON.stringify({nick:nick,email:email,password:password})});setAuthMsg("Cuenta creada. Entrando…","ok");await login();}
+    try{await api("/api/register",{method:"POST",body:JSON.stringify({nick:nick,email:email,password:password})});setAuthMsg("Cuenta creada. Entrando…","ok");setUserMode(false);await login();}
     catch(e){setAuthMsg(e.message||"No se pudo crear la cuenta.","error");}
     finally{btn.disabled=false;}
   }
   async function login(){
-    const email=$("customChatEmail").value.trim().toLowerCase();
-    const password=$("customChatPassword").value;
+    const email=$("customChatEmail").value.trim().toLowerCase(),password=$("customChatPassword").value;
     if(!email||!password){setAuthMsg("Completá correo y contraseña.","error");return;}
     const btn=$("customChatAuthBtn");btn.disabled=true;
     try{const data=await api("/api/login",{method:"POST",body:JSON.stringify({email:email,password:password})});await enterChat(data.user);}
     catch(e){setAuthMsg(e.message||"No se pudo iniciar sesión.","error");}
+    finally{btn.disabled=false;}
+  }
+  async function adminLogin(){
+    const pin=$("customAdminPin").value.trim();
+    if(!/^\d{4}$/.test(pin)){setAuthMsg("Ingresá el PIN de 4 dígitos del panel privado.","error");return;}
+    const btn=$("customAdminLoginBtn");btn.disabled=true;
+    try{const data=await api("/api/admin/login",{method:"POST",body:JSON.stringify({pin:pin})});$("customAdminPin").value="";await enterChat(data.user);}
+    catch(e){setAuthMsg(e.message||"No se pudo ingresar como administrador.","error");}
     finally{btn.disabled=false;}
   }
   async function enterChat(user){
@@ -813,7 +844,6 @@ document.addEventListener("DOMContentLoaded",async()=>{
     $("customChatRole").textContent=user.isAdmin?"ADMIN ✓":"USUARIO";
     $("customChatRole").classList.toggle("admin",!!user.isAdmin);
     $("customChatCrown").classList.toggle("hidden",!user.isAdmin);
-    $("customChatAdminBtn").classList.toggle("hidden",!user.isAdmin);
     await refreshMessages();await refreshOnline();startTimers();
   }
   function renderMessages(messages){
@@ -850,34 +880,28 @@ document.addEventListener("DOMContentLoaded",async()=>{
     try{await api("/api/logout",{method:"POST",body:"{}"});}catch(e){}
     clearInterval(pollTimer);clearInterval(heartbeatTimer);currentUser=null;lastMessagesSignature="";
     $("customChatAuth").classList.remove("hidden");$("customChatApp").classList.add("hidden");
-    setAuthMsg("");$("customChatPassword").value="";$("customChatPassword2").value="";
+    setUserMode(false);setAuthMsg("");
   }
   async function moderate(action,id){
     if(!currentUser||!currentUser.isAdmin)return;
-    try{
-      const payload=action==="delete"?{id:Number(id)}:{userId:id};
-      await api("/api/admin/"+action,{method:"POST",body:JSON.stringify(payload)});
-      await refreshMessages();
-    }catch(e){setAuthMsg(e.message||"No se pudo moderar.","error");}
+    try{const payload=action==="delete"?{id:Number(id)}:{userId:id};await api("/api/admin/"+action,{method:"POST",body:JSON.stringify(payload)});await refreshMessages();}
+    catch(e){setAuthMsg(e.message||"No se pudo moderar.","error");}
   }
   async function init(){
-    setMode(false);
-    $("customLoginTab").onclick=function(){setMode(false);};
-    $("customRegisterTab").onclick=function(){setMode(true);};
-    $("customChatAuthBtn").onclick=function(){loginMode?login():register();};
-    $("customChatPassword").addEventListener("keydown",function(e){if(e.key==="Enter")(loginMode?login:register)();});
+    setAuthMode("login");setUserMode(false);
+    $("customLoginTab").onclick=function(){setAuthMode("login");};
+    $("customAdminTab").onclick=function(){setAuthMode("admin");};
+    $("customUserLoginTab").onclick=function(){setUserMode(false);};
+    $("customRegisterTab").onclick=function(){setUserMode(true);};
+    $("customChatAuthBtn").onclick=function(){authMode==="register"?register():login();};
+    $("customAdminLoginBtn").onclick=adminLogin;
+    $("customChatPassword").addEventListener("keydown",function(e){if(e.key==="Enter")(authMode==="register"?register:login)();});
     $("customChatPassword2").addEventListener("keydown",function(e){if(e.key==="Enter")register();});
+    $("customAdminPin").addEventListener("keydown",function(e){if(e.key==="Enter")adminLogin();});
     $("customChatSend").onclick=send;
     $("customChatText").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();send();}});
     $("customChatLogout").onclick=logout;
     $("customChatMessages").addEventListener("click",function(e){if(e.target.dataset.delete)moderate("delete",e.target.dataset.delete);if(e.target.dataset.ban)moderate("ban",e.target.dataset.ban);});
-    if(CHAT_API_URL.indexOf("REEMPLAZAR-")>=0){
-      $("customChatAuthBtn").disabled=true;
-      $("customChatLoginTab").disabled=true;
-      $("customChatRegisterTab").disabled=true;
-      setAuthMsg("El nuevo chat propio de Magic Kids está en configuración. Próximamente estará disponible.","ok");
-      return;
-    }
     try{const data=await api("/api/me");if(data.user)await enterChat(data.user);}catch(e){}
   }
   document.addEventListener("DOMContentLoaded",init);
