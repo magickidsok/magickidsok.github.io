@@ -264,7 +264,7 @@ async function adminM3u8(request,env,origin){
 }
 async function channelState(request,env,origin){
   await ensureVideoSchema(env.DB);
-  const state=await env.DB.prepare("SELECT status,generation,updated_at FROM channel_control WHERE id=1").first();
+  const state=await env.DB.prepare("SELECT status,generation,updated_at,started_at FROM channel_control WHERE id=1").first();
   return json({status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0),startedAt:Number(state?.started_at||0)},200,origin);
 }
 async function adminChannelControl(request,env,origin){
