@@ -240,6 +240,9 @@ async function adminSchedule(request,env,origin){
     if(!videoId||!start)continue;
     await env.DB.prepare("INSERT INTO video_schedule(video_id,start_time,position,enabled,created_at) VALUES(?,?,?,?,?)").bind(videoId,start,pos++,1,Date.now()).run();
   }
+  // Bump the public channel generation so every open player detects
+  // a programming change without requiring a page refresh.
+  await env.DB.prepare("UPDATE channel_control SET generation=generation+1,updated_at=? WHERE id=1").bind(Date.now()).run();
   return publicSchedule(request,env,origin);
 }
 async function media(request,env){
