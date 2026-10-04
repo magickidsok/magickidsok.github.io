@@ -1,4 +1,4 @@
-const CACHE_NAME="magic-kids-pwa-v14";
+const CACHE_NAME="magic-kids-pwa-v15";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -29,23 +29,25 @@ self.addEventListener("fetch",event=>{
   const req=event.request;
   if(req.method!=="GET") return;
   const url=new URL(req.url);
+  if(url.origin!==self.location.origin) return;
 
-  // Never cache the live HLS stream or Firebase traffic.
-  if(url.hostname.includes("vdopanel.com") || url.hostname.includes("firebaseio.com") || url.hostname.includes("googleapis.com")) return;
+  // Always fetch HTML/navigation from the network first so new
+  // deployments reach visitors without Ctrl+F5.
+  if(req.mode==="navigate" || req.destination==="document" || url.pathname.endsWith(".html")){
+    event.respondWith(
+      fetch(req,{cache:"no-store"}).catch(()=>caches.match(req).then(r=>r||caches.match("./index.html")))
+    );
+    return;
+  }
 
+  // Same-origin assets are also network-first; cache is only a fallback.
   event.respondWith(
-    caches.match(req).then(cached=>{
-      if(cached) return cached;
-      return fetch(req).then(res=>{
-        if(res && res.ok && url.origin===self.location.origin){
-          const copy=res.clone();
-          caches.open(CACHE_NAME).then(cache=>cache.put(req,copy));
-        }
-        return res;
-      }).catch(()=>{
-        if(req.mode==="navigate") return caches.match("./index.html");
-        return cached;
-      });
-    })
+    fetch(req,{cache:"no-store"}).then(res=>{
+      if(res && res.ok){
+        const copy=res.clone();
+        caches.open(CACHE_NAME).then(cache=>cache.put(req,copy));
+      }
+      return res;
+    }).catch(()=>caches.match(req))
   );
 });
