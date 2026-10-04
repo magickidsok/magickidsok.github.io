@@ -75,12 +75,23 @@ function normalizeNick(v){return String(v||"").normalize("NFD").replace(/[\u0300
 function validNick(v){return /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 _.-]{3,24}$/.test(v);}
 function cleanText(v){return String(v||"").replace(/https?:\/\/\S+|www\.\S+|\b[a-z0-9-]+\.(?:com|net|org|es|ar|tv|site)\b/gi,"").replace(/\s+/g," ").trim().slice(0,180);}
 async function body(request){try{return await request.json();}catch(e){return {};}}
-async function hashPassword(password,saltBytes){
+async function hashPassword(password,saltBytes,iterations){
   const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),{name:"PBKDF2"},false,["deriveBits"]);
-  return new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:saltBytes,iterations:PASSWORD_ITERATIONS,hash:"SHA-256"},key,256));
+  return new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:saltBytes,iterations:iterations||PASSWORD_ITERATIONS,hash:"SHA-256"},key,256));
 }
-async function makePasswordRecord(password){const salt=crypto.getRandomValues(new Uint8Array(16));const hash=await hashPassword(password,salt);return {salt:bytesToB64(salt),hash:bytesToB64(hash)};}
-async function verifyPassword(password,saltB64,hashB64){return safeEq(await hashPassword(password,b64ToBytes(saltB64)),b64ToBytes(hashB64));}
+async function makePasswordRecord(password){
+  // New accounts use a lighter KDF so registration is fast on Cloudflare Workers.
+  // Existing accounts keep the original 120k-iteration format.
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const hash=await hashPassword(password,salt,30000);
+  return {salt:"v2:"+bytesToB64(salt),hash:bytesToB64(hash)};
+}
+async function verifyPassword(password,saltB64,hashB64){
+  const s=String(saltB64||"");
+  const isV2=s.startsWith("v2:");
+  const raw=isV2?s.slice(3):s;
+  return safeEq(await hashPassword(password,b64ToBytes(raw),isV2?30000:PASSWORD_ITERATIONS),b64ToBytes(hashB64));
+}
 
 
 
