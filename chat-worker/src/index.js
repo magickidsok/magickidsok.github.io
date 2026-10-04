@@ -3,15 +3,32 @@ const COOKIE = "MKCHAT_SESSION";
 const SESSION_SECONDS = 60 * 60 * 24 * 14;
 const PASSWORD_ITERATIONS = 120000;
 
+function allowedOrigin(origin){
+  return ALLOWED_ORIGINS.has(String(origin||""))?String(origin):"";
+}
 function json(data,status,origin,extraHeaders){
-  const h = new Headers(Object.assign({"Content-Type":"application/json; charset=utf-8"},extraHeaders||{}));
-  if(origin && /^https?:\/\//.test(origin)){h.set("Access-Control-Allow-Origin",origin);h.set("Access-Control-Allow-Credentials","true");h.set("Vary","Origin");}
+  const h=new Headers(Object.assign({
+    "Content-Type":"application/json; charset=utf-8",
+    "Cache-Control":"no-store"
+  },extraHeaders||{}));
+  const allow=allowedOrigin(origin);
+  if(allow){
+    h.set("Access-Control-Allow-Origin",allow);
+    h.set("Access-Control-Allow-Credentials","true");
+    h.set("Vary","Origin");
+  }
   return new Response(JSON.stringify(data),{status:status||200,headers:h});
 }
 function cors(request){
-  const origin=request.headers.get("Origin")||"";
-  const h={"Access-Control-Allow-Methods":"GET,POST,OPTIONS","Access-Control-Allow-Headers":"Content-Type","Access-Control-Allow-Credentials":"true","Access-Control-Max-Age":"86400","Vary":"Origin"};
-  if(origin && /^https?:\/\//.test(origin))h["Access-Control-Allow-Origin"]=origin;
+  const allow=allowedOrigin(request.headers.get("Origin")||"");
+  const h={
+    "Access-Control-Allow-Methods":"GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers":"Content-Type, Authorization",
+    "Access-Control-Allow-Credentials":"true",
+    "Access-Control-Max-Age":"86400",
+    "Vary":"Origin"
+  };
+  if(allow)h["Access-Control-Allow-Origin"]=allow;
   return new Response(null,{status:204,headers:h});
 }
 function bytesToB64(bytes){let s="";for(const b of bytes)s+=String.fromCharCode(b);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
