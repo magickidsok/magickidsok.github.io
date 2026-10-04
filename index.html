@@ -66,42 +66,35 @@ body{
 </style><style id="registered-admin-style">
 .adminSetup{margin-top:8px;padding:10px;border-radius:10px;background:rgba(255,210,27,.06);border:1px solid rgba(255,210,27,.18);display:grid;gap:6px}.adminSetup strong{font-size:11px}.adminSetup span{font-size:9px;color:#9eb7d4;line-height:1.4}.adminSetup .miniBtn{justify-self:start}
 </style><style id="custom-chat-style">
-.customChatAuth{display:grid;gap:7px}
-.customChatSubtabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0 0 7px}
-.customChatSubtab{border:1px solid rgba(125,192,255,.2);background:rgba(255,255,255,.05);color:#cfe4fb;border-radius:9px;padding:9px;font-size:10px;font-weight:1000;cursor:pointer}
-.customChatSubtab.active{background:rgba(25,130,245,.2);color:#fff;border-color:rgba(75,163,255,.35)}
-.customChatSubtab:disabled{opacity:.65;cursor:not-allowed}
-.customAdminAuth{display:grid;gap:7px;padding:10px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(125,192,255,.14)}
-.customAdminLock{text-align:center;font-size:24px;line-height:1;margin-bottom:1px}
-.customChatTabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
-.customChatTab{border:1px solid rgba(125,192,255,.2);background:rgba(255,255,255,.05);color:#cfe4fb;border-radius:9px;padding:9px;font-size:10px;font-weight:1000;cursor:pointer}
-.customChatTab.active{background:rgba(25,130,245,.2);color:#fff;border-color:rgba(75,163,255,.35)}
-.customChatField{width:100%;border:1px solid rgba(130,196,255,.2);background:#04194a;color:#fff;border-radius:10px;padding:10px 11px;outline:none}
-.customChatAuthMsg{min-height:17px;color:#ffcf55;font-size:10px;line-height:1.35}
-.customChatAuthMsg.ok{color:#7cf29e}
-.customChatAuthMsg.error{color:#ff9b9b}
+.customChatAuth{display:grid;gap:9px}
+.customChatTabs,.customChatSubtabs{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.customChatSubtabs{margin-top:7px}
+.customChatTab,.customChatSubtab{border:1px solid rgba(125,192,255,.22);background:rgba(255,255,255,.05);color:#d9ebff;border-radius:9px;padding:10px 8px;font-size:10px;font-weight:900;cursor:pointer}
+.customChatTab.active,.customChatSubtab.active{background:rgba(25,130,245,.22);color:#fff;border-color:rgba(75,163,255,.45)}
+.customChatField{width:100%;border:1px solid rgba(130,196,255,.22);background:#04194a;color:#fff;border-radius:10px;padding:11px;outline:none;box-sizing:border-box}
+.customChatField:focus{border-color:rgba(75,163,255,.7)}
+.customChatAuthMsg{min-height:17px;color:#ffcf55;font-size:10px;line-height:1.4}
+.customChatAuthMsg.ok{color:#7cf29e}.customChatAuthMsg.error{color:#ff9b9b}
+.customAdminAuth{display:grid;gap:8px;padding:12px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(125,192,255,.14)}
+.customAdminLock{text-align:center;font-size:24px;line-height:1}
+.customAdminAuth strong{font-size:13px}.customAdminAuth span{font-size:10px;color:#9eb8d4;line-height:1.4}
 .customChatApp{display:flex;flex-direction:column;min-height:390px}
-.customChatTop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
-.customChatIdentity{display:flex;align-items:center;gap:8px;min-width:0}
-.customChatCrown{font-size:22px;line-height:1;filter:drop-shadow(0 0 6px rgba(255,211,55,.8))}
-.customChatIdentity strong{display:block;font-size:11px;line-height:1.1}
-.customChatIdentity span{display:block;color:#76e88e;font-size:9px;margin-top:3px}
-.customChatCrown.hidden{display:none}
-.customChatActions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
-.customChatRole{display:inline-flex;align-items:center;white-space:nowrap;color:#b7c7da;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);padding:4px 7px;border-radius:999px;font-size:8px;font-weight:900}
+.customChatTop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.customChatIdentity{display:flex;align-items:center;gap:7px;min-width:0}
+.customChatCrown{font-size:20px}.customChatCrown.hidden{display:none}
+.customChatIdentity strong{display:block;font-size:11px}.customChatIdentity span{display:block;color:#76e88e;font-size:9px;margin-top:3px}
+.customChatActions{display:flex;align-items:center;gap:5px}
+.customChatRole{white-space:nowrap;color:#b7c7da;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);padding:4px 7px;border-radius:999px;font-size:8px;font-weight:900}
 .customChatRole.admin{color:#79f0a0;background:rgba(57,205,101,.12);border-color:rgba(57,205,101,.28)}
-.customChatMessages{flex:1;overflow:auto;min-height:220px;max-height:290px;padding:6px 3px;display:flex;flex-direction:column;gap:6px}
+.customChatMessages{flex:1;overflow:auto;min-height:220px;max-height:290px;padding:4px 2px;display:flex;flex-direction:column;gap:6px}
 .customChatMsg{padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.045);border:1px solid rgba(145,205,255,.08)}
 .customChatMeta{font-size:9px;color:#75c5ff;font-weight:900;margin-bottom:2px}
-.customChatCrownMini{font-size:11px;margin-right:3px;filter:drop-shadow(0 0 4px rgba(255,211,55,.8))}
-.customChatText{font-size:12px;color:#e4effc;word-break:break-word}
-.customChatMod{float:right;display:flex;gap:4px}
-.customChatMod button{border:0;border-radius:6px;padding:3px 5px;font-size:8px;color:#fff;background:#7f1d26;cursor:pointer}
+.customChatCrownMini{font-size:11px;margin-right:3px}.customChatText{font-size:12px;color:#e4effc;word-break:break-word}
+.customChatMod{float:right;display:flex;gap:4px}.customChatMod button{border:0;border-radius:6px;padding:3px 5px;font-size:8px;color:#fff;background:#7f1d26;cursor:pointer}
 .customChatCompose{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:8px}
-.customChatCompose input{width:100%;border:1px solid rgba(130,196,255,.2);background:#04194a;color:#fff;border-radius:10px;padding:10px 11px;outline:none}
-.customChatHint{font-size:9px;color:#7e9fbe;margin-top:7px}
-.customChatAdminPanel{margin-top:10px;border-top:1px solid rgba(146,203,255,.14);padding-top:10px}
-@media(max-width:600px){.customChatActions{align-items:flex-end}.customChatCompose{grid-template-columns:1fr}.customChatApp{min-height:330px}.customChatMessages{max-height:290px}}
+.customChatCompose input{width:100%;border:1px solid rgba(130,196,255,.2);background:#04194a;color:#fff;border-radius:10px;padding:10px 11px;outline:none;box-sizing:border-box}
+.customChatHint{font-size:9px;color:#7e9fbe;margin-top:7px}.customChatAdminPanel{margin-top:8px;border-top:1px solid rgba(146,203,255,.14);padding-top:8px}
+@media(max-width:600px){.customChatCompose{grid-template-columns:1fr}.customChatApp{min-height:330px}.customChatMessages{max-height:260px}}
 </style><style>
 /* MAGIC KIDS — MOBILE POLISH */
 @media (max-width: 700px){
@@ -462,29 +455,29 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
 </div>
 <div class="magicSyncStatusRow"><span>● SINCRONIZADO CON LA PROGRAMACIÓN</span></div></div><aside class="card donateBox"><div class="heart">♥</div><h2>Apoyá a sostener Magic Kids</h2><p>Tu aporte está destinado a impulsar las acciones necesarias para que Magic Kids vuelva a la televisión argentina lo más pronto posible.</p><div class="bank"><small>BANCO BRUBANK</small><strong>MAGICKIDS.OK</strong><span>A NOMBRE DE MARCELO GOMEZ</span><button id="copyHome">COPIAR ALIAS</button></div><a class="btn red" href="donar.html">VER DATOS DE DONACIÓN</a></aside></section><section class="tiles"><a class="tile" href="programacion.html"><b>▦</b><div><strong>Programación</strong><span>Horarios y series</span></div><i>›</i></a><a class="tile" href="donar.html"><b>♥</b><div><strong>Apoyar Magic Kids</strong><span>Alias de la campaña</span></div><i>›</i></a></section><section class="nowNext" aria-label="Programación en tiempo real"><div><small>AHORA</small><strong id="nowShow">Calculando…</strong><span id="nowTime">--:--</span></div><div class="nextArrow">→</div><div><small>PRÓXIMO</small><strong id="nextShow">Calculando…</strong><span id="nextTime">--:--</span></div></section><section class="grid"><div class="card"><div class="row"><h2>La programación</h2><a class="link" href="programacion.html">Ver todo →</a></div><div id="schedule" class="schedule"></div></div><div class="card chatCard">
   <h2>💬 Chat Magic Kids</h2>
-  <p class="chatIntro">Participá con tu cuenta. <b>MAGICKIDS</b> es exclusivo del administrador y solo puede ingresar con el PIN de 4 dígitos del panel privado.</p>
+  <p class="chatIntro">Entrá con tu cuenta. Elegí <b>USUARIO</b> para el chat público o <b>ADMINISTRADOR</b> para usar tu PIN privado.</p>
   <div id="customChatAuth" class="customChatAuth">
     <div class="customChatTabs">
       <button id="customLoginTab" class="customChatTab active">USUARIO</button>
-      <button id="customAdminTab" class="customChatTab">ADMINISTRADOR PRIVADO</button>
+      <button id="customAdminTab" class="customChatTab">ADMINISTRADOR</button>
     </div>
     <div id="customUserAuth">
       <div class="customChatSubtabs">
-        <button id="customUserLoginTab" class="customChatSubtab active">INICIAR SESIÓN</button>
-        <button id="customRegisterTab" class="customChatSubtab">REGISTRARME</button>
+        <button id="customUserLoginTab" class="customChatSubtab active">ENTRAR</button>
+        <button id="customRegisterTab" class="customChatSubtab">CREAR CUENTA</button>
       </div>
-      <input id="customChatNick" class="customChatField hidden" maxlength="24" placeholder="Tu nick" autocomplete="nickname">
+      <input id="customChatNick" class="customChatField hidden" maxlength="24" placeholder="Elegí tu nick (sin MAGIC)" autocomplete="nickname">
       <input id="customChatEmail" class="customChatField" type="email" maxlength="120" placeholder="Correo electrónico" autocomplete="email">
       <input id="customChatPassword" class="customChatField" type="password" maxlength="128" placeholder="Contraseña" autocomplete="current-password">
       <input id="customChatPassword2" class="customChatField hidden" type="password" maxlength="128" placeholder="Repetí la contraseña" autocomplete="new-password">
-      <button id="customChatAuthBtn" class="btn blueBtn">INICIAR SESIÓN</button>
+      <button id="customChatAuthBtn" class="btn blueBtn">ENTRAR AL CHAT</button>
     </div>
     <div id="customAdminAuth" class="customAdminAuth hidden">
       <div class="customAdminLock">👑</div>
-      <strong>Acceso exclusivo del administrador</strong>
-      <span>Usá el mismo código de 4 dígitos del panel privado de videos.</span>
+      <strong>Acceso del administrador</strong>
+      <span>Usá el mismo PIN de 4 dígitos del panel privado de videos.</span>
       <input id="customAdminPin" class="customChatField" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="one-time-code" placeholder="PIN de 4 dígitos">
-      <button id="customAdminLoginBtn" class="btn blueBtn">INGRESAR AL CHAT PRIVADO</button>
+      <button id="customAdminLoginBtn" class="btn blueBtn">ENTRAR COMO ADMINISTRADOR</button>
     </div>
     <div id="customChatAuthMsg" class="customChatAuthMsg"></div>
   </div>
@@ -492,10 +485,7 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
     <div class="customChatTop">
       <div class="customChatIdentity">
         <div id="customChatCrown" class="customChatCrown hidden">👑</div>
-        <div>
-          <strong id="customChatUser">Usuario</strong>
-          <span id="customChatOnline">👥 0 conectados</span>
-        </div>
+        <div><strong id="customChatUser">Usuario</strong><span id="customChatOnline">👥 0 conectados</span></div>
       </div>
       <div class="customChatActions">
         <span id="customChatRole" class="customChatRole">USUARIO</span>
@@ -504,16 +494,16 @@ body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
     </div>
     <div id="customChatMessages" class="customChatMessages"></div>
     <div class="customChatCompose">
-      <input id="customChatText" maxlength="180" placeholder="Escribí un mensaje…" autocomplete="off">
+      <input id="customChatText" maxlength="180" placeholder="Escribí tu mensaje…" autocomplete="off">
       <button id="customChatSend" class="btn blueBtn">ENVIAR</button>
     </div>
-    <div class="customChatHint">Solo texto · sin enlaces · anti-spam activo.</div>
+    <div class="customChatHint">Sin enlaces · mensajes de hasta 180 caracteres.</div>
   </div>
   <div id="customChatAdminPanel" class="customChatAdminPanel hidden">
-    <div class="adminHead"><strong>Moderación</strong><button id="customChatAdminClose" class="miniBtn">CERRAR</button></div>
-    <p class="adminHelp">Como administrador podés borrar mensajes y bloquear cuentas.</p>
+    <div class="adminHead"><strong>Moderación de administrador</strong></div>
+    <p class="adminHelp">Podés borrar mensajes y bloquear usuarios.</p>
   </div>
-</div></section><section class="campaign"><div><h2>QUE VUELVA MAGIC</h2><p>Conocé el objetivo de la campaña y cómo colaborar.</p></div><a class="btn red" href="que-vuelva-magic.html">ENTRAR</a></section><footer><div><div class="mini">magic<span>★</span><b>KIDS</b></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>let schedule=[["22:00","DRAGON BALL"],["22:30","DRAGON BALL KAI"],["23:00","DRAGON BALL Z"],["01:00","DRAGON BALL SUPER"],["02:30","DRAGON BALL HEROES"],["03:30","DRAGON BALL GT"],["04:00","POKEMON"],["04:30","DIGIMON TAMERS"],["05:00","MIKAMI CAZAFANTASMAS"],["05:30","POWER RANGERS FUERZA DEL TIEMPO"],["06:00","MOB 100"],["06:30","DETECTIVE CONAN"],["07:30","LOS SIMPSONS"],["08:00","GAME LIFE"],["08:30","MONSTERS CIBERNETICOS"],["09:00","BLOQUE ANIMAX"],["11:00","RANMA 1/2"],["11:30","SAILOR MOON"]];
+</div></section>><section class="campaign"><div><h2>QUE VUELVA MAGIC</h2><p>Conocé el objetivo de la campaña y cómo colaborar.</p></div><a class="btn red" href="que-vuelva-magic.html">ENTRAR</a></section><footer><div><div class="mini">magic<span>★</span><b>KIDS</b></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>let schedule=[["22:00","DRAGON BALL"],["22:30","DRAGON BALL KAI"],["23:00","DRAGON BALL Z"],["01:00","DRAGON BALL SUPER"],["02:30","DRAGON BALL HEROES"],["03:30","DRAGON BALL GT"],["04:00","POKEMON"],["04:30","DIGIMON TAMERS"],["05:00","MIKAMI CAZAFANTASMAS"],["05:30","POWER RANGERS FUERZA DEL TIEMPO"],["06:00","MOB 100"],["06:30","DETECTIVE CONAN"],["07:30","LOS SIMPSONS"],["08:00","GAME LIFE"],["08:30","MONSTERS CIBERNETICOS"],["09:00","BLOQUE ANIMAX"],["11:00","RANMA 1/2"],["11:30","SAILOR MOON"]];
 async function loadMagicSchedule(){
   try{
     const r=await fetch("https://magickidsok-github-io.elmagickids.workers.dev/api/schedule",{cache:"no-store"});
