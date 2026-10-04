@@ -355,6 +355,14 @@ async function adminPinLogin(request,env,origin){
   const token=await makeAdminSession(env.SESSION_SECRET);
   return json({user:{id:"admin-pin",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin,{"Set-Cookie":setAdminSessionCookie(token)});
 }
+async function adminMasterLogin(request,env,origin){
+  if(!env.ADMIN_MASTER_CODE)return json({error:"Falta configurar ADMIN_MASTER_CODE en el Worker de Cloudflare."},500,origin);
+  const b=await body(request),code=String(b.code||"").trim();
+  const master=String(env.ADMIN_MASTER_CODE).trim();
+  if(!code||code!==master)return json({error:"Código maestro incorrecto."},401,origin);
+  const token=await makeAdminSession(env.SESSION_SECRET);
+  return json({user:{id:"admin-master",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin,{"Set-Cookie":setAdminSessionCookie(token)});
+}
 async function login(request,env,origin){
   const b=await body(request),email=String(b.email||"").trim().toLowerCase(),password=String(b.password||"");
   const u=await env.DB.prepare("SELECT * FROM users WHERE email=?").bind(email).first();
@@ -414,6 +422,7 @@ export default {
       if(path==="/")return json({ok:true,service:"Magic Kids Chat API"},200,origin);
       if(path==="/api/register"&&request.method==="POST")return register(request,env,origin);
       if(path==="/api/admin/login"&&request.method==="POST")return adminPinLogin(request,env,origin);
+      if(path==="/api/admin/master-login"&&request.method==="POST")return adminMasterLogin(request,env,origin);
       if(path==="/api/login"&&request.method==="POST")return login(request,env,origin);
       if(path==="/api/logout"&&request.method==="POST")return json({ok:true},200,origin,{"Set-Cookie":clearAdminSessionCookie()});
       if(path==="/api/me"&&request.method==="GET"){if(await readAdminSession(request,env))return json({user:{id:"admin-pin",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin);const u=await requireUser(request,env);return json({user:publicUser(u)},200,origin);}
