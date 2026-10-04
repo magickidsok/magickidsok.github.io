@@ -1,4 +1,4 @@
-const CACHE_NAME = "magic-kids-network-only-v2";
+const CACHE_NAME = "magic-kids-network-only-v3";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
