@@ -24,7 +24,7 @@ function json(data,status,origin,extraHeaders){
 function cors(request){
   const allow=allowedOrigin(request.headers.get("Origin")||"");
   const h={
-    "Access-Control-Allow-Methods":"GET,POST,OPTIONS",
+    "Access-Control-Allow-Methods":"GET,POST,PUT,OPTIONS",
     "Access-Control-Allow-Headers":"Content-Type, Authorization",
     "Access-Control-Allow-Credentials":"true",
     "Access-Control-Max-Age":"86400",
@@ -127,6 +127,52 @@ async function adminUpload(request,env,origin){
     uploaded.push({id:result.meta?.last_row_id||null,key,title,videoType});
   }
   return json({ok:true,count:uploaded.length,uploaded},201,origin);
+}
+async function adminUploadInitiate(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const bucket=requireR2(env);
+  const b=await body(request);
+  const rawName=String(b.name||"video.mp4").split("/").pop().slice(0,220);
+  const name=rawName.replace(/[^A-Za-z0-9._-]/g,"_")||"video.mp4";
+  const key="videos/"+Date.now()+"-"+crypto.randomUUID()+"-"+name;
+  const contentType=String(b.contentType||"video/mp4").slice(0,120)||"video/mp4";
+  const upload=await bucket.createMultipartUpload(key,{httpMetadata:{contentType,cacheControl:"public, max-age=31536000"}});
+  return json({ok:true,key:upload.key,uploadId:upload.uploadId},200,origin);
+}
+async function adminUploadPart(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const u=new URL(request.url),key=String(u.searchParams.get("key")||""),uploadId=String(u.searchParams.get("uploadId")||""),partNumber=Number(u.searchParams.get("partNumber")||0);
+  if(!key.startsWith("videos/")||!uploadId||!Number.isInteger(partNumber)||partNumber<1||partNumber>10000||!request.body)return json({error:"Parte de subida inválida."},400,origin);
+  try{
+    const upload=requireR2(env).resumeMultipartUpload(key,uploadId);
+    const part=await upload.uploadPart(partNumber,request.body);
+    return json({ok:true,part:{partNumber:part.partNumber,etag:part.etag}},200,origin);
+  }catch(e){return json({error:"No se pudo subir esta parte: "+String(e&&e.message||e)},400,origin);}
+}
+async function adminUploadComplete(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const bucket=requireR2(env),b=await body(request);
+  const key=String(b.key||""),uploadId=String(b.uploadId||"");
+  if(!key.startsWith("videos/")||!uploadId||!Array.isArray(b.parts)||!b.parts.length)return json({error:"Datos de finalización inválidos."},400,origin);
+  try{
+    const upload=bucket.resumeMultipartUpload(key,uploadId);
+    const parts=b.parts.map(p=>({partNumber:Number(p.partNumber),etag:String(p.etag)})).filter(p=>Number.isInteger(p.partNumber)&&p.partNumber>0&&p.etag);
+    if(!parts.length)return json({error:"No hay partes válidas."},400,origin);
+    const object=await upload.complete(parts);
+    const videoType=String(b.videoType||"program")==="commercial"?"commercial":"program";
+    const categoryId=Number(b.categoryId||0)||null;
+    const title=String(b.title||"Video").trim().slice(0,180)||"Video";
+    const now=Date.now();
+    const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,video_type,created_at,updated_at) VALUES(?,?,?,?,?,?)").bind(key,title,categoryId,videoType,now,now).run();
+    return json({ok:true,id:result.meta?.last_row_id||null,key,title,videoType,etag:object.httpEtag},201,origin);
+  }catch(e){return json({error:"No se pudo completar la subida: "+String(e&&e.message||e)},400,origin);}
+}
+async function adminUploadAbort(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const u=new URL(request.url),key=String(u.searchParams.get("key")||""),uploadId=String(u.searchParams.get("uploadId")||"");
+  if(!key.startsWith("videos/")||!uploadId)return json({error:"Datos de cancelación inválidos."},400,origin);
+  try{await requireR2(env).resumeMultipartUpload(key,uploadId).abort();return json({ok:true},200,origin);}
+  catch(e){return json({error:"No se pudo cancelar la subida."},400,origin);}
 }
 async function adminDeleteVideo(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
@@ -297,6 +343,10 @@ export default {
       if(path==="/api/admin/categories"&&request.method==="GET")return adminCategories(request,env,origin);
       if(path==="/api/admin/categories"&&request.method==="POST")return adminCategories(request,env,origin);
       if(path==="/api/admin/upload"&&request.method==="POST")return adminUpload(request,env,origin);
+      if(path==="/api/admin/upload/initiate"&&request.method==="POST")return adminUploadInitiate(request,env,origin);
+      if(path==="/api/admin/upload/part"&&request.method==="PUT")return adminUploadPart(request,env,origin);
+      if(path==="/api/admin/upload/complete"&&request.method==="POST")return adminUploadComplete(request,env,origin);
+      if(path==="/api/admin/upload/abort"&&request.method==="POST")return adminUploadAbort(request,env,origin);
       if(path==="/api/admin/video/delete"&&request.method==="POST")return adminDeleteVideo(request,env,origin);
       if(path==="/api/schedule"&&request.method==="GET")return publicSchedule(request,env,origin);
       if(path==="/api/admin/schedule"&&(request.method==="GET"||request.method==="POST"))return adminSchedule(request,env,origin);
