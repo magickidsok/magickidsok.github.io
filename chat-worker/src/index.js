@@ -316,11 +316,38 @@ async function adminChannelControl(request,env,origin){
   await env.DB.prepare("UPDATE channel_control SET status=?,generation=?,updated_at=?,started_at=? WHERE id=1").bind(status,generation,now,startedAt).run();
   return channelState(request,env,origin);
 }
+async function resolveScheduledR2Keys(env,rows){
+  const listRows=Array.isArray(rows)?rows:[];
+  if(!listRows.length)return listRows;
+  const bucket=requireR2(env);
+  const missing=[];
+  await Promise.all(listRows.map(async row=>{
+    const key=String(row.object_key||"");
+    if(!key)return;
+    try{
+      const hit=await bucket.head(key);
+      if(!hit)missing.push(row);
+    }catch(e){missing.push(row);}
+  }));
+  if(!missing.length)return listRows;
+  const listed=await bucket.list({prefix:"videos/",limit:1000});
+  const objects=listed.objects||[];
+  const uuidRe=/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+  return listRows.map(row=>{
+    if(!missing.includes(row))return row;
+    const m=String(row.object_key||"").match(uuidRe);
+    if(!m)return row;
+    const uuid=m[0].toLowerCase();
+    const match=objects.find(o=>String(o.key||"").toLowerCase().includes(uuid));
+    return match?{...row,object_key:match.key}:row;
+  });
+}
 async function publicSchedule(request,env,origin){
   await ensureVideoSchema(env.DB);
   const rows=await env.DB.prepare("SELECT s.id,s.video_id,s.start_time,s.position,s.enabled,v.title,v.object_key,v.thumbnail_key,v.video_type,c.name AS category FROM video_schedule s JOIN videos v ON v.id=s.video_id LEFT JOIN video_categories c ON c.id=v.category_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
-  const state=await env.DB.prepare("SELECT status,generation,updated_at FROM channel_control WHERE id=1").first();
-  return json({schedule:rows.results||[],channel:{status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0)}},200,origin);
+  const scheduleRows=await resolveScheduledR2Keys(env,rows.results||[]);
+  const state=await env.DB.prepare("SELECT status,generation,updated_at,started_at FROM channel_control WHERE id=1").first();
+  return json({schedule:scheduleRows,channel:{status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0)}},200,origin);
 }
 async function adminSchedule(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
