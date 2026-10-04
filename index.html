@@ -474,6 +474,7 @@ const videoDurationCache=new Map();
 
 function setStreamState(state,msg){
   const badge=document.getElementById("streamBadge"),label=document.getElementById("streamLabel"),status=document.getElementById("status"),retry=document.getElementById("retryStream");
+  if(status){status.textContent="";status.style.display="none";}
   if(!badge||!label)return;
   badge.classList.remove("offline","connecting");
   if(state==="live"){label.textContent="EN VIVO";status.textContent="";retry?.classList.add("hidden");}
