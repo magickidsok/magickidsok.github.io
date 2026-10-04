@@ -392,8 +392,15 @@ async function ensureSchema(db){
 }
 async function getUser(db,uid){return db.prepare("SELECT id,email,nick,nick_norm,password_salt,password_hash,role,banned,created_at,last_message_at,last_message_text,repeat_count FROM users WHERE id=?").bind(uid).first();}
 async function requireUser(request,env){const s=await readSession(request,env);if(!s)return null;return await getUser(env.DB,s.uid);}
-async function requireAdmin(request,env){if(await readAdminSession(request,env))return {id:"admin-pin",email:"",nick:"MAGICKIDS",role:"admin",banned:0};const u=await requireUser(request,env);return u&&u.role==="admin"&&!u.banned?u:null;}
-function publicUser(u){return u?{id:u.id,email:u.email,nick:u.nick,isAdmin:u.role==="admin"&&!u.banned}:null;}
+async function requireChatUser(request,env){
+  if(await readAdminSession(request,env))return {id:"admin-pin",email:"",nick:"MAGICKIDS",role:"admin",banned:0};
+  return await requireUser(request,env);
+}
+async function requireAdmin(request,env){
+  if(await readAdminSession(request,env))return {id:"admin-pin",email:"",nick:"MAGICKIDS",role:"admin",banned:0};
+  return null;
+}
+function publicUser(u){return u?{id:u.id,email:u.email,nick:u.nick,isAdmin:u.id==="admin-pin"}:null;}
 
 async function register(request,env,origin){
   if(!env.SESSION_SECRET){
@@ -403,13 +410,12 @@ async function register(request,env,origin){
   if(!validNick(nick))return json({error:"El nick debe tener entre 3 y 24 caracteres."},400,origin);
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json({error:"El correo electrónico no es válido."},400,origin);
   if(password.length<6)return json({error:"La contraseña debe tener al menos 6 caracteres."},400,origin);
-  const norm=normalizeNick(nick),admin=await env.DB.prepare("SELECT id FROM users WHERE role='admin' LIMIT 1").first();
-  if(!admin && norm!=="MAGICKIDS")return json({error:"El primer registro debe usar el nick MAGICKIDS."},403,origin);
-  if(admin && norm==="MAGICKIDS")return json({error:"El nick MAGICKIDS está reservado para el administrador."},409,origin);
+  const norm=normalizeNick(nick);
+  if(norm==="MAGICKIDS")return json({error:"El nick MAGICKIDS está reservado exclusivamente para el administrador."},409,origin);
   if(await env.DB.prepare("SELECT id FROM users WHERE email=?").bind(email).first())return json({error:"Ese correo ya está registrado."},409,origin);
   if(await env.DB.prepare("SELECT id FROM users WHERE nick_norm=?").bind(norm).first())return json({error:"Ese nick ya está ocupado."},409,origin);
 
-  const pass=await makePasswordRecord(password),uid=crypto.randomUUID(),now=Date.now(),role=(!admin&&norm==="MAGICKIDS")?"admin":"user";
+  const pass=await makePasswordRecord(password),uid=crypto.randomUUID(),now=Date.now(),role="user";
   try{
     const token=await makeSession(uid,env.SESSION_SECRET);
     await env.DB.prepare("INSERT INTO users (id,email,nick,nick_norm,password_salt,password_hash,role,banned,created_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(uid,email,nick,norm,pass.salt,pass.hash,role,0,now).run();
@@ -448,24 +454,29 @@ async function messages(request,env,origin){
   if(!await requireUser(request,env))return json({error:"Sesión requerida."},401,origin);
   const u=new URL(request.url),limit=Math.min(100,Math.max(10,Number(u.searchParams.get("limit")||80)));
   const rows=await env.DB.prepare("SELECT id,user_id,nick,is_admin,text,created_at FROM messages ORDER BY id DESC LIMIT ?").bind(limit).all();
-  return json({messages:(rows.results||[]).reverse().map(function(r){return {id:r.id,userId:r.user_id,nick:r.nick,isAdmin:!!r.is_admin,text:r.text,createdAt:r.created_at};})},200,origin);
+  return json({messages:(rows.results||[]).reverse().map(function(r){return {id:r.id,userId:r.user_id,nick:r.nick,isAdmin:r.user_id==="admin-pin"&&!!r.is_admin,text:r.text,createdAt:r.created_at};})},200,origin);
 }
 async function sendMessage(request,env,origin){
-  const u=await requireUser(request,env);if(!u)return json({error:"Sesión requerida."},401,origin);if(u.banned)return json({error:"Tu cuenta está bloqueada."},403,origin);
+  const u=await requireChatUser(request,env);if(!u)return json({error:"Sesión requerida."},401,origin);if(u.banned)return json({error:"Tu cuenta está bloqueada."},403,origin);
   const b=await body(request),text=cleanText(b.text);if(!text)return json({error:"El mensaje está vacío."},400,origin);
-  const now=Date.now();if(u.last_message_at&&now-u.last_message_at<3000)return json({error:"Esperá 3 segundos antes de enviar otro mensaje."},429,origin);
-  const repeat=text===u.last_message_text?(u.repeat_count||0)+1:0;if(repeat>=2)return json({error:"No podés repetir el mismo mensaje varias veces seguidas."},429,origin);
-  await env.DB.prepare("INSERT INTO messages (user_id,nick,is_admin,text,created_at) VALUES (?,?,?,?,?)").bind(u.id,u.nick,u.role==="admin"?1:0,text,now).run();
-  await env.DB.prepare("UPDATE users SET last_message_at=?,last_message_text=?,repeat_count=? WHERE id=?").bind(now,text,repeat,u.id).run();
+  const now=Date.now(),isAdmin=await readAdminSession(request,env);
+  if(!isAdmin){
+    if(u.last_message_at&&now-u.last_message_at<3000)return json({error:"Esperá 3 segundos antes de enviar otro mensaje."},429,origin);
+    const repeat=text===u.last_message_text?(u.repeat_count||0)+1:0;if(repeat>=2)return json({error:"No podés repetir el mismo mensaje varias veces seguidas."},429,origin);
+    await env.DB.prepare("INSERT INTO messages (user_id,nick,is_admin,text,created_at) VALUES (?,?,?,?,?)").bind(u.id,u.nick,0,text,now).run();
+    await env.DB.prepare("UPDATE users SET last_message_at=?,last_message_text=?,repeat_count=? WHERE id=?").bind(now,text,repeat,u.id).run();
+  }else{
+    await env.DB.prepare("INSERT INTO messages (user_id,nick,is_admin,text,created_at) VALUES (?,?,?,?,?)").bind("admin-pin","MAGICKIDS",1,text,now).run();
+  }
   return json({ok:true},200,origin);
 }
 async function heartbeat(request,env,origin){
-  const u=await requireUser(request,env);if(!u)return json({error:"Sesión requerida."},401,origin);
+  const u=await requireChatUser(request,env);if(!u)return json({error:"Sesión requerida."},401,origin);
   await env.DB.prepare("INSERT INTO presence (user_id,nick,last_seen) VALUES (?,?,?) ON CONFLICT(user_id) DO UPDATE SET nick=excluded.nick,last_seen=excluded.last_seen").bind(u.id,u.nick,Date.now()).run();
   return json({ok:true},200,origin);
 }
 async function online(request,env,origin){
-  if(!await requireUser(request,env))return json({error:"Sesión requerida."},401,origin);
+  if(!await requireChatUser(request,env))return json({error:"Sesión requerida."},401,origin);
   const cutoff=Date.now()-20000;await env.DB.prepare("DELETE FROM presence WHERE last_seen<?").bind(cutoff).run();
   const row=await env.DB.prepare("SELECT COUNT(*) AS count FROM presence").first();
   return json({count:Number(row&&row.count||0)},200,origin);
@@ -497,7 +508,7 @@ export default {
       if(path==="/api/admin/login"&&request.method==="POST")return adminPinLogin(request,env,origin);
       if(path==="/api/admin/master-login"&&request.method==="POST")return adminMasterLogin(request,env,origin);
       if(path==="/api/login"&&request.method==="POST")return login(request,env,origin);
-      if(path==="/api/logout"&&request.method==="POST")return json({ok:true},200,origin,{"Set-Cookie":clearAdminSessionCookie()});
+      if(path==="/api/logout"&&request.method==="POST")return json({ok:true},200,origin,{"Set-Cookie":clearAdminSessionCookie()+"; "+clearSessionCookie()});
       if(path==="/api/me"&&request.method==="GET"){if(await readAdminSession(request,env))return json({user:{id:"admin-pin",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin);const u=await requireUser(request,env);return json({user:publicUser(u)},200,origin);}
       if(path==="/api/messages"&&request.method==="GET")return messages(request,env,origin);
       if(path==="/api/messages"&&request.method==="POST")return sendMessage(request,env,origin);
