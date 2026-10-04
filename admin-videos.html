@@ -33,7 +33,7 @@
 </div></div><div id="m3u8Panel" class="panel" style="margin-bottom:14px">
 <h3>📡 Compartir lista propia de Magic Kids</h3>
 <div class="hint">Esta lista se genera exclusivamente con los videos y el orden guardados en tu panel. No utiliza VDO Panel.</div>
-<div class="row"><input id="m3u8Url" class="field" readonly placeholder="Generar lista propia…"><button id="getM3u8" class="btn blue">OBTENER LISTA</button><button id="copyM3u8" class="btn">COPIAR</button></div>
+<div class="row"><input id="m3u8Url" class="field" readonly placeholder="Generar lista propia…"><button id="getM3u8" class="btn blue">🔗 VER LISTA M3U8</button><button id="copyM3u8" class="btn">📋 COPIAR URL</button></div>
 <div id="m3u8Msg" class="msg"></div></div><div id="videos" class="tab">
 <div class="hero"><h2>Biblioteca de videos</h2><p>Series y tandas guardadas permanentemente en Cloudflare R2.</p></div>
 <div class="panel"><div class="row" style="justify-content:space-between"><h3>Todos los videos</h3><button class="btn blue" onclick="showTab('upload')">+ Cargar varios</button></div>
@@ -106,7 +106,7 @@ function addVideoToSchedule(id,time){const v=videos.find(x=>x.id===Number(id));i
 window.addVideoToSchedule=addVideoToSchedule;
 $("quickAdd").onclick=()=>addVideoToSchedule($("quickVideo").value);
 $("startChannel").onclick=()=>setChannel("start");$("stopChannel").onclick=()=>setChannel("stop");$("offAirChannel").onclick=()=>setChannel("offair");$("restartChannel").onclick=()=>setChannel("restart");
-async function loadM3u8(){try{const d=await api("/api/admin/m3u8");$("m3u8Url").value=d.url;$("m3u8Msg").textContent="Lista propia generada desde tu programación.";return d.url}catch(e){$("m3u8Msg").textContent=e.message;}}
+async function loadM3u8(){try{const d=await api("/api/admin/m3u8");$("m3u8Url").value=d.url;$("m3u8Msg").textContent=d.live?"✅ M3U8 HLS EN VIVO lista para tu aplicación Android.":"⚠️ Lista de respaldo del panel. La M3U8 HLS en vivo aparecerá cuando Cloudflare Stream esté conectado.";return d.url}catch(e){$("m3u8Msg").textContent=e.message;}}
 $("getM3u8").onclick=loadM3u8;$("copyM3u8").onclick=async()=>{const u=$("m3u8Url").value||await loadM3u8();if(u){try{await navigator.clipboard.writeText(u);$("m3u8Msg").textContent="Lista copiada al portapapeles."; }catch(e){$("m3u8Msg").textContent="Seleccioná y copiá la URL manualmente.";}}};
 $("addTanda").onclick=async()=>{const cs=videos.filter(v=>v.video_type==="commercial");if(!cs.length){alert("Primero cargá los comerciales en Tandas comerciales.");return}for(const v of cs)schedule.push({video_id:v.id,title:v.title,start_time:$("quickTime").value||"00:00",video_type:"commercial"});renderSchedule();await autoSave()};
 $("saveSchedule").onclick=()=>saveSchedule(true);
