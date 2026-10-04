@@ -40,6 +40,97 @@ async function hashPassword(password,saltBytes){
 async function makePasswordRecord(password){const salt=crypto.getRandomValues(new Uint8Array(16));const hash=await hashPassword(password,salt);return {salt:bytesToB64(salt),hash:bytesToB64(hash)};}
 async function verifyPassword(password,saltB64,hashB64){return safeEq(await hashPassword(password,b64ToBytes(saltB64)),b64ToBytes(hashB64));}
 
+
+
+function requireR2(env){if(!env.VIDEOS)throw new Error("R2 no configurado: falta el binding VIDEOS.");return env.VIDEOS;}
+async function ensureVideoSchema(db){
+  await db.batch([
+    db.prepare("CREATE TABLE IF NOT EXISTS video_categories (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,created_at INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS videos (id INTEGER PRIMARY KEY AUTOINCREMENT,object_key TEXT NOT NULL UNIQUE,title TEXT NOT NULL,category_id INTEGER,thumbnail_key TEXT,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS video_schedule (id INTEGER PRIMARY KEY AUTOINCREMENT,video_id INTEGER NOT NULL,start_time TEXT NOT NULL,position INTEGER NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,created_at INTEGER NOT NULL)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_position ON video_schedule(position)")
+  ]);
+}
+async function adminVideos(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const rows=await env.DB.prepare("SELECT v.id,v.object_key,v.title,v.category_id,c.name AS category,v.thumbnail_key,v.created_at,v.updated_at FROM videos v LEFT JOIN video_categories c ON c.id=v.category_id ORDER BY v.id DESC").all();
+  return json({videos:rows.results||[],r2Configured:!!env.VIDEOS},200,origin);
+}
+async function adminCategories(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  if(request.method==="GET"){
+    const rows=await env.DB.prepare("SELECT id,name FROM video_categories ORDER BY name COLLATE NOCASE").all();
+    return json({categories:rows.results||[]},200,origin);
+  }
+  const b=await body(request),name=String(b.name||"").trim().slice(0,60);
+  if(!name)return json({error:"Nombre de categoría requerido."},400,origin);
+  try{await env.DB.prepare("INSERT INTO video_categories(name,created_at) VALUES(?,?)").bind(name,Date.now()).run();return adminCategories(new Request(request.url,{method:"GET",headers:request.headers}),env,origin);}
+  catch(e){return json({error:"La categoría ya existe o no se pudo crear."},409,origin);}
+}
+async function adminUpload(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const bucket=requireR2(env);
+  const form=await request.formData(),file=form.get("file"),title=String(form.get("title")||"").trim().slice(0,180),categoryId=Number(form.get("categoryId")||0)||null;
+  if(!file||typeof file.arrayBuffer!=="function")return json({error:"Seleccioná un video."},400,origin);
+  if(!title)return json({error:"El título es obligatorio."},400,origin);
+  const name=String(file.name||"video.mp4").replace(/[^A-Za-z0-9._-]/g,"_");
+  const key="videos/"+Date.now()+"-"+crypto.randomUUID()+"-"+name;
+  const data=await file.arrayBuffer();
+  await bucket.put(key,data,{httpMetadata:{contentType:file.type||"video/mp4",cacheControl:"public, max-age=31536000"}});
+  const now=Date.now();
+  const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,created_at,updated_at) VALUES(?,?,?,?,?)").bind(key,title,categoryId,now,now).run();
+  return json({ok:true,id:result.meta?.last_row_id||null,key,title},201,origin);
+}
+async function adminDeleteVideo(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const id=Number((await body(request)).id);if(!id)return json({error:"Video inválido."},400,origin);
+  const row=await env.DB.prepare("SELECT object_key FROM videos WHERE id=?").bind(id).first();
+  if(!row)return json({error:"Video no encontrado."},404,origin);
+  if(env.VIDEOS)await env.VIDEOS.delete(row.object_key);
+  await env.DB.prepare("DELETE FROM video_schedule WHERE video_id=?").bind(id).run();
+  await env.DB.prepare("DELETE FROM videos WHERE id=?").bind(id).run();
+  return json({ok:true},200,origin);
+}
+async function publicSchedule(request,env,origin){
+  await ensureVideoSchema(env.DB);
+  const rows=await env.DB.prepare("SELECT s.id,s.video_id,s.start_time,s.position,s.enabled,v.title,v.object_key,v.thumbnail_key,c.name AS category FROM video_schedule s JOIN videos v ON v.id=s.video_id LEFT JOIN video_categories c ON c.id=v.category_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
+  return json({schedule:rows.results||[]},200,origin);
+}
+async function adminSchedule(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  if(request.method==="GET")return publicSchedule(request,env,origin);
+  const b=await body(request),items=Array.isArray(b.items)?b.items:[];
+  await env.DB.prepare("DELETE FROM video_schedule").run();
+  let pos=0;
+  for(const x of items){
+    const videoId=Number(x.videoId),start=String(x.startTime||"00:00").match(/^([01]\d|2[0-3]):[0-5]\d$/)?.[0];
+    if(!videoId||!start)continue;
+    await env.DB.prepare("INSERT INTO video_schedule(video_id,start_time,position,enabled,created_at) VALUES(?,?,?,?,?)").bind(videoId,start,pos++,1,Date.now()).run();
+  }
+  return publicSchedule(request,env,origin);
+}
+async function media(request,env){
+  const key=decodeURIComponent(new URL(request.url).pathname.replace(/^\/media\//,""));
+  if(!key)return new Response("Not found",{status:404});
+  const object=await requireR2(env).get(key);
+  if(!object)return new Response("Not found",{status:404});
+  const h=new Headers();
+  object.writeHttpMetadata(h);h.set("Cache-Control","public, max-age=31536000");h.set("Accept-Ranges","bytes");
+  const range=request.headers.get("Range");
+  if(range && object.size){
+    const m=range.match(/bytes=(\d+)-(\d*)/);
+    if(m){
+      const start=Number(m[1]),end=m[2]?Number(m[2]):object.size-1;
+      if(start<object.size && start<=end){
+        const part=await requireR2(env).get(key,{range:{offset:start,length:end-start+1}});
+        h.set("Content-Range","bytes "+start+"-"+end+"/"+object.size);h.set("Content-Length",String(end-start+1));
+        return new Response(part.body,{status:206,headers:h});
+      }
+    }
+  }
+  h.set("Content-Length",String(object.size||0));return new Response(object.body,{headers:h});
+}
+
 async function ensureSchema(db){
   await db.batch([
     db.prepare("CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY,email TEXT NOT NULL UNIQUE,nick TEXT NOT NULL,nick_norm TEXT NOT NULL UNIQUE,password_salt TEXT NOT NULL,password_hash TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'user',banned INTEGER NOT NULL DEFAULT 0,created_at INTEGER NOT NULL,last_message_at INTEGER NOT NULL DEFAULT 0,last_message_text TEXT NOT NULL DEFAULT '',repeat_count INTEGER NOT NULL DEFAULT 0)"),
@@ -131,8 +222,8 @@ export default {
     const origin=request.headers.get("Origin")||"";
     if(request.method==="OPTIONS")return cors(request);
     try{
-      await ensureSchema(env.DB);
-      const path=new URL(request.url).pathname;
+      await ensureSchema(env.DB);\n      await ensureVideoSchema(env.DB);
+      const path=new URL(request.url).pathname;\n      if(path.startsWith("/media/")&&request.method==="GET")return media(request,env);
       if(path==="/api/health"&&request.method==="GET")return json({ok:true,service:"Magic Kids Chat API",database:true,sessionConfigured:!!env.SESSION_SECRET},200,origin);\n      if(path==="/")return json({ok:true,service:"Magic Kids Chat API"},200,origin);
       if(path==="/api/register"&&request.method==="POST")return register(request,env,origin);
       if(path==="/api/login"&&request.method==="POST")return login(request,env,origin);
@@ -144,6 +235,13 @@ export default {
       if(path==="/api/online"&&request.method==="GET")return online(request,env,origin);
       if(path==="/api/admin/delete"&&request.method==="POST")return adminDelete(request,env,origin);
       if(path==="/api/admin/ban"&&request.method==="POST")return adminBan(request,env,origin);
+      if(path==="/api/videos"&&request.method==="GET")return adminVideos(request,env,origin);
+      if(path==="/api/admin/categories"&&request.method==="GET")return adminCategories(request,env,origin);
+      if(path==="/api/admin/categories"&&request.method==="POST")return adminCategories(request,env,origin);
+      if(path==="/api/admin/upload"&&request.method==="POST")return adminUpload(request,env,origin);
+      if(path==="/api/admin/video/delete"&&request.method==="POST")return adminDeleteVideo(request,env,origin);
+      if(path==="/api/schedule"&&request.method==="GET")return publicSchedule(request,env,origin);
+      if(path==="/api/admin/schedule"&&(request.method==="GET"||request.method==="POST"))return adminSchedule(request,env,origin);
       return json({error:"Ruta no encontrada."},404,origin);
     }catch(e){return json({error:"Error interno del chat."},500,origin);}
   }
