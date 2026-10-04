@@ -366,27 +366,8 @@ async function media(request,env){
   }
 
   if(range){
-    const m=range.match(/^bytes=(\d+)-(\d*)$/);
-    if(!m){
-      const head=await bucket.head(key);
-      const size=Number(head?.size||object.size||0);
-      return new Response("Requested range is not satisfiable.",{
-        status:416,
-        headers:{...Object.fromEntries(h),"Content-Range":"bytes */"+size}
-      });
-    }
-    const start=Number(m[1]);
-    const requestedEnd=m[2]?Number(m[2]):Number(object.size)-1;
-    const size=Number(object.size||0);
-    const end=Math.min(requestedEnd,size-1);
-    if(!size||start<0||start>=size||end<start){
-      return new Response("Requested range is not satisfiable.",{
-        status:416,
-        headers:{...Object.fromEntries(h),"Content-Range":"bytes */"+size}
-      });
-    }
-    h.set("Content-Range","bytes "+start+"-"+end+"/"+size);
-    h.set("Content-Length",String(end-start+1));
+    h.set("Content-Range","bytes "+rangeStart+"-"+rangeEnd+"/"+totalSize);
+    h.set("Content-Length",String(rangeEnd-rangeStart+1));
     return new Response(object.body,{status:206,headers:h});
   }
 
