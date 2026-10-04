@@ -523,6 +523,7 @@ async function fetchChannelControl(){
   }catch(e){return null}
 }
 function stopScheduledPlayer(){
+  showOffAir(false);
   const video=document.getElementById("magicVideo");if(!video)return;
   scheduledMode=false;currentVideoIndex=-1;magicStreamStarted=false;
   if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}
