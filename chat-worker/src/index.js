@@ -99,7 +99,7 @@ function requireR2(env){if(!env.VIDEOS)throw new Error("R2 no configurado: falta
 async function ensureVideoSchema(db){
   await db.batch([
     db.prepare("CREATE TABLE IF NOT EXISTS video_categories (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,created_at INTEGER NOT NULL)"),
-    db.prepare("CREATE TABLE IF NOT EXISTS videos (id INTEGER PRIMARY KEY AUTOINCREMENT,object_key TEXT NOT NULL UNIQUE,title TEXT NOT NULL,category_id INTEGER,thumbnail_key TEXT,video_type TEXT NOT NULL DEFAULT 'program',created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS videos (id INTEGER PRIMARY KEY AUTOINCREMENT,object_key TEXT NOT NULL UNIQUE,title TEXT NOT NULL,category_id INTEGER,thumbnail_key TEXT,video_type TEXT NOT NULL DEFAULT 'program',duration_seconds REAL NOT NULL DEFAULT 0,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS video_schedule (id INTEGER PRIMARY KEY AUTOINCREMENT,video_id INTEGER NOT NULL,start_time TEXT NOT NULL,position INTEGER NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,created_at INTEGER NOT NULL)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_position ON video_schedule(position)"),db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_enabled_position ON video_schedule(enabled,position)"),db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_video_id ON video_schedule(video_id)"),db.prepare("CREATE TABLE IF NOT EXISTS viewer_presence (viewer_id TEXT PRIMARY KEY,last_seen INTEGER NOT NULL)")
   ]);
@@ -110,6 +110,9 @@ async function ensureVideoSchema(db){
   if(!(cols.results||[]).some(x=>x.name==="category_position")){
     await db.prepare("ALTER TABLE videos ADD COLUMN category_position INTEGER NOT NULL DEFAULT 0").run();
   }
+  if(!(cols.results||[]).some(x=>x.name==="duration_seconds")){
+    await db.prepare("ALTER TABLE videos ADD COLUMN duration_seconds REAL NOT NULL DEFAULT 0").run();
+  }
   await db.prepare("CREATE TABLE IF NOT EXISTS channel_control (id INTEGER PRIMARY KEY CHECK(id=1),status TEXT NOT NULL DEFAULT 'stopped',generation INTEGER NOT NULL DEFAULT 0,updated_at INTEGER NOT NULL,started_at INTEGER NOT NULL DEFAULT 0)").run();
   const cc=await db.prepare("PRAGMA table_info(channel_control)").all();
   if(!(cc.results||[]).some(x=>x.name==="started_at")) await db.prepare("ALTER TABLE channel_control ADD COLUMN started_at INTEGER NOT NULL DEFAULT 0").run();
@@ -118,7 +121,7 @@ async function ensureVideoSchema(db){
 }
 async function adminVideos(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
-  const rows=await env.DB.prepare("SELECT v.id,v.object_key,v.title,v.category_id,c.name AS category,v.thumbnail_key,v.video_type,v.created_at,v.updated_at FROM videos v LEFT JOIN video_categories c ON c.id=v.category_id ORDER BY v.id DESC").all();
+  const rows=await env.DB.prepare("SELECT v.id,v.object_key,v.title,v.category_id,c.name AS category,v.thumbnail_key,v.video_type,v.duration_seconds,v.created_at,v.updated_at FROM videos v LEFT JOIN video_categories c ON c.id=v.category_id ORDER BY v.id DESC").all();
   return json({videos:rows.results||[],r2Configured:!!env.VIDEOS},200,origin);
 }
 async function adminRepairR2Keys(request,env,origin){
@@ -198,7 +201,8 @@ async function adminUpload(request,env,origin){
     const now=Date.now();
     const nextPosRow=categoryId?await env.DB.prepare("SELECT COALESCE(MAX(category_position),-1)+1 AS next_pos FROM videos WHERE category_id=?").bind(categoryId).first():{next_pos:0};
     const categoryPosition=Number(nextPosRow?.next_pos||0);
-    const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,category_position,video_type,created_at,updated_at) VALUES(?,?,?,?,?,?,?)").bind(key,title,categoryId,categoryPosition,videoType,now,now).run();
+    const durationSeconds=Math.max(0,Math.min(86400,Number(form.get("durationSeconds")||0)||0));
+    const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,category_position,video_type,duration_seconds,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)").bind(key,title,categoryId,categoryPosition,videoType,durationSeconds,now,now).run();
     uploaded.push({id:result.meta?.last_row_id||null,key,title,videoType});
   }
   return json({ok:true,count:uploaded.length,uploaded},201,origin);
@@ -237,11 +241,12 @@ async function adminUploadComplete(request,env,origin){
     const videoType=String(b.videoType||"program")==="commercial"?"commercial":"program";
     const categoryId=Number(b.categoryId||0)||null;
     const title=String(b.title||"Video").trim().slice(0,180)||"Video";
+    const durationSeconds=Math.max(0,Math.min(86400,Number(b.durationSeconds||0)||0));
     const now=Date.now();
     const nextPosRow=categoryId?await env.DB.prepare("SELECT COALESCE(MAX(category_position),-1)+1 AS next_pos FROM videos WHERE category_id=?").bind(categoryId).first():{next_pos:0};
     const categoryPosition=Number(nextPosRow?.next_pos||0);
-    const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,category_position,video_type,created_at,updated_at) VALUES(?,?,?,?,?,?,?)").bind(key,title,categoryId,categoryPosition,videoType,now,now).run();
-    return json({ok:true,id:result.meta?.last_row_id||null,key,title,videoType,etag:object.httpEtag},201,origin);
+    const result=await env.DB.prepare("INSERT INTO videos(object_key,title,category_id,category_position,video_type,duration_seconds,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)").bind(key,title,categoryId,categoryPosition,videoType,durationSeconds,now,now).run();
+    return json({ok:true,id:result.meta?.last_row_id||null,key,title,videoType,durationSeconds,etag:object.httpEtag},201,origin);
   }catch(e){return json({error:"No se pudo completar la subida: "+String(e&&e.message||e)},400,origin);}
 }
 async function adminUploadAbort(request,env,origin){
@@ -251,6 +256,22 @@ async function adminUploadAbort(request,env,origin){
   try{await requireR2(env).resumeMultipartUpload(key,uploadId).abort();return json({ok:true},200,origin);}
   catch(e){return json({error:"No se pudo cancelar la subida."},400,origin);}
 }
+async function adminVideoDurations(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const b=await body(request);
+  const items=Array.isArray(b.items)?b.items:[];
+  const clean=[];
+  for(const x of items){
+    const id=Number(x.id||0),duration=Math.max(0,Math.min(86400,Number(x.durationSeconds||0)||0));
+    if(Number.isInteger(id)&&id>0&&duration>0)clean.push({id,duration});
+  }
+  if(!clean.length)return json({ok:true,updated:0},200,origin);
+  const now=Date.now(),unique=[...new Map(clean.map(x=>[x.id,x])).values()],statements=[];
+  for(const x of unique)statements.push(env.DB.prepare("UPDATE videos SET duration_seconds=?,updated_at=? WHERE id=?").bind(x.duration,now,x.id));
+  for(let i=0;i<statements.length;i+=250)await env.DB.batch(statements.slice(i,i+250));
+  return json({ok:true,updated:unique.length},200,origin);
+}
+
 async function adminVideoCategory(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   const b=await body(request);
@@ -379,7 +400,7 @@ async function resolveScheduledR2Keys(env,rows){
 }
 async function publicSchedule(request,env,origin){
   await ensureVideoSchema(env.DB);
-  const rows=await env.DB.prepare("SELECT s.id,s.video_id,s.start_time,s.position,s.enabled,v.title,v.object_key,v.thumbnail_key,v.video_type,c.name AS category FROM video_schedule s JOIN videos v ON v.id=s.video_id LEFT JOIN video_categories c ON c.id=v.category_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
+  const rows=await env.DB.prepare("SELECT s.id,s.video_id,s.start_time,s.position,s.enabled,v.title,v.object_key,v.thumbnail_key,v.video_type,v.duration_seconds,c.name AS category FROM video_schedule s JOIN videos v ON v.id=s.video_id LEFT JOIN video_categories c ON c.id=v.category_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
   // Las claves R2 guardadas en D1 son la fuente estable de reproducción.
   // La reparación de claves se ejecuta explícitamente desde el panel; no hacemos
   // cientos de HEAD de R2 en cada consulta pública de programación.
@@ -647,6 +668,7 @@ export default {
       if(path==="/api/admin/upload/abort"&&request.method==="POST")return adminUploadAbort(request,env,origin);
       if(path==="/api/admin/video/delete"&&request.method==="POST")return adminDeleteVideo(request,env,origin);
       if(path==="/api/admin/video/category"&&request.method==="POST")return adminVideoCategory(request,env,origin);
+      if(path==="/api/admin/video/durations"&&request.method==="POST")return adminVideoDurations(request,env,origin);
       if(path==="/api/admin/video/category-order"&&request.method==="POST")return adminVideoCategoryOrder(request,env,origin);
       if(path==="/api/channel/state"&&request.method==="GET")return channelState(request,env,origin);
       if(path==="/api/admin/m3u8"&&request.method==="GET")return adminM3u8(request,env,origin);
