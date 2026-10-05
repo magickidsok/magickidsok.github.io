@@ -608,6 +608,8 @@ function chooseScheduledIndex(){return scheduledVideos.length?0:-1;}
 function loadVideoDuration(item){
   const key=String(item?.object_key||"");
   if(!key)return Promise.resolve(0);
+  const known=Number(item?.duration_seconds||item?.duration||0);
+  if(Number.isFinite(known)&&known>0){videoDurationCache.set(key,known);return Promise.resolve(known);}
   if(videoDurationCache.has(key))return Promise.resolve(videoDurationCache.get(key));
   return new Promise(resolve=>{
     const v=document.createElement("video");
@@ -630,8 +632,8 @@ function loadVideoDuration(item){
 }
 async function prepareSynchronizedTimeline(){
   const durations=[];
-  for(let i=0;i<scheduledVideos.length;i+=4){
-    const batch=scheduledVideos.slice(i,i+4).map(loadVideoDuration);
+  for(let i=0;i<scheduledVideos.length;i+=8){
+    const batch=scheduledVideos.slice(i,i+8).map(loadVideoDuration);
     durations.push(...await Promise.all(batch));
   }
   return durations;
@@ -699,16 +701,11 @@ function detectPlayingScheduledIndex(){
 function updateScheduledNowNext(){
   const nowEl=document.getElementById("nowShow"),nextEl=document.getElementById("nextShow"),nowTimeEl=document.getElementById("nowTime"),nextTimeEl=document.getElementById("nextTime");
   if(!nowEl||!nextEl)return;
-  if(!scheduledVideos.length){
-    nowEl.textContent="Sin programación";nextEl.textContent="Esperando video";nowTimeEl.textContent="--:--";nextTimeEl.textContent="--:--";return;
-  }
-  const idx=detectPlayingScheduledIndex();
-  const cur=scheduledVideos[idx>=0?idx:0];
-  const next=scheduledVideos[((idx>=0?idx:0)+1)%scheduledVideos.length];
-  nowEl.textContent=cur.title||"Video";
-  nowTimeEl.textContent=cur.start_time||"--:--";
-  nextEl.textContent=next.title||"Video";
-  nextTimeEl.textContent=next.start_time||"--:--";
+  if(!scheduledVideos.length){nowEl.textContent="Sin programación";nextEl.textContent="Esperando video";nowTimeEl.textContent="--:--";nextTimeEl.textContent="--:--";return;}
+  const idx=detectPlayingScheduledIndex(),safeIdx=idx>=0?idx:0;
+  const cur=scheduledVideos[safeIdx],next=scheduledVideos[(safeIdx+1)%scheduledVideos.length];
+  nowEl.textContent=cur.title||"Video";nowTimeEl.textContent="POSICIÓN "+(safeIdx+1)+" / "+scheduledVideos.length;
+  nextEl.textContent=next.title||"Video";nextTimeEl.textContent="POSICIÓN "+(((safeIdx+1)%scheduledVideos.length)+1)+" / "+scheduledVideos.length;
 }
 function showOffAir(show=true){
   const overlay=document.getElementById("offAirOverlay");if(!overlay)return;
@@ -893,14 +890,19 @@ document.getElementById("magicVideo")?.addEventListener("ended",()=>{if(schedule
 
 window.addEventListener("offline",()=>setStreamState("offline","Sin conexión a Internet."));
 function updateNowNext(){
-  if(scheduledMode&&scheduledVideos.length){updateScheduledNowNext();return;}
   const nowEl=document.getElementById("nowShow"),nextEl=document.getElementById("nextShow"),nowTimeEl=document.getElementById("nowTime"),nextTimeEl=document.getElementById("nextTime");if(!nowEl||!nextEl)return;
-  const d=new Date();const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(d);
+  const state=lastScheduleChannelState||{};
+  if(state.status==="offair"){nowEl.textContent="FUERA DE AIRE";nowTimeEl.textContent="Actualizando programación";const n=scheduledVideos[0]||schedule[0];nextEl.textContent=n?.title||n?.[1]||"Esperando programación";nextTimeEl.textContent="PRÓXIMO";return;}
+  if(state.status==="stopped"){nowEl.textContent="CANAL DETENIDO";nowTimeEl.textContent="--:--";const n=scheduledVideos[0]||schedule[0];nextEl.textContent=n?.title||n?.[1]||"Esperando inicio";nextTimeEl.textContent="PRÓXIMO";return;}
+  if(scheduledMode&&scheduledVideos.length){updateScheduledNowNext();return;}
+  if(scheduledVideos.length){const n=scheduledVideos[0],nx=scheduledVideos[1]||scheduledVideos[0];nowEl.textContent="SINCRONIZANDO PROGRAMACIÓN";nowTimeEl.textContent="CANAL EN VIVO";nextEl.textContent=nx?.title||"Próximo video";nextTimeEl.textContent="POSICIÓN 2 / "+scheduledVideos.length;return;}
+  if(state.status==="live"){nowEl.textContent="SIN PROGRAMACIÓN";nowTimeEl.textContent="CANAL EN VIVO";nextEl.textContent="Esperando video";nextTimeEl.textContent="--:--";return;}
+  const d=new Date(),parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(d);
   const h=Number(parts.find(p=>p.type==="hour").value)%24,m=Number(parts.find(p=>p.type==="minute").value),cur=h*60+m;
   const starts=schedule.map((x,i)=>{const [hh,mm]=x[0].split(":").map(Number);let t=hh*60+mm;return {i,t:t<720?t+1440:t}});
   let base=cur<720?cur+1440:cur,active=-1,nextIndex=-1,nextAbs=null;
-  for(let i=0;i<starts.length;i++){let s=starts[i].t;if(base>=s){let e=i<starts.length-1?starts[i+1].t:starts[0].t+1440;if(base<e){active=i;nextIndex=i<starts.length-1?i+1:0;nextAbs=e;break}}}
-  if(active===-1){nowEl.textContent="Fuera de programación";nowTimeEl.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}).format(d);const n=schedule[0];nextEl.textContent=n[1];nextTimeEl.textContent=n[0];return}
+  for(let i=0;i<starts.length;i++){let ss=starts[i].t;if(base>=ss){let e=i<starts.length-1?starts[i+1].t:starts[0].t+1440;if(base<e){active=i;nextIndex=i<starts.length-1?i+1:0;nextAbs=e;break}}}
+  if(active===-1){nowEl.textContent="Sin programación";nowTimeEl.textContent="--:--";const n=schedule[0];nextEl.textContent=n?.[1]||"Esperando programación";nextTimeEl.textContent=n?.[0]||"--:--";return;}
   nowEl.textContent=schedule[active][1];nowTimeEl.textContent=schedule[active][0];const nxt=schedule[nextIndex];nextEl.textContent=nxt[1];const nt=(nextAbs%1440+1440)%1440;nextTimeEl.textContent=String(Math.floor(nt/60)).padStart(2,"0")+":"+String(nt%60).padStart(2,"0");
 }
 document.addEventListener("DOMContentLoaded",async()=>{
