@@ -158,7 +158,7 @@ const API="https://magickidsok-github-io.elmagickids.workers.dev";
 let videos=[],schedule=[],channel={status:"stopped",generation:0};
 let ADMIN_TOKEN="";try{ADMIN_TOKEN=sessionStorage.getItem("mk_admin_token")||""}catch(e){}
 const $=id=>document.getElementById(id);
-async function api(path,opt={}){const sep=path.includes("?")?"&":"?";const freshPath=path+sep+"_="+Date.now();const headers=new Headers(opt.headers||{});if(ADMIN_TOKEN)headers.set("Authorization","Bearer "+ADMIN_TOKEN);const r=await fetch(API+freshPath,{...opt,headers,cache:"no-store",credentials:"include"});let d={};try{d=await r.json()}catch(e){}if(!r.ok)throw Error(d.error||"No se pudo conectar con el panel.");return d}
+async function api(path,opt={}){const sep=path.includes("?")?"&":"?";const freshPath=path+sep+"_="+Date.now();const r=await fetch(API+freshPath,{cache:"no-store",credentials:"include",...opt});let d={};try{d=await r.json()}catch(e){}if(!r.ok)throw Error(d.error||"No se pudo conectar con el panel.");return d}
 function showTab(id){document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));$(id).classList.remove("hidden");document.querySelectorAll(".side button").forEach(x=>x.classList.toggle("active",x.dataset.tab===id));if(id==="videos")loadVideos();if(id==="commercials"){loadVideos();}if(id==="schedule"){loadVideos();loadSchedule();loadChannelState();}if(id==="categories")loadCategories()}
 window.showTab=showTab;
 async function boot(){try{const me=await api("/api/me");if(me.user?.isAdmin){$("login").classList.add("hidden");$("app").style.display="block";$("logout").classList.remove("hidden");await loadAll()}else throw Error("Esta cuenta no tiene permisos de administrador.")}catch(e){$("loginMsg").textContent=e.message}}
@@ -602,12 +602,12 @@ $("catBtn").onclick=async()=>{
   }catch(e){alert(e.message)}
 };
 window.delVideo=async id=>{if(!confirm("¿Eliminar este video? También se quitará de la programación."))return;try{await api("/api/admin/video/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});schedule=schedule.filter(x=>x.video_id!==Number(id));await loadVideos();renderSchedule();await autoSave()}catch(e){alert(e.message)}};
-$("loginBtn").onclick=async()=>{const msg=$("loginMsg");msg.textContent="Ingresando…";try{const d=await api("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:$("pin").value})});if(d.token){ADMIN_TOKEN=String(d.token);try{sessionStorage.setItem("mk_admin_token",ADMIN_TOKEN)}catch(e){}}await boot()}catch(e){msg.textContent=e.message}};
+$("loginBtn").onclick=async()=>{const msg=$("loginMsg");msg.textContent="Ingresando…";try{await api("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:$("pin").value})});await boot()}catch(e){msg.textContent=e.message}};
 $("togglePin").onclick=()=>{const input=$("pin"),btn=$("togglePin");const visible=input.type==="text";input.type=visible?"password":"text";btn.textContent=visible?"👁️":"🙈";btn.title=visible?"Mostrar código":"Ocultar código";btn.setAttribute("aria-label",visible?"Mostrar código":"Ocultar código")};
 $("forgotBtn").onclick=()=>{$("masterBox").style.display=$("masterBox").style.display==="none"?"block":"none";$("masterMsg").textContent="";if($("masterBox").style.display!=="none")$("masterCode").focus()};
 $("toggleMaster").onclick=()=>{const input=$("masterCode"),btn=$("toggleMaster");const visible=input.type==="text";input.type=visible?"password":"text";btn.textContent=visible?"👁️":"🙈";btn.title=visible?"Mostrar código maestro":"Ocultar código maestro";btn.setAttribute("aria-label",visible?"Mostrar código maestro":"Ocultar código maestro")};
-$("masterLoginBtn").onclick=async()=>{const msg=$("masterMsg");msg.textContent="Verificando…";try{const d=await api("/api/admin/master-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:$("masterCode").value})});if(d.token){ADMIN_TOKEN=String(d.token);try{sessionStorage.setItem("mk_admin_token",ADMIN_TOKEN)}catch(e){}}await boot()}catch(e){msg.textContent=e.message}};
-$("logout").onclick=async()=>{try{await api("/api/logout",{method:"POST"})}finally{ADMIN_TOKEN="";try{sessionStorage.removeItem("mk_admin_token")}catch(e){}location.reload()}};
+$("masterLoginBtn").onclick=async()=>{const msg=$("masterMsg");msg.textContent="Verificando…";try{await api("/api/admin/master-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:$("masterCode").value})});await boot()}catch(e){msg.textContent=e.message}};
+$("logout").onclick=async()=>{await api("/api/logout",{method:"POST"});location.reload()};
 document.querySelectorAll(".side button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 boot();
