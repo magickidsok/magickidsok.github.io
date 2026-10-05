@@ -352,7 +352,7 @@ async function publishLiveOverlay(){
 }
 async function clearLiveOverlay(){
   const btn=$("clearLiveOverlay");btn.disabled=true;
-  try{await api("/api/admin/live-overlay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"clear"}));$("liveOverlayMsg").textContent="✓ Mensaje retirado."}
+  try{await api("/api/admin/live-overlay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"clear"})});$("liveOverlayMsg").textContent="✓ Mensaje retirado."}
   catch(e){$("liveOverlayMsg").textContent=e.message}
   finally{btn.disabled=false}
 }
