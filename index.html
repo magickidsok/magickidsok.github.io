@@ -921,7 +921,37 @@ document.addEventListener("DOMContentLoaded",async()=>{
   await playerStart;
   channelPollTimer=setInterval(()=>syncChannelState(),15000);setInterval(()=>syncScheduledToClock(),5000);
   document.getElementById("copyHome")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copyHome").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copyHome").textContent="COPIAR ALIAS",1600)}catch(e){}});
-});</script><script src="assets/chat.js?v=2026.10.04.04"></script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script>
+});</script><style id="mk-live-overlay-style">
+.mkLiveOverlay{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:90;max-width:min(82%,760px);padding:11px 18px;border-radius:10px;background:rgba(7,7,25,.94);border:1px solid rgba(157,69,255,.9);box-shadow:0 8px 24px rgba(0,0,0,.28);color:#fff;font-size:clamp(15px,2.1vw,24px);font-weight:800;line-height:1.25;text-align:center;word-break:break-word;pointer-events:none;display:none}
+.mkLiveOverlay.show{display:block}
+@media(max-width:600px){.mkLiveOverlay{bottom:52px;max-width:88%;padding:9px 13px;font-size:15px}}
+</style>
+<script id="mk-live-overlay">
+(function(){
+  const API="https://magickidsok-github-io.elmagickids.workers.dev";
+  let box=null,lastUpdated=0;
+  function ensure(){
+    const screen=document.getElementById("screen");if(!screen)return null;
+    if(!box){
+      box=document.createElement("div");box.className="mkLiveOverlay";box.setAttribute("aria-live","polite");
+      screen.appendChild(box);
+    }
+    return box;
+  }
+  async function refresh(){
+    try{
+      const r=await fetch(API+"/api/live-overlay?_="+Date.now(),{cache:"no-store"});
+      if(!r.ok)return;
+      const d=await r.json(),el=ensure();if(!el)return;
+      if(d.visible&&d.message){
+        if(Number(d.updatedAt||0)!==lastUpdated){el.textContent=d.message;lastUpdated=Number(d.updatedAt||0);}
+        el.classList.add("show");
+      }else{el.classList.remove("show");}
+    }catch(e){}
+  }
+  refresh();setInterval(refresh,3000);
+})();
+</script><script src="assets/chat.js?v=2026.10.04.04"></script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script>
 let magicPwaPrompt=null;
 window.addEventListener("beforeinstallprompt",e=>{
   e.preventDefault();
