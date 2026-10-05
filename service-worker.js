@@ -1,4 +1,7 @@
-const CACHE_NAME="magic-kids-pwa-v16";
+const CACHE_NAME="magic-kids-pwa-v17";
+// Actualización silenciosa de UNA sola vez para publicar la nueva programación.
+// Queda limitada exclusivamente a esta versión; las futuras no fuerzan recargas.
+const FORCE_REFRESH_ONCE = CACHE_NAME === "magic-kids-pwa-v17";
 const APP_SHELL=[
   "./",
   "./index.html",
@@ -21,7 +24,20 @@ self.addEventListener("activate",event=>{
   event.waitUntil(
     caches.keys().then(keys=>Promise.all(
       keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k))
-    )).then(()=>self.clients.claim())
+    ))
+    .then(()=>self.clients.claim())
+    .then(async()=>{
+      if(!FORCE_REFRESH_ONCE)return;
+      const list=await self.clients.matchAll({type:"window",includeUncontrolled:true});
+      await Promise.all(list.map(async client=>{
+        try{
+          const u=new URL(client.url);
+          if((u.pathname==="/"||u.pathname==="/index.html") && "navigate" in client){
+            await client.navigate(client.url);
+          }
+        }catch(_){}
+      }));
+    })
   );
 });
 
