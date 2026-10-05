@@ -135,6 +135,7 @@ const VIDEO_API="https://magickidsok-github-io.elmagickids.workers.dev";
 let magicHls=null, magicPlyr=null, magicRetryTimer=null, magicRetryAttempt=0, magicStreamStarted=false;
 let scheduledMode=false, currentVideoIndex=-1, scheduledVideos=[];
 let channelStartedAt=0;
+let lastScheduleChannelState={};
 const videoDurationCache=new Map();
 let playerVolume=0.5;
 let playerMuted=true;
