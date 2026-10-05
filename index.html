@@ -1,547 +1,122 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="theme-color" content="#03164b"><title>Magic Kids | Sitio Oficial - EN VIVO y Programación</title><meta name="mk-build" content="2026.10.05.1"><style>:root{--bg:#03164b;--bg2:#08276f;--card:rgba(3,20,67,.88);--line:rgba(139,203,255,.18);--blue:#1788ff;--cyan:#67c8ff;--red:#e52c37;--red2:#a81620;--yellow:#ffd21b;--muted:#c3d7ef}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:#fff;font-family:Inter,Segoe UI,Arial,sans-serif;background:radial-gradient(circle at 8% 12%,rgba(69,161,255,.34) 0 2px,transparent 3px),radial-gradient(circle at 91% 18%,rgba(41,131,255,.26) 0 2px,transparent 3px),radial-gradient(circle at 72% 67%,rgba(37,129,255,.23) 0 2px,transparent 3px),linear-gradient(180deg,#03184d,#041f60 55%,#020e31);background-size:170px 170px,230px 230px,190px 190px,auto;background-attachment:fixed}a{text-decoration:none;color:inherit}.shell{width:min(1180px,calc(100% - 18px));margin:auto;padding-bottom:28px}header{text-align:center;padding:15px 0 10px;position:relative}.brand{display:block;width:min(300px,72vw);margin:0 auto 3px}.brand svg{width:100%;height:auto;display:block;filter:drop-shadow(0 10px 20px rgba(0,0,0,.4))}.logoMagic{font-size:140px;font-weight:900;fill:var(--yellow);stroke:#06090d;stroke-width:9;paint-order:stroke}.logoKids{font-size:50px;font-weight:1000;fill:#ffe71a;stroke:#111;stroke-width:4;paint-order:stroke}.logoStar{fill:#1596ff;stroke:#081629;stroke-width:5}nav{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;background:rgba(3,17,61,.82);border:1px solid var(--line);padding:8px;border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.22);backdrop-filter:blur(10px)}nav a{padding:11px 14px;border-radius:11px;font-size:11px;font-weight:1000;letter-spacing:.3px;color:#d4e6fc}nav a:hover,nav a.active{background:rgba(26,132,255,.24);color:#fff}nav a.donate{background:linear-gradient(135deg,var(--red),var(--red2));color:#fff}.clock{position:absolute;right:3px;top:16px;padding:7px 10px;border-radius:11px;background:rgba(2,18,61,.72);border:1px solid var(--line);font-size:10px;font-weight:1000}.alert{margin:12px 0 16px;padding:10px 14px;border-radius:13px;background:rgba(10,67,151,.44);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:9px;font-size:12px}.dot{width:8px;height:8px;border-radius:50%;background:#62ff98;box-shadow:0 0 12px #62ff98}.hero{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 50px rgba(0,0,0,.28);backdrop-filter:blur(12px)}.player,.donateBox{padding:21px}.row{display:flex;align-items:center;justify-content:space-between;gap:15px}.row h1{margin:0;font-size:26px}.row em{font-style:normal;color:var(--cyan)}.live{font-size:10px;font-weight:1000;padding:8px 10px;border-radius:99px;background:rgba(23,126,232,.22)}.screen{margin-top:16px;aspect-ratio:16/9;border-radius:16px;display:grid;place-items:center;text-align:center;background:linear-gradient(145deg,#010817,#041b49);border:1px solid rgba(95,189,255,.16);position:relative;overflow:hidden}.screen:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(40,145,255,.18),transparent 36%)}.play{position:relative;z-index:2;width:74px;height:74px;border:0;border-radius:50%;background:linear-gradient(135deg,#198cff,#0d5cc8);color:#fff;font-size:26px;cursor:pointer;box-shadow:0 10px 32px rgba(13,107,231,.28)}.status{position:relative;z-index:2;margin-top:7px;font-weight:800}.screen small{position:relative;z-index:2;color:#97b8dc}.controls{display:flex;gap:8px;margin-top:10px}.controls button{border:1px solid var(--line);background:rgba(255,255,255,.05);color:#fff;border-radius:9px;padding:8px 11px;font-size:11px;cursor:pointer}.donateBox{text-align:center}.heart{font-size:42px;color:#6bcaff}.donateBox h2{margin:5px 0 8px;font-size:24px}.donateBox p{color:var(--muted);font-size:13px;line-height:1.65}.bank{margin-top:13px;padding:16px;text-align:left;border-radius:15px;background:linear-gradient(135deg,rgba(15,83,184,.24),rgba(196,26,35,.18));border:1px solid var(--line)}.bank small{display:block;color:#84c8ff;font-weight:1000;font-size:9px;letter-spacing:1px}.bank strong{display:block;font-size:24px;margin:4px 0 5px}.bank span{display:block;color:#bdd3ed;font-size:10px}.bank button{margin-top:10px;border:0;background:var(--red);color:#fff;padding:8px 10px;border-radius:8px;font-size:10px;font-weight:1000;cursor:pointer}.btn{display:inline-flex;justify-content:center;align-items:center;padding:11px 14px;border-radius:10px;font-size:11px;font-weight:1000;margin-top:12px}.red{background:linear-gradient(135deg,var(--red),var(--red2));box-shadow:0 10px 26px rgba(229,44,55,.22)}.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.tile{display:grid;grid-template-columns:auto 1fr auto;gap:11px;align-items:center;padding:15px;background:rgba(3,19,65,.7);border:1px solid var(--line);border-radius:15px}.tile b{display:grid;place-items:center;width:39px;height:39px;border-radius:11px;background:rgba(29,131,246,.16)}.tile strong{display:block;font-size:13px}.tile span{display:block;color:#a9c5e6;font-size:10px;margin-top:2px}.tile i{font-style:normal;font-size:21px;color:#80c9ff}.grid{display:grid;grid-template-columns:1.35fr .65fr;gap:16px;margin-top:16px}.grid>.card{padding:19px}.link{font-size:11px;font-weight:1000;color:#7fcaff}.schedule{margin-top:10px}.item{display:grid;grid-template-columns:58px 1fr;gap:11px;padding:11px;border-radius:11px;background:rgba(255,255,255,.04);margin-bottom:7px}.item time{color:#79c6ff;font-weight:1000;font-size:12px}.item strong{font-size:12px}.socials p{color:var(--muted);font-size:13px;line-height:1.65}.socialRow{display:flex;gap:8px;margin-top:13px}.socialRow a{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.05);font-weight:1000}.campaign{margin-top:16px;padding:19px 22px;border-radius:19px;background:linear-gradient(100deg,rgba(8,59,142,.9),rgba(135,19,27,.9));border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px}.campaign h2{margin:0 0 4px;font-size:22px}.campaign p{margin:0;color:#cfe0f2;font-size:12px}.campaign .btn{margin:0}footer{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:23px 5px 0;margin-top:25px;border-top:1px solid rgba(255,255,255,.1)}footer p{margin:0;color:#93aed0;font-size:10px}footer a{color:#b8cfe9;font-size:10px}.mini{font-weight:1000;color:var(--yellow);font-size:23px;-webkit-text-stroke:1px #111}.mini span{color:#1596ff;font-size:16px}.mini b{display:block;text-align:right;color:var(--yellow);font-size:8px}.links{display:flex;gap:14px}@media(max-width:900px){.hero,.grid{grid-template-columns:1fr}.clock{position:static;display:inline-block;margin-top:7px}}@media(max-width:600px){.shell{width:calc(100% - 12px)}nav a{padding:9px 9px;font-size:9px}.tiles{grid-template-columns:1fr}.campaign,footer{flex-direction:column;align-items:flex-start}.row h1{font-size:23px}}
-/* Logo oficial subido por Alex */
-.brand svg{display:none!important}
-.brand::before{content:"";display:block;width:100%;aspect-ratio:1.92/1;background:url("assets/magic-kids-logo.webp") center/contain no-repeat}
-.mini{width:180px;height:74px;background:url("assets/magic-kids-logo.webp") center/contain no-repeat;font-size:0;-webkit-text-stroke:0}
-.mini>*{display:none!important}
-
-.offAirOverlay{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(10,4,25,.94);padding:20px;box-sizing:border-box}
-.offAirOverlay.hidden{display:none}
-.offAirBox{max-width:760px;text-align:center;padding:34px 28px;border:2px solid #7b3cff;border-radius:18px;background:rgba(18,8,42,.97);box-shadow:0 0 35px rgba(123,60,255,.22)}
-.offAirTitle{font-size:clamp(30px,5vw,58px);font-weight:900;color:#fff;margin-bottom:14px}
-.offAirText{font-size:clamp(18px,2.5vw,30px);font-weight:800;line-height:1.35;color:#fff}
-.offAirIg{margin-top:22px;font-size:18px;color:#ddd}
-.offAirIg b{color:#fff}
-</style><style>
-/* Logo fijo dentro del reproductor, también visible en pantalla completa */
-.screen{position:relative}
-.playerLogoOverlay{
-  position:absolute;
-  z-index:100;
-  top:10px;
-  right:10px;
-  width:clamp(58px,9vw,92px);
-  height:auto;
-  max-width:92px;
-  max-height:52px;
-  object-fit:contain;
-  object-position:top right;
-  pointer-events:none;
-  user-select:none;
-}
-@media(max-width:600px){
-  .playerLogoOverlay{top:7px;right:7px;width:64px;max-height:38px}
-}
-#screen:fullscreen{width:100vw;height:100vh;max-width:none;max-height:none;border-radius:0}#screen:fullscreen .playerLogoOverlay{top:18px;right:18px;width:clamp(72px,8vw,110px);max-width:110px;max-height:64px;z-index:1000}
-</style>
-<style id="magic-kids-official-background">
-body{
-  background-image:url("assets/magic-kids-stars.svg?v=db6db9bd8e7052115d3e66459050370406c7092a") !important;
-  background-size:1600px 900px !important;
-  background-position:center top !important;
-  background-repeat:repeat-y !important;
-  background-attachment:fixed !important;
-}
-</style><style>.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}.screen .status{position:absolute;left:0;right:0;bottom:8px;text-align:center;text-shadow:0 1px 5px #000;pointer-events:none;display:none!important}</style><style>.nowNext{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin-top:16px;padding:15px 18px;border-radius:17px;background:linear-gradient(100deg,rgba(8,59,142,.85),rgba(126,18,27,.82));border:1px solid rgba(139,203,255,.2);box-shadow:0 12px 34px rgba(0,0,0,.18)}.nowNext>div:not(.nextArrow){min-width:0}.nowNext small{display:block;color:#8fd1ff;font-size:9px;letter-spacing:1px;font-weight:1000}.nowNext strong{display:block;font-size:16px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowNext span{display:block;color:#d4e3f3;font-size:10px;margin-top:3px}.nextArrow{font-size:27px;font-weight:900;color:#ffd21b}.nowNext>div:last-child{text-align:right}@media(max-width:600px){.nowNext{grid-template-columns:1fr;gap:7px}.nowNext>div:last-child{text-align:left}.nextArrow{display:none}.nowNext strong{white-space:normal}}</style><style>
-.chatCard{padding:20px;min-height:100%;display:flex;flex-direction:column}.chatIntro{color:#bfd4ec;font-size:12px;line-height:1.55;margin:8px 0 12px}.chatLogin{display:grid;grid-template-columns:1fr auto;gap:7px}.chatLogin input,.chatCompose input{width:100%;border:1px solid rgba(130,196,255,.2);background:#04194a;color:#fff;border-radius:10px;padding:10px 11px;outline:none}.blueBtn{background:linear-gradient(135deg,#1788ff,#0d5cc8);color:#fff;border:0;cursor:pointer;margin:0}.hidden{display:none!important}.chatApp{display:flex;flex-direction:column;min-height:390px}.chatTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.chatTop span{font-size:10px;color:#9dccf5;font-weight:900}.chatOnlineCount{display:inline-flex;align-items:center;white-space:nowrap;color:#76e88e!important;background:rgba(57,205,101,.1);border:1px solid rgba(57,205,101,.2);padding:4px 7px;border-radius:999px;font-size:9px!important}.chatAdminStatus{display:inline-flex;align-items:center;white-space:nowrap;color:#b7c7da;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);padding:4px 7px;border-radius:999px;font-size:9px;font-weight:900}.chatAdminStatus.admin{color:#79f0a0;background:rgba(57,205,101,.12);border-color:rgba(57,205,101,.28)}.miniBtn{border:1px solid rgba(125,192,255,.2);background:rgba(255,255,255,.05);color:#fff;border-radius:8px;padding:7px 8px;font-size:9px;font-weight:900;cursor:pointer}.chatMessages{flex:1;overflow:auto;min-height:220px;max-height:270px;padding:6px 3px;display:flex;flex-direction:column;gap:6px}.msg{padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.045);border:1px solid rgba(145,205,255,.08)}.msg .meta{font-size:9px;color:#75c5ff;font-weight:900;margin-bottom:2px}.msg .txt{font-size:12px;color:#e4effc;word-break:break-word}.msg .mod{float:right;display:flex;gap:4px}.mod button{border:0;border-radius:6px;padding:3px 5px;font-size:8px;color:#fff;background:#7f1d26;cursor:pointer}.chatCompose{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:8px}.chatHint{font-size:9px;color:#7e9fbe;margin-top:7px}.adminPanel{margin-top:10px;border-top:1px solid rgba(146,203,255,.14);padding-top:10px}.adminHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}.adminHead strong{font-size:12px}.adminUser{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);padding:7px;border-radius:8px;margin-bottom:5px}.adminUser span{font-size:10px}.banBtn{background:#b91725}.kickBtn{background:#7f1d26}.adminHelp{font-size:9px;line-height:1.4;color:#819fbc}code{color:#9dd5ff}@media(max-width:600px){.chatLogin,.chatCompose{grid-template-columns:1fr}.chatApp{min-height:320px}}
-</style><style id="registered-chat-style">
-.chatAuthTabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
-.chatAuthTab{border:1px solid rgba(125,192,255,.2);background:rgba(255,255,255,.05);color:#cfe4fb;border-radius:9px;padding:9px;font-size:10px;font-weight:1000;cursor:pointer}
-.chatAuthTab.active{background:rgba(25,130,245,.2);color:#fff;border-color:rgba(75,163,255,.35)}
-#chatAuthPanel{display:grid;gap:7px}
-#chatAuthPanel input{width:100%;border:1px solid rgba(130,196,255,.2);background:#04194a;color:#fff;border-radius:10px;padding:10px 11px;outline:none}
-.chatAuthMsg{min-height:16px;color:#ffcf55;font-size:10px;line-height:1.35}
-.chatAuthMsg.ok{color:#7cf29e}
-.chatAuthMsg.error{color:#ff9b9b}
-.chatIdentityWrap{display:flex;align-items:center;gap:8px;min-width:0}
-.chatIdentityWrap>div:last-child{min-width:0}
-.chatCrown{font-size:19px;line-height:1;filter:drop-shadow(0 0 5px rgba(255,208,63,.85));text-align:center}
-.chatCrown.hidden{display:none}
-.chatActions{display:flex;align-items:center;gap:5px}
-.chatAdminStatus{display:inline-flex;align-items:center;white-space:nowrap;color:#b7c7da;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);padding:4px 7px;border-radius:999px;font-size:8px;font-weight:900}
-.chatAdminStatus.admin{color:#79f0a0;background:rgba(57,205,101,.12);border-color:rgba(57,205,101,.28)}
-.msgCrown{font-size:11px;filter:drop-shadow(0 0 4px rgba(255,208,63,.8));margin-right:3px}
-.chatAuthTab:disabled{opacity:.65;cursor:not-allowed}
-@media(max-width:600px){.chatActions{flex-wrap:wrap;justify-content:flex-end}.chatAuthTab{font-size:9px}}
-</style><style id="registered-admin-style">
-.adminSetup{margin-top:8px;padding:10px;border-radius:10px;background:rgba(255,210,27,.06);border:1px solid rgba(255,210,27,.18);display:grid;gap:6px}.adminSetup strong{font-size:11px}.adminSetup span{font-size:9px;color:#9eb7d4;line-height:1.4}.adminSetup .miniBtn{justify-self:start}
-</style><style id="custom-chat-style">
-.customChatAuth{display:grid;gap:9px}
-.customChatTabs,.customChatSubtabs{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.customChatSubtabs{margin-top:7px}
-.customChatTab,.customChatSubtab{border:1px solid rgba(125,192,255,.22);background:rgba(255,255,255,.05);color:#d9ebff;border-radius:9px;padding:10px 8px;font-size:10px;font-weight:900;cursor:pointer}
-.customChatTab.active,.customChatSubtab.active{background:rgba(25,130,245,.22);color:#fff;border-color:rgba(75,163,255,.45)}
-.customChatField{width:100%;border:1px solid rgba(130,196,255,.22);background:#04194a;color:#fff;border-radius:10px;padding:11px;outline:none;box-sizing:border-box}
-.customChatField:focus{border-color:rgba(75,163,255,.7)}
-.customChatAuthMsg{min-height:17px;color:#ffcf55;font-size:10px;line-height:1.4}
-.customChatAuthMsg.ok{color:#7cf29e}.customChatAuthMsg.error{color:#ff9b9b}
-.customAdminAuth{display:grid;gap:8px;padding:12px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(125,192,255,.14)}
-.customAdminLock{text-align:center;font-size:24px;line-height:1}
-.customAdminAuth strong{font-size:13px}.customAdminAuth span{font-size:10px;color:#9eb8d4;line-height:1.4}
-.customChatApp{display:flex;flex-direction:column;min-height:390px}
-.customChatTop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-.customChatIdentity{display:flex;align-items:center;gap:7px;min-width:0}
-.customChatCrown{font-size:20px}.customChatCrown.hidden{display:none}
-.customChatIdentity strong{display:block;font-size:11px}.customChatIdentity span{display:block;color:#76e88e;font-size:9px;margin-top:3px}
-.customChatActions{display:flex;align-items:center;gap:5px}
-.customChatRole{white-space:nowrap;color:#b7c7da;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);padding:4px 7px;border-radius:999px;font-size:8px;font-weight:900}
-.customChatRole.admin{color:#79f0a0;background:rgba(57,205,101,.12);border-color:rgba(57,205,101,.28)}
-.customChatMessages{flex:1;overflow:auto;min-height:220px;max-height:290px;padding:4px 2px;display:flex;flex-direction:column;gap:6px}
-.customChatMsg{padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.045);border:1px solid rgba(145,205,255,.08)}
-.customChatMeta{font-size:9px;color:#75c5ff;font-weight:900;margin-bottom:2px}
-.customChatCrownMini{font-size:11px;margin-right:3px}.customChatText{font-size:12px;color:#e4effc;word-break:break-word}
-.customChatMod{float:right;display:flex;gap:4px}.customChatMod button{border:0;border-radius:6px;padding:3px 5px;font-size:8px;color:#fff;background:#7f1d26;cursor:pointer}
-.customChatCompose{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:8px}
-.customChatCompose input{width:100%;border:1px solid rgba(130,196,255,.2);background:#04194a;color:#fff;border-radius:10px;padding:10px 11px;outline:none;box-sizing:border-box}
-.customChatHint{font-size:9px;color:#7e9fbe;margin-top:7px}.customChatAdminPanel{margin-top:8px;border-top:1px solid rgba(146,203,255,.14);padding-top:8px}
-@media(max-width:600px){.customChatCompose{grid-template-columns:1fr}.customChatApp{min-height:330px}.customChatMessages{max-height:260px}}
-</style><style>
-/* MAGIC KIDS — MOBILE POLISH */
-@media (max-width: 700px){
-  html{font-size:16px}
-  body{overflow-x:hidden}
-  .shell{width:100%;max-width:none;padding:0 10px 22px}
-  header{padding:12px 0 8px}
-  .brand{width:min(220px,64vw);margin-bottom:8px}
-  .clock{
-    position:static;
-    display:inline-flex;
-    margin:4px auto 0;
-    font-size:10px;
-    padding:6px 9px;
-  }
-  nav{
-    width:100%;
-    justify-content:flex-start;
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    overflow-y:hidden;
-    scrollbar-width:none;
-    -webkit-overflow-scrolling:touch;
-    gap:6px;
-    padding:7px;
-  }
-  nav::-webkit-scrollbar{display:none}
-  nav a{
-    flex:0 0 auto;
-    white-space:nowrap;
-    padding:10px 12px;
-    font-size:10px;
-  }
-  .alert{
-    margin:10px 0 12px;
-    padding:9px 10px;
-    justify-content:flex-start;
-    flex-wrap:wrap;
-    font-size:11px;
-    line-height:1.35;
-  }
-  .alert span:last-child{width:100%;padding-left:17px}
-  .hero,.grid,.donateGrid{grid-template-columns:1fr!important;gap:12px}
-  .player,.donateBox,.grid>.card,.donateMain,.side,.scheduleCard,.returnGrid .card{padding:15px}
-  .row{gap:8px}
-  .row h1{font-size:23px;line-height:1.15}
-  .live{font-size:9px;padding:7px 8px}
-  .screen{
-    margin-top:12px;
-    aspect-ratio:16/9;
-    min-height:190px;
-    border-radius:13px;
-  }
-  .play{width:62px;height:62px;font-size:22px}
-  .controls{display:grid;grid-template-columns:1fr 1fr}
-  .controls button{width:100%;padding:10px 8px}
-  .donateBox{text-align:left}
-  .donateBox .heart{text-align:center}
-  .donateBox h2,.donateMain h2{font-size:21px;line-height:1.2}
-  .donateBox p,.donateMain p,.side p{font-size:12px;line-height:1.6}
-  .bank{padding:14px;margin-top:10px}
-  .bank strong{font-size:22px}
-  .btn{width:100%;margin-top:10px}
-  .tiles{grid-template-columns:1fr!important;gap:9px;margin-top:12px}
-  .tile{padding:12px}
-  .tile b{width:36px;height:36px}
-  .tile strong{font-size:12px}
-  .tile span{font-size:9px}
-  .nowNext{
-    grid-template-columns:1fr!important;
-    gap:8px;
-    padding:13px;
-    margin-top:12px;
-  }
-  .nowNext>div:last-child{text-align:left!important}
-  .nextArrow{display:none}
-  .nowNext strong{font-size:15px;white-space:normal}
-  .grid{margin-top:12px}
-  .grid>.card{min-width:0}
-  .schedule{max-height:300px;overflow:auto;padding-right:2px}
-  .item{grid-template-columns:52px 1fr;padding:10px}
-  .item time{font-size:11px}
-  .item strong{font-size:11px}
-  .socials{min-height:unset}
-  .socialRow{margin-bottom:0}
-  .campaign{
-    margin-top:12px;
-    padding:15px;
-    flex-direction:column;
-    align-items:stretch;
-    gap:8px;
-  }
-  .campaign h2{font-size:20px}
-  .campaign p{font-size:11px;line-height:1.5}
-  footer{
-    flex-direction:column;
-    align-items:flex-start;
-    gap:10px;
-    padding-top:18px;
-    margin-top:18px;
-  }
-  footer .links{flex-wrap:wrap;gap:10px}
-  .head{padding:22px 6px 14px}
-  .head h1{font-size:31px;line-height:1.1}
-  .head p{font-size:12px}
-  .banner{padding:12px;flex-direction:column;align-items:flex-start;gap:5px}
-  .banner h2{font-size:17px}
-  .list{gap:6px}
-  .prog{
-    grid-template-columns:56px minmax(0,1fr);
-    gap:9px;
-    padding:11px 10px;
-  }
-  .prog time{font-size:12px}
-  .prog strong{font-size:11px;line-height:1.25}
-  .prog b{display:none}
-  .returnHero{padding:35px 16px 28px}
-  .returnHero h1{font-size:43px;line-height:1}
-  .returnHero p{font-size:12px;line-height:1.6}
-  .returnGrid{grid-template-columns:1fr!important;gap:10px;margin-top:12px}
-  .star{width:65px;height:65px;font-size:32px}
-  .chatCard{min-height:0!important}
-  .chatIntro{font-size:11px}
-  .chatLogin,.chatCompose{grid-template-columns:1fr!important}
-  .chatApp{min-height:360px}
-  .chatMessages{min-height:190px;max-height:290px}
-  .chatTop{gap:8px}
-  .chatTop span{font-size:9px}
-  .chatCompose input,.chatLogin input{font-size:14px;padding:11px}
-  .blueBtn{width:100%;padding:11px}
-  .adminPanel{font-size:11px}
-}
-@media (min-width:701px) and (max-width:980px){
-  .shell{width:calc(100% - 20px)}
-}
-</style><style>
-.streamBadge{position:absolute;top:10px;left:10px;z-index:3;display:flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:rgba(2,10,34,.82);border:1px solid rgba(255,255,255,.12);font-size:9px;letter-spacing:.5px;pointer-events:none}.streamDot{width:7px;height:7px;border-radius:50%;background:#20e86b;box-shadow:0 0 10px rgba(32,232,107,.8)}.streamBadge.offline .streamDot{background:#ff3b47;box-shadow:0 0 10px rgba(255,59,71,.7)}.streamBadge.connecting .streamDot{background:#ffd21b;box-shadow:0 0 10px rgba(255,210,27,.7)}.retryBtn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;border:0;border-radius:10px;padding:10px 14px;background:linear-gradient(135deg,#1788ff,#0d5cc8);color:#fff;font-weight:1000;font-size:11px;cursor:pointer;box-shadow:0 12px 25px rgba(0,0,0,.3)}.retryBtn.hidden{display:none}
-</style><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#03164b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>
-.pwaInstall{display:none;align-items:center;justify-content:center;gap:9px;margin:10px auto 0;padding:10px 15px;border:1px solid rgba(87,214,116,.35);border-radius:12px;background:linear-gradient(135deg,#168f3a,#0c6f2d);color:#fff;font-weight:1000;font-size:11px;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.18)}
-.pwaInstall.show{display:inline-flex}
-.pwaInstall span{font-size:15px}
-</style><style id="magic-stars-style">
-.magicStars{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
-.magicStars .magicStar{position:absolute;width:var(--size);height:var(--size);object-fit:contain;opacity:var(--opacity);will-change:transform}
-body{position:relative}
-body>.shell,body>main,body>.page,body>.container{position:relative;z-index:1}
-@media (max-width:700px){.magicStars .magicStar{opacity:.5}}
-</style><style id="cursor-sparkle-style">
-.cursorSparkle{
- position:fixed;left:0;top:0;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;
- pointer-events:none;z-index:2147483647;opacity:0;
- color:#39a9ff;font:900 11px/11px Arial,sans-serif;text-align:center;
- text-shadow:0 0 3px #fff,0 0 7px #188cff,0 0 12px rgba(40,150,255,.9);
- will-change:transform,opacity;
- animation:cursorSparkleFly .85s ease-out forwards;
-}
-.cursorSparkle::before{content:"★";display:block}
-@keyframes cursorSparkleFly{
- 0%{opacity:0;transform:translate3d(0,0,0) scale(.2) rotate(0)}
- 12%{opacity:1;transform:translate3d(0,0,0) scale(1) rotate(0)}
- 100%{opacity:0;transform:translate3d(var(--dx),var(--dy),0) scale(.25) rotate(var(--rot))}
-}
-@media(max-width:700px){.cursorSparkle{display:none!important}}
-</style><style id="player-logo-overlay-style">
-.playerLogoOverlay{
-  position:absolute;
-  top:10px;
-  right:10px;
-  width:78px;
-  max-width:18%;
-  height:auto;
-  object-fit:contain;
-  z-index:5;
-  pointer-events:none;
-  user-select:none;
-  filter:drop-shadow(0 2px 5px rgba(0,0,0,.5));
-  opacity:.96;
-}
-@media(max-width:700px){
-  .playerLogoOverlay{width:62px;max-width:20%;top:8px;right:8px}
-}
-</style><meta name="description" content="Sitio web oficial de Magic Kids. Mirá la señal EN VIVO, consultá la programación, participá del chat y conocé las novedades del canal.">
-<meta name="author" content="Magic Kids">\n<meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="canonical" href="https://magickidsok.online/">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Magic Kids">
-<meta property="og:title" content="Magic Kids | Sitio Oficial - EN VIVO y Programación">
-<meta property="og:description" content="Sitio web oficial de Magic Kids. Mirá la señal EN VIVO, consultá la programación, participá del chat y conocé las novedades del canal.">
-<meta property="og:url" content="https://magickidsok.online/">
-<meta property="og:image" content="https://magickidsok.online/assets/magic-kids-app.webp">
-<meta property="og:image:alt" content="Magic Kids">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Magic Kids | Sitio Oficial - EN VIVO y Programación">
-<meta name="twitter:description" content="Sitio web oficial de Magic Kids. Mirá la señal EN VIVO, consultá la programación, participá del chat y conocé las novedades del canal.">
-<meta name="twitter:image" content="https://magickidsok.online/assets/magic-kids-app.webp">
-<meta name="theme-color" content="#03164b">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Magic Kids">
-<link rel="icon" href="/assets/magic-kids-tab.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="assets/magic-kids-logo.webp"><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://magickidsok.online/#website","name":"Magic Kids","alternateName":"Magic Kids WEBTV","url":"https://magickidsok.online/","description":"Sitio web oficial de Magic Kids con señal en vivo, programación y comunidad online.","inLanguage":"es-AR","publisher":{"@id":"https://magickidsok.online/#organization"}},{"@type":"Organization","@id":"https://magickidsok.online/#organization","name":"Magic Kids","alternateName":"Magic Kids WEBTV","url":"https://magickidsok.online/","logo":"https://magickidsok.online/assets/magic-kids-logo.webp","description":"Proyecto Magic Kids y su sitio web oficial, con señal online, programación y comunidad.","sameAs":["https://magic2021.blogspot.com/"]}]}</script><style id="donor-ticker-style">
-.donorTicker{
-  width:100%;
-  height:34px;
-  margin-top:8px;
-  border-radius:9px;
-  overflow:hidden;
-  background:#061a4d;
-  border:1px solid rgba(75,163,255,.26);
-  box-shadow:0 7px 18px rgba(0,0,0,.18);
-  display:flex;
-  align-items:center;
-  position:relative;
-}
-.donorTicker::before,
-.donorTicker::after{
-  content:"";
-  position:absolute;
-  top:0;
-  bottom:0;
-  width:24px;
-  z-index:2;
-  pointer-events:none;
-}
-.donorTicker::before{left:0;background:linear-gradient(90deg,#061a4d,rgba(6,26,77,0))}
-.donorTicker::after{right:0;background:linear-gradient(270deg,#061a4d,rgba(6,26,77,0))}
-.donorTickerTrack{
-  display:flex;
-  align-items:center;
-  flex:0 0 auto;
-  width:max-content;
-  white-space:nowrap;
-  will-change:transform;
-  animation:magicDonorTicker 52s linear infinite;
-}
-.donorTickerGroup{
-  display:flex;
-  align-items:center;
-  flex:0 0 auto;
-}
-.donorTickerItem{
-  color:#fff;
-  font-size:11px;
-  font-weight:900;
-  letter-spacing:.2px;
-  margin-right:46px;
-  flex:0 0 auto;
-}
-.donorTickerItem.yellow{color:#ffd21b}
-@keyframes magicDonorTicker{
-  from{transform:translate3d(0,0,0)}
-  to{transform:translate3d(-50%,0,0)}
-}
-@media(max-width:700px){
-  .donorTicker{height:33px;margin-top:7px;border-radius:8px}
-  .donorTickerTrack{animation-duration:64s}
-  .donorTickerItem{font-size:9.5px;margin-right:34px}
-}
-</style><style id="clock-position-fix">.clock{position:absolute;right:3px;top:16px;z-index:20}@media(max-width:900px){.clock{position:absolute;right:3px;top:16px;margin-top:0;display:inline-block}}</style><script id="mkNoCache">(function(){try{if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).catch(()=>{});}document.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll("img[src],video[src],audio[src],script[src],link[href]").forEach(el=>{const a=el.getAttribute("src")||el.getAttribute("href");if(a&&/^assets\\//.test(a)&&!a.includes("?")){const k=el.hasAttribute("src")?"src":"href";el.setAttribute(k,a+"?v=8602f99501eb4bf0715fe5abc4a48e5bcf39e7ae");}});});}catch(e){}})();</script><script id="mkSilentUpdateDisabled">/* Actualizaciones silenciosas desactivadas. El sitio no recarga ni consulta nuevas versiones automáticamente. */</script><style id="magic-sync-player-style">
-/* MAGIC PLAYER ONLY — no chat styles or chat behavior live here. */
-.magicSyncNow{display:none!important}
-.magicSyncPlayer{background:#000!important;border:1px solid rgba(68,167,255,.32)!important;box-shadow:inset 0 0 70px rgba(0,0,0,.8),0 18px 45px rgba(0,0,0,.35);isolation:isolate}
-.magicSyncPlayer:before{display:none!important}
-.magicSyncPlayer video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1}
-.magicSyncPlayer .playerLogoOverlay{z-index:8;top:10px;right:11px;width:clamp(64px,9vw,96px);max-height:55px}
-.magicSyncPlayer .streamBadge{display:none!important}
-.magicSyncMessage{position:absolute;left:50%;bottom:53px;transform:translateX(-50%);z-index:7;color:#fff;font-size:10px;font-weight:900;text-shadow:0 2px 7px #000;pointer-events:none;white-space:nowrap}
-.magicSyncCenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:6;pointer-events:none}
-.syncPlayBtn{pointer-events:auto;width:68px;height:68px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(17,130,255,.92);color:#fff;font-size:25px;font-weight:900;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.5)}
-.syncPlayBtn:hover{transform:scale(1.04)}
-#syncPlayText{margin-top:9px;font-size:9px;font-weight:1000;letter-spacing:.5px;color:#fff;text-shadow:0 2px 8px #000}
-.magicPlayerControlBar{position:absolute;left:0;right:0;bottom:0;height:44px;z-index:9;display:flex;align-items:center;gap:7px;padding:0 10px;background:linear-gradient(transparent,rgba(0,0,0,.9));opacity:0;transition:opacity .18s ease}
-.magicSyncPlayer:hover .magicPlayerControlBar,.magicSyncPlayer:focus-within .magicPlayerControlBar{opacity:1}
-.magicPlayerControlBar{pointer-events:none}
-.magicSyncPlayer:hover .magicPlayerControlBar,.magicSyncPlayer:focus-within .magicPlayerControlBar{pointer-events:auto}
-.magicPlayerControl{width:34px;height:30px;padding:0;border:0;border-radius:7px;background:rgba(6,13,30,.78);color:#fff;font-size:15px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-.magicPlayerControl:hover{background:rgba(25,120,220,.85)}
-.magicPlayerVolume{width:82px;height:4px;accent-color:#43a9ff;cursor:pointer}
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#031a55"><meta name="description" content="Magic Kids en vivo — señal online, programación, donaciones y chat."><title>Magic Kids | EN VIVO</title><style>
+:root{--blue:#031a55;--blue2:#062b78;--line:rgba(119,190,255,.22);--white:#fff;--yellow:#ffd21b;--red:#e32635;--red2:#a80f1b}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;color:#fff;font-family:Arial,Segoe UI,sans-serif;background:#031a55 url("assets/magic-kids-stars.svg") center top/1600px auto repeat-y fixed}
+a{text-decoration:none;color:inherit}
+.page{width:min(980px,calc(100% - 20px));margin:auto;padding:10px 0 34px}
+header{text-align:center;padding:4px 0 8px}
+.logo{display:block;width:min(330px,76vw);height:auto;margin:0 auto 4px}
+.liveLine{font-size:10px;font-weight:900;letter-spacing:.7px;color:#bfe2ff}
+.liveDot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#5cff87;margin-right:5px}
+.playerCard,.simpleCard{background:rgba(2,17,62,.91);border:1px solid var(--line);border-radius:16px;padding:13px;box-shadow:0 12px 30px rgba(0,0,0,.24)}
+.playerTitle{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.playerTitle h1{font-size:18px;margin:0}.badge{font-size:9px;font-weight:900;background:rgba(23,136,255,.22);border:1px solid rgba(80,170,255,.28);padding:6px 9px;border-radius:99px}
+.screen{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:11px;overflow:hidden;border:1px solid rgba(115,190,255,.18)}
+.screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.playerLogoOverlay{position:absolute;z-index:100;top:9px;right:9px;width:clamp(55px,8vw,88px);max-height:50px;object-fit:contain;pointer-events:none}
+.magicPlayerControlBar{position:absolute;z-index:120;left:8px;right:8px;bottom:8px;display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:9px;background:rgba(0,0,0,.58);backdrop-filter:blur(4px)}
+.magicPlayerControl{border:0;background:rgba(255,255,255,.08);color:#fff;border-radius:7px;padding:6px 8px;font-size:9px;font-weight:900;cursor:pointer}
+.magicPlayerVolume{width:90px;accent-color:#1788ff}
+.magicPlayerSyncLabel{font-size:8px;color:#c9e7ff;font-weight:900}
 .magicPlayerSpacer{flex:1}
-.magicPlayerSyncLabel{font-size:9px;font-weight:900;color:#b7dcff;text-shadow:0 1px 5px #000;pointer-events:none}
-.magicSyncStatusRow{display:flex;align-items:center;justify-content:flex-end;margin-top:8px;min-height:18px}
-.magicSyncStatusRow span{font-size:9px;color:#8fcfff;font-weight:900}
-@media(max-width:600px){
-  .magicSyncPlayer .playerLogoOverlay{top:8px;right:8px;width:68px}
-  .magicSyncPlayer .streamBadge{top:8px;left:8px}
-  .magicPlayerControlBar{opacity:1;height:40px;pointer-events:auto}
-  .magicPlayerControl{width:32px;height:28px}
-  .magicPlayerSyncLabel{display:none}
-}
-#screen:fullscreen .playerLogoOverlay{top:18px!important;right:18px!important;width:clamp(74px,8vw,112px)!important}
-</style><style id="magic-share-social-style">
-.magicShareSection{margin-top:16px;display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
-.magicShareCard{padding:19px;background:rgba(3,19,65,.78);border:1px solid var(--line);border-radius:19px;box-shadow:0 14px 38px rgba(0,0,0,.18)}
-.magicShareCard h2{margin:0 0 5px;font-size:19px}
-.magicShareCard p{margin:0;color:#bdd3ed;font-size:11px;line-height:1.55}
-.magicShareBtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:13px;border:0;border-radius:11px;padding:11px 16px;background:linear-gradient(135deg,#1788ff,#0d5cc8);color:#fff;font-size:11px;font-weight:1000;cursor:pointer;box-shadow:0 9px 22px rgba(13,107,231,.2)}
-.magicShareBtn:hover{filter:brightness(1.08)}
-.magicShareOptions{display:none;flex-wrap:wrap;gap:7px;margin-top:10px}
-.magicShareOptions.show{display:flex}
-.magicShareOptions a,.magicShareOptions button{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:rgba(255,255,255,.05);color:#fff;border-radius:9px;padding:8px 10px;font-size:9px;font-weight:900;cursor:pointer}
-.magicShareOptions a:hover,.magicShareOptions button:hover{background:rgba(26,132,255,.18)}
-.magicSocialLinks{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}
-.magicSocialLink{display:inline-flex;align-items:center;gap:7px;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-size:10px;font-weight:1000}
-.magicSocialLink.instagram{background:linear-gradient(135deg,rgba(131,58,180,.28),rgba(225,48,108,.2))}
-.magicSocialLink.tiktok{background:rgba(255,255,255,.07)}
-.magicSocialLink:hover{background:rgba(26,132,255,.18)}
-@media(max-width:700px){.magicShareSection{grid-template-columns:1fr;gap:12px}.magicShareCard{padding:15px}}
-</style></head><body><script id="magic-stars-script">
-(function(){
-  function initMagicStars(){
-    if(document.getElementById("magicStars"))return;
-    const field=document.createElement("div");
-    field.id="magicStars";
-    field.className="magicStars";
-    document.body.prepend(field);
-    const count=58;
-    const stars=[];
-    for(let i=0;i<count;i++){
-      const img=document.createElement("img");
-      img.className="magicStar";
-      img.src="assets/magic-star.png";
-      img.alt="";
-      img.setAttribute("aria-hidden","true");
-      const size=4+Math.random()*9;
-      const opacity=.25+Math.random()*.5;
-      const depth=.12+Math.random()*.52;
-      const x=Math.random()*100;
-      const y=Math.random()*100;
-      img.style.setProperty("--size",size+"px");
-      img.style.setProperty("--opacity",opacity.toFixed(2));
-      img.style.left=x+"%";
-      img.style.top=y+"%";
-      field.appendChild(img);
-      stars.push({el:img,x,y,depth});
-    }
-    let targetX=0,targetY=0,currentX=0,currentY=0,raf=0;
-    function animate(){
-      currentX+=(targetX-currentX)*.055;
-      currentY+=(targetY-currentY)*.055;
-      for(const s of stars){
-        const dx=currentX*s.depth;
-        const dy=currentY*s.depth;
-        s.el.style.transform="translate("+dx.toFixed(2)+"px,"+dy.toFixed(2)+"px)";
-      }
-      raf=requestAnimationFrame(animate);
-    }
-    function move(e){
-      const x=(e.clientX/window.innerWidth-.5)*24;
-      const y=(e.clientY/window.innerHeight-.5)*16;
-      targetX=-x; targetY=-y;
-      if(!raf)animate();
-    }
-    window.addEventListener("mousemove",move,{passive:true});
-    window.addEventListener("mouseleave",()=>{targetX=0;targetY=0},{passive:true});
-    // En celulares mantenemos el fondo fijo y liviano.
-    if("ontouchstart" in window){
-      for(const s of stars)s.el.style.opacity=Math.min(parseFloat(getComputedStyle(s.el).opacity),.5);
-    }
-  }
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initMagicStars);
-  else initMagicStars();
-})();
-</script><div class="shell"><header><a class="brand" href="index.html"><svg viewBox="0 0 560 190" role="img" aria-label="Magic Kids"><text x="18" y="118" font-size="145" font-family="Arial Black,Arial Rounded MT Bold,sans-serif" font-weight="900" fill="#ffd21b" stroke="#06090d" stroke-width="9" paint-order="stroke" transform="skewX(-7)">magic</text><polygon points="420,8 432,42 468,44 440,65 450,100 420,80 390,100 400,65 372,44 408,42" fill="#1596ff" stroke="#081629" stroke-width="5"/><text x="350" y="165" font-size="50" font-family="Arial Black,Arial,sans-serif" font-weight="1000" fill="#ffe71a" stroke="#111" stroke-width="4" paint-order="stroke">KIDS</text></svg></a><nav><a class="active" href="index.html">INICIO</a><a href="programacion.html">PROGRAMACIÓN</a><a href="juegos.html">JUEGOS</a><a href="que-vuelva-magic.html">QUE VUELVA MAGIC</a><a class="donate" href="donar.html">DONAR</a><a href="descargar-aplicacion.html" class="downloadAppNav"><span class="androidIcon">●</span> DESCARGAR APLICACION</a></nav><div class="clock">🇦🇷 <span id="clock">--:--:--</span></div><div class="donorTicker" aria-label="Donadores de Magic Kids"><div class="donorTickerTrack"><div class="donorTickerGroup"><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARIA LUZ ZAIN DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span></div><div class="donorTickerGroup"><span class="donorTickerItem">MARIA DE CORDOBA DONO $3000</span><span class="donorTickerItem">MARIA LUZ ZAIN DONO $3000</span><span class="donorTickerItem">MARTIN DE BS.AS DONO $5000</span><span class="donorTickerItem">ROCIO DE FORMOSA DONO $1500</span><span class="donorTickerItem">NESTOR DE NEUQUEN DONO $10.000</span><span class="donorTickerItem">PATRICIO DE MENDOZA DONO $22.000</span><span class="donorTickerItem">TAMARA DE MAR DEL PLATA BS. AS DONO $4000</span><span class="donorTickerItem yellow">TU DONACION NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24HS</span></div></div></div></header><div class="alert"><span class="dot"></span><b>MAGIC KIDS EN VIVO</b><span>Sitio web oficial de Magic Kids: señal en vivo, programación y comunidad online.</span></div><button id="installPwa" class="pwaInstall"><span>📲</span> INSTALAR MAGIC KIDS</button><section class="hero"><div class="card player"><div class="row"><h1>Magic Kids <em>EN VIVO</em></h1><span class="live">● LIVE</span></div><div class="screen magicSyncPlayer" id="screen">
-  <div id="offAirOverlay" class="offAirOverlay hidden"><div class="offAirBox"><div class="offAirTitle">FUERA DE AIRE</div><div class="offAirText">ESTAMOS ACTUALIZANDO LA PROGRAMACION<br>EN INSTANTES VOLVEMOS</div><div class="offAirIg">📸 INSTAGRAM: <b>ELMAGICTVOK</b></div></div></div>
-  <video id="magicVideo" autoplay muted playsinline preload="metadata" controlsList="nodownload" disablePictureInPicture></video>
-  <img class="playerLogoOverlay" src="assets/magic-player-logo.svg?v=9de8b4106cc21d1024aafa150c10a34e01713361" alt="Magic Kids" aria-hidden="true">
-  <div class="magicSyncMessage" id="status">Conectando Magic Kids…</div>
-  <button class="retryBtn hidden" id="retryStream">↻ REINTENTAR</button>
-  <div class="magicPlayerControlBar" aria-label="Controles del reproductor">
-    <button id="playerMute" class="magicPlayerControl" type="button" aria-label="Volumen 0%" title="Volumen 0%">🔇 0%</button>
-    <input id="playerVolume" class="magicPlayerVolume" type="range" min="0" max="100" value="50" step="1" aria-label="Volumen" title="Volumen 50%">
-    <span class="magicPlayerSyncLabel">SINCRONIZADO CON LA PROGRAMACIÓN</span>
-    <span class="magicPlayerSpacer"></span>
-    <button id="playerFull" class="magicPlayerControl" type="button" aria-label="Pantalla completa" title="Pantalla completa">⛶</button>
-  </div>
+.magicSyncStatusRow{margin-top:7px;text-align:center;color:#8fd2ff;font-size:9px;font-weight:900}
+.retryBtn{position:absolute;z-index:150;left:50%;top:50%;transform:translate(-50%,-50%);border:0;border-radius:9px;background:#e32635;color:#fff;padding:10px 13px;font-weight:900;cursor:pointer}
+.hidden{display:none!important}
+.offAirOverlay{position:absolute;inset:0;z-index:130;display:flex;align-items:center;justify-content:center;background:rgba(3,9,30,.94);padding:18px}.offAirOverlay.hidden{display:none}.offAirBox{text-align:center;border:1px solid #7b3cff;border-radius:13px;background:#12082a;padding:22px}.offAirTitle{font-size:30px;font-weight:900}.offAirText{margin-top:8px;font-size:14px;font-weight:800;line-height:1.35}.offAirIg{margin-top:12px;font-size:11px;color:#cbd8ea}
+.nowNext{display:grid;grid-template-columns:1fr 38px 1fr;gap:9px;align-items:stretch;margin-top:10px}
+.nowNext>div:not(.nextArrow){padding:11px 12px;border-radius:11px;background:rgba(3,25,83,.9);border:1px solid var(--line);min-width:0}
+.nowNext small{display:block;color:#7fd0ff;font-size:8px;font-weight:900;letter-spacing:1px}.nowNext strong{display:block;margin-top:3px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowNext span{display:block;margin-top:3px;color:#b8cfe7;font-size:9px}.nextArrow{display:grid;place-items:center;color:var(--yellow);font-size:24px;font-weight:900}
+.donation{margin-top:10px;text-align:center}.donation h2,.chat h2{font-size:17px;margin:0 0 6px}.donation p{margin:0 0 10px;color:#c5d9ef;font-size:10px;line-height:1.45}
+.bank{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px;border-radius:10px;background:rgba(4,36,102,.75);border:1px solid var(--line)}
+.bankInfo{text-align:left}.bankInfo small{display:block;color:#8fd2ff;font-size:8px;font-weight:900;letter-spacing:.8px}.bankInfo strong{display:block;font-size:17px;color:#fff;margin-top:2px}.bankInfo span{display:block;color:#b8cde5;font-size:9px;margin-top:2px}
+.copyBtn{border:0;background:var(--red);color:#fff;border-radius:8px;padding:9px 12px;font-size:9px;font-weight:900;cursor:pointer}.copyBtn:hover{background:var(--red2)}
+.donorTicker{margin-top:10px;overflow:hidden;border-radius:9px;border:1px solid rgba(119,190,255,.18);background:rgba(2,18,63,.82);white-space:nowrap}.donorTickerTrack{display:flex;width:max-content;animation:donorMove 30s linear infinite}.donorTickerGroup{display:flex;flex:none}.donorTickerItem{padding:8px 16px;font-size:9px;font-weight:900;color:#fff;border-right:1px solid rgba(255,255,255,.08)}.donorTickerItem:nth-child(odd){color:#ffe45b}@keyframes donorMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.chat{margin-top:10px}.chatIntro{margin:0 0 9px;color:#bfd4ec;font-size:10px;line-height:1.45}.customChatAuth{display:grid;gap:7px}.customChatTabs,.customChatSubtabs{display:grid;grid-template-columns:1fr 1fr;gap:6px}.customChatTab,.customChatSubtab{border:1px solid rgba(125,192,255,.22);background:rgba(255,255,255,.05);color:#d9ebff;border-radius:8px;padding:8px;font-size:9px;font-weight:900;cursor:pointer}.customChatTab.active,.customChatSubtab.active{background:rgba(25,130,245,.22);color:#fff}.customChatField{width:100%;border:1px solid rgba(130,196,255,.22);background:#04194a;color:#fff;border-radius:8px;padding:9px;outline:none}.customChatAuthMsg{min-height:14px;color:#ffcf55;font-size:9px}.customChatAuthMsg.ok{color:#7cf29e}.customChatAuthMsg.error{color:#ff9b9b}.customAdminAuth{display:grid;gap:7px;padding:10px;border-radius:9px;background:rgba(255,255,255,.03);border:1px solid rgba(125,192,255,.14)}.customAdminLock{text-align:center;font-size:20px}.customAdminAuth strong{font-size:11px}.customAdminAuth span{font-size:9px;color:#9eb8d4}.btn{border:0;border-radius:8px;padding:9px 11px;font-size:9px;font-weight:900;cursor:pointer}.blueBtn{background:#147fe9;color:#fff}.customChatApp{display:flex;flex-direction:column;min-height:300px}.customChatTop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}.customChatIdentity{display:flex;align-items:center;gap:7px}.customChatCrown{font-size:17px}.customChatIdentity strong{display:block;font-size:10px}.customChatIdentity span{display:block;color:#76e88e;font-size:8px;margin-top:2px}.customChatActions{display:flex;gap:5px}.customChatRole,.miniBtn{border:1px solid rgba(125,192,255,.18);background:rgba(255,255,255,.05);color:#cfe4fb;border-radius:999px;padding:4px 7px;font-size:8px;font-weight:900}.miniBtn{border-radius:7px;cursor:pointer}.customChatRole.admin{color:#79f0a0}.customChatMessages{flex:1;overflow:auto;min-height:190px;max-height:300px;display:flex;flex-direction:column;gap:5px;padding:3px}.customChatMsg{padding:7px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(145,205,255,.08)}.customChatMeta{font-size:8px;color:#75c5ff;font-weight:900;margin-bottom:2px}.customChatText{font-size:10px;color:#e4effc;word-break:break-word}.customChatMod{float:right;display:flex;gap:3px}.customChatMod button{border:0;border-radius:5px;padding:3px 4px;font-size:7px;color:#fff;background:#7f1d26;cursor:pointer}.customChatCompose{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:7px}.customChatCompose input{width:100%;border:1px solid rgba(130,196,255,.2);background:#04194a;color:#fff;border-radius:8px;padding:9px;outline:none}.customChatHint{font-size:8px;color:#7e9fbe;margin-top:5px}.customChatAdminPanel{margin-top:7px;border-top:1px solid rgba(146,203,255,.14);padding-top:7px}.adminHead strong{font-size:10px}.adminHelp{font-size:8px;color:#819fbc}
+#hiddenSchedule{display:none}
+@media(max-width:600px){.page{width:calc(100% - 12px);padding-top:6px}.logo{width:min(250px,70vw)}.nowNext{grid-template-columns:1fr}.nextArrow{display:none}.nowNext strong{white-space:normal}.magicPlayerSyncLabel{display:none}.magicPlayerVolume{width:70px}.bankInfo{text-align:center}.customChatCompose{grid-template-columns:1fr}.donorTickerTrack{animation-duration:24s}}
+</style></head>
+<body>
+<div class="page">
+  <header>
+    <img class="logo" src="assets/magic-kids-logo.webp" alt="Magic Kids">
+    <div class="liveLine"><span class="liveDot"></span>MAGIC KIDS · SEÑAL EN VIVO</div>
+  </header>
+
+  <main>
+    <section class="playerCard">
+      <div class="playerTitle"><h1>MAGIC KIDS EN VIVO</h1><span class="badge">● LIVE</span></div>
+      <div class="screen magicSyncPlayer" id="screen">
+        <div id="offAirOverlay" class="offAirOverlay hidden"><div class="offAirBox"><div class="offAirTitle">FUERA DE AIRE</div><div class="offAirText">ESTAMOS ACTUALIZANDO LA PROGRAMACIÓN<br>EN INSTANTES VOLVEMOS</div><div class="offAirIg">INSTAGRAM: <b>ELMAGICTVOK</b></div></div></div>
+        <video id="magicVideo" autoplay muted playsinline preload="metadata" controlsList="nodownload" disablePictureInPicture></video>
+        <img class="playerLogoOverlay" src="assets/magic-player-logo.svg" alt="Magic Kids" aria-hidden="true">
+        <div id="status"></div>
+        <button class="retryBtn hidden" id="retryStream">↻ REINTENTAR</button>
+        <div class="magicPlayerControlBar" aria-label="Controles del reproductor">
+          <button id="playerMute" class="magicPlayerControl" type="button">🔇 0%</button>
+          <input id="playerVolume" class="magicPlayerVolume" type="range" min="0" max="100" value="50" step="1" aria-label="Volumen">
+          <span class="magicPlayerSyncLabel">SINCRONIZADO</span><span class="magicPlayerSpacer"></span>
+          <button id="playerFull" class="magicPlayerControl" type="button">⛶</button>
+        </div>
+      </div>
+      <div class="magicSyncStatusRow">● SEÑAL SINCRONIZADA CON LA PROGRAMACIÓN</div>
+    </section>
+
+    <section class="nowNext" aria-label="Programación actual">
+      <div><small>AHORA</small><strong id="nowShow">Calculando…</strong><span id="nowTime">--:--</span></div>
+      <div class="nextArrow">→</div>
+      <div><small>DESPUÉS</small><strong id="nextShow">Calculando…</strong><span id="nextTime">--:--</span></div>
+    </section>
+
+    <section class="simpleCard donation">
+      <h2>💙 DONACIONES</h2>
+      <p>Si querés ayudar a mantener Magic Kids online, podés colaborar por transferencia.</p>
+      <div class="bank">
+        <div class="bankInfo"><small>BANCO BRUBANK</small><strong>MAGICKIDS.OK</strong><span>A nombre de Marcelo Gomez</span></div>
+        <button id="copyHome" class="copyBtn" type="button">COPIAR ALIAS</button>
+      </div>
+    </section>
+
+    <div class="donorTicker" aria-label="Donadores">
+      <div class="donorTickerTrack">
+        <div class="donorTickerGroup">
+          <span class="donorTickerItem">DONADOR 01 · $4.000</span><span class="donorTickerItem">DONADOR 02 · $6.000</span><span class="donorTickerItem">DONADOR 03 · $4.000</span><span class="donorTickerItem">DONADOR 04 · $6.000</span><span class="donorTickerItem">DONADOR 05 · $4.000</span><span class="donorTickerItem">DONADOR 06 · $6.000</span><span class="donorTickerItem">DONADOR 07 · $6.000</span><span class="donorTickerItem">DONADOR 08 · $4.000</span><span class="donorTickerItem">DONADOR 09 · $6.000</span><span class="donorTickerItem">DONADOR 10 · $4.000</span>
+        </div>
+        <div class="donorTickerGroup" aria-hidden="true">
+          <span class="donorTickerItem">DONADOR 01 · $4.000</span><span class="donorTickerItem">DONADOR 02 · $6.000</span><span class="donorTickerItem">DONADOR 03 · $4.000</span><span class="donorTickerItem">DONADOR 04 · $6.000</span><span class="donorTickerItem">DONADOR 05 · $4.000</span><span class="donorTickerItem">DONADOR 06 · $6.000</span><span class="donorTickerItem">DONADOR 07 · $6.000</span><span class="donorTickerItem">DONADOR 08 · $4.000</span><span class="donorTickerItem">DONADOR 09 · $6.000</span><span class="donorTickerItem">DONADOR 10 · $4.000</span>
+        </div>
+      </div>
+    </div>
+
+    <section class="simpleCard chat">
+      <h2>💬 CHAT MAGIC KIDS</h2>
+      <p class="chatIntro">Entrá con tu cuenta para participar del chat.</p>
+      <div id="customChatAuth" class="customChatAuth">
+        <div class="customChatTabs"><button id="customLoginTab" class="customChatTab active">USUARIO</button><button id="customAdminTab" class="customChatTab">ADMINISTRADOR</button></div>
+        <div id="customUserAuth">
+          <div class="customChatSubtabs"><button id="customUserLoginTab" class="customChatSubtab active">ENTRAR</button><button id="customRegisterTab" class="customChatSubtab">CREAR CUENTA</button></div>
+          <input id="customChatNick" class="customChatField hidden" maxlength="24" placeholder="Elegí tu nick (sin MAGIC)" autocomplete="nickname">
+          <input id="customChatEmail" class="customChatField" type="email" maxlength="120" placeholder="Correo electrónico" autocomplete="email">
+          <input id="customChatPassword" class="customChatField" type="password" maxlength="128" placeholder="Contraseña" autocomplete="current-password">
+          <input id="customChatPassword2" class="customChatField hidden" type="password" maxlength="128" placeholder="Repetí la contraseña" autocomplete="new-password">
+          <button id="customChatAuthBtn" class="btn blueBtn">ENTRAR AL CHAT</button>
+        </div>
+        <div id="customAdminAuth" class="customAdminAuth hidden"><div class="customAdminLock">👑</div><strong>Acceso del administrador</strong><span>Usá el PIN privado de 4 dígitos.</span><input id="customAdminPin" class="customChatField" type="password" inputmode="numeric" maxlength="4" placeholder="PIN de 4 dígitos"><button id="customAdminLoginBtn" class="btn blueBtn">ENTRAR COMO ADMINISTRADOR</button></div>
+        <div id="customChatAuthMsg" class="customChatAuthMsg"></div>
+      </div>
+      <div id="customChatApp" class="customChatApp hidden">
+        <div class="customChatTop"><div class="customChatIdentity"><div id="customChatCrown" class="customChatCrown hidden">👑</div><div><strong id="customChatUser">Usuario</strong><span id="customChatOnline">👥 0 conectados</span></div></div><div class="customChatActions"><span id="customChatRole" class="customChatRole">USUARIO</span><button id="customChatLogout" class="miniBtn">SALIR</button></div></div>
+        <div id="customChatMessages" class="customChatMessages"></div>
+        <div class="customChatCompose"><input id="customChatText" maxlength="180" placeholder="Escribí tu mensaje…" autocomplete="off"><button id="customChatSend" class="btn blueBtn">ENVIAR</button></div>
+        <div class="customChatHint">Sin enlaces · mensajes de hasta 180 caracteres.</div>
+      </div>
+      <div id="customChatAdminPanel" class="customChatAdminPanel hidden"><div class="adminHead"><strong>Moderación</strong></div><p class="adminHelp">El administrador puede borrar mensajes y bloquear usuarios.</p></div>
+    </section>
+
+    <div id="hiddenSchedule"><div id="schedule"></div></div>
+  </main>
 </div>
-<div class="magicSyncStatusRow"><span>● SINCRONIZADO CON LA PROGRAMACIÓN</span></div></div><aside class="card donateBox"><div class="heart">♥</div><h2>APOYA AL CANAL MAGIC CON TU DONACION $</h2><p>Tu aporte está destinado a impulsar las acciones necesarias para que Magic Kids vuelva a la televisión argentina lo más pronto posible.</p><div class="bank"><small>BANCO BRUBANK</small><strong>MAGICKIDS.OK</strong><span>A NOMBRE DE MARCELO GOMEZ</span><button id="copyHome">COPIAR ALIAS</button></div><a class="btn red" href="donar.html">VER DATOS DE DONACIÓN</a></aside></section><section class="tiles"><a class="tile" href="programacion.html"><b>▦</b><div><strong>Programación</strong><span>Horarios y series</span></div><i>›</i></a><a class="tile" href="donar.html"><b>♥</b><div><strong>Apoyar Magic Kids</strong><span>Alias de la campaña</span></div><i>›</i></a></section><section id="magicShareSection" class="magicShareSection" aria-label="Compartir y redes sociales">
-  <div class="magicShareCard">
-    <h2>📲 COMPARTÍ MAGIC KIDS</h2>
-    <p>Compartí la página oficial de Magic Kids con tus amigos y en tus redes sociales.</p>
-    <button id="magicShareBtn" class="magicShareBtn" type="button">↗ COMPARTIR PÁGINA</button>
-    <div id="magicShareOptions" class="magicShareOptions" aria-label="Opciones para compartir">
-      <a id="magicShareWhatsApp" target="_blank" rel="noopener" href="#">WhatsApp</a>
-      <a id="magicShareFacebook" target="_blank" rel="noopener" href="#">Facebook</a>
-      <a id="magicShareX" target="_blank" rel="noopener" href="#">X</a>
-      <a id="magicShareTelegram" target="_blank" rel="noopener" href="#">Telegram</a>
-      <button id="magicCopyShare" type="button">COPIAR ENLACE</button>
-    </div>
-  </div>
-  <div class="magicShareCard">
-    <h2>🌐 SEGUÍ A MAGIC KIDS</h2>
-    <p>Encontranos en nuestras redes sociales:</p>
-    <div class="magicSocialLinks">
-      <a class="magicSocialLink instagram" href="https://www.instagram.com/ELMAGICTVOK/" target="_blank" rel="noopener noreferrer">◎ Instagram · ELMAGICTVOK</a>
-      <a class="magicSocialLink tiktok" href="https://www.tiktok.com/@ELMAGICTVOK" target="_blank" rel="noopener noreferrer">♪ TikTok · ELMAGICTVOK</a>
-    </div>
-  </div>
-</section><section class="nowNext" aria-label="Programación en tiempo real"><div><small>AHORA</small><strong id="nowShow">Calculando…</strong><span id="nowTime">--:--</span></div><div class="nextArrow">→</div><div><small>PRÓXIMO</small><strong id="nextShow">Calculando…</strong><span id="nextTime">--:--</span></div></section><section class="grid"><div class="card"><div class="row"><h2>La programación</h2><a class="link" href="programacion.html">Ver todo →</a></div><div id="schedule" class="schedule"></div></div><div class="card chatCard">
-  <h2>💬 Chat Magic Kids</h2>
-  <p class="chatIntro">Entrá con tu cuenta. Elegí <b>USUARIO</b> para el chat público o <b>ADMINISTRADOR</b> para usar tu PIN privado.</p>
-  <div id="customChatAuth" class="customChatAuth">
-    <div class="customChatTabs">
-      <button id="customLoginTab" class="customChatTab active">USUARIO</button>
-      <button id="customAdminTab" class="customChatTab">ADMINISTRADOR</button>
-    </div>
-    <div id="customUserAuth">
-      <div class="customChatSubtabs">
-        <button id="customUserLoginTab" class="customChatSubtab active">ENTRAR</button>
-        <button id="customRegisterTab" class="customChatSubtab">CREAR CUENTA</button>
-      </div>
-      <input id="customChatNick" class="customChatField hidden" maxlength="24" placeholder="Elegí tu nick (sin MAGIC)" autocomplete="nickname">
-      <input id="customChatEmail" class="customChatField" type="email" maxlength="120" placeholder="Correo electrónico" autocomplete="email">
-      <input id="customChatPassword" class="customChatField" type="password" maxlength="128" placeholder="Contraseña" autocomplete="current-password">
-      <input id="customChatPassword2" class="customChatField hidden" type="password" maxlength="128" placeholder="Repetí la contraseña" autocomplete="new-password">
-      <button id="customChatAuthBtn" class="btn blueBtn">ENTRAR AL CHAT</button>
-    </div>
-    <div id="customAdminAuth" class="customAdminAuth hidden">
-      <div class="customAdminLock">👑</div>
-      <strong>Acceso del administrador</strong>
-      <span>Usá el mismo PIN de 4 dígitos del panel privado de videos.</span>
-      <input id="customAdminPin" class="customChatField" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="one-time-code" placeholder="PIN de 4 dígitos">
-      <button id="customAdminLoginBtn" class="btn blueBtn">ENTRAR COMO ADMINISTRADOR</button>
-    </div>
-    <div id="customChatAuthMsg" class="customChatAuthMsg"></div>
-  </div>
-  <div id="customChatApp" class="customChatApp hidden">
-    <div class="customChatTop">
-      <div class="customChatIdentity">
-        <div id="customChatCrown" class="customChatCrown hidden">👑</div>
-        <div><strong id="customChatUser">Usuario</strong><span id="customChatOnline">👥 0 conectados</span></div>
-      </div>
-      <div class="customChatActions">
-        <span id="customChatRole" class="customChatRole">USUARIO</span>
-        <button id="customChatLogout" class="miniBtn">SALIR</button>
-      </div>
-    </div>
-    <div id="customChatMessages" class="customChatMessages"></div>
-    <div class="customChatCompose">
-      <input id="customChatText" maxlength="180" placeholder="Escribí tu mensaje…" autocomplete="off">
-      <button id="customChatSend" class="btn blueBtn">ENVIAR</button>
-    </div>
-    <div class="customChatHint">Sin enlaces · mensajes de hasta 180 caracteres.</div>
-  </div>
-  <div id="customChatAdminPanel" class="customChatAdminPanel hidden">
-    <div class="adminHead"><strong>Moderación de administrador</strong></div>
-    <p class="adminHelp">Podés borrar mensajes y bloquear usuarios.</p>
-  </div>
-</div></section><section class="campaign"><div><h2>QUE VUELVA MAGIC</h2><p>Conocé el objetivo de la campaña y cómo colaborar.</p></div><a class="btn red" href="que-vuelva-magic.html">ENTRAR</a></section><footer><div><div class="mini">magic<span>★</span><b>KIDS</b></div><p>Magic Kids © 2026 · Sitio independiente.</p></div><div class="links"><a href="index.html">Inicio</a><a href="programacion.html">Programación</a><a href="donar.html">Donar</a></div></footer></div><script>let schedule=[["22:00","DRAGON BALL"],["22:30","DRAGON BALL KAI"],["23:00","DRAGON BALL Z"],["01:00","DRAGON BALL SUPER"],["02:30","DRAGON BALL HEROES"],["03:30","DRAGON BALL GT"],["04:00","POKEMON"],["04:30","DIGIMON TAMERS"],["05:00","MIKAMI CAZAFANTASMAS"],["05:30","POWER RANGERS FUERZA DEL TIEMPO"],["06:00","MOB 100"],["06:30","DETECTIVE CONAN"],["07:30","LOS SIMPSONS"],["08:00","GAME LIFE"],["08:30","MONSTERS CIBERNETICOS"],["09:00","BLOQUE ANIMAX"],["11:00","RANMA 1/2"],["11:30","SAILOR MOON"]];
+let schedule=[["22:00","DRAGON BALL"],["22:30","DRAGON BALL KAI"],["23:00","DRAGON BALL Z"],["01:00","DRAGON BALL SUPER"],["02:30","DRAGON BALL HEROES"],["03:30","DRAGON BALL GT"],["04:00","POKEMON"],["04:30","DIGIMON TAMERS"],["05:00","MIKAMI CAZAFANTASMAS"],["05:30","POWER RANGERS FUERZA DEL TIEMPO"],["06:00","MOB 100"],["06:30","DETECTIVE CONAN"],["07:30","LOS SIMPSONS"],["08:00","GAME LIFE"],["08:30","MONSTERS CIBERNETICOS"],["09:00","BLOQUE ANIMAX"],["11:00","RANMA 1/2"],["11:30","SAILOR MOON"]];
 async function loadMagicSchedule(){
   try{
     const r=await fetch("https://magickidsok-github-io.elmagickids.workers.dev/api/schedule",{cache:"no-store"});
@@ -924,121 +499,6 @@ document.addEventListener("DOMContentLoaded",async()=>{
   await playerStart;
   channelPollTimer=setInterval(()=>syncChannelState(),15000);setInterval(()=>syncScheduledToClock(),5000);
   document.getElementById("copyHome")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copyHome").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copyHome").textContent="COPIAR ALIAS",1600)}catch(e){}});
-});</script><style id="mk-live-overlay-style">
-.mkLiveOverlay{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:90;max-width:min(82%,760px);padding:11px 18px;border-radius:10px;background:rgba(7,7,25,.94);border:1px solid rgba(157,69,255,.9);box-shadow:0 8px 24px rgba(0,0,0,.28);color:#fff;font-size:clamp(15px,2.1vw,24px);font-weight:800;line-height:1.25;text-align:center;word-break:break-word;pointer-events:none;display:none}
-.mkLiveOverlay.show{display:block}
-@media(max-width:600px){.mkLiveOverlay{bottom:52px;max-width:88%;padding:9px 13px;font-size:15px}}
-</style>
-<script id="mk-live-overlay">
-(function(){
-  const API="https://magickidsok-github-io.elmagickids.workers.dev";
-  let box=null,lastUpdated=0;
-  function ensure(){
-    const screen=document.getElementById("screen");if(!screen)return null;
-    if(!box){
-      box=document.createElement("div");box.className="mkLiveOverlay";box.setAttribute("aria-live","polite");
-      screen.appendChild(box);
-    }
-    return box;
-  }
-  async function refresh(){
-    try{
-      const r=await fetch(API+"/api/live-overlay?_="+Date.now(),{cache:"no-store"});
-      if(!r.ok)return;
-      const d=await r.json(),el=ensure();if(!el)return;
-      if(d.visible&&d.message){
-        if(Number(d.updatedAt||0)!==lastUpdated){el.textContent=d.message;lastUpdated=Number(d.updatedAt||0);}
-        el.classList.add("show");
-      }else{el.classList.remove("show");}
-    }catch(e){}
-  }
-  refresh();setInterval(refresh,3000);
-})();
-</script><script src="assets/chat.js?v=2026.10.04.04"></script><script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));}</script><script>
-let magicPwaPrompt=null;
-window.addEventListener("beforeinstallprompt",e=>{
-  e.preventDefault();
-  magicPwaPrompt=e;
-  document.getElementById("installPwa")?.classList.add("show");
 });
-document.getElementById("installPwa")?.addEventListener("click",async()=>{
-  if(!magicPwaPrompt)return;
-  magicPwaPrompt.prompt();
-  await magicPwaPrompt.userChoice;
-  magicPwaPrompt=null;
-  document.getElementById("installPwa")?.classList.remove("show");
-});
-window.addEventListener("appinstalled",()=>{
-  document.getElementById("installPwa")?.classList.remove("show");
-});
-</script><script id="cursor-sparkle-script">
-(function(){
-  if(window.matchMedia("(hover:none), (pointer:coarse)").matches)return;
-  let last=0;
-  function sparkle(x,y){
-    const now=performance.now();
-    if(now-last<45)return;
-    last=now;
-    const amount=1+(Math.random()<0.28?1:0);
-    for(let i=0;i<amount;i++){
-      const s=document.createElement("span");
-      s.className="cursorSparkle";
-      s.style.left=(x+(Math.random()*10-5))+"px";
-      s.style.top=(y+(Math.random()*10-5))+"px";
-      s.style.setProperty("--dx",(Math.random()*34-17).toFixed(1)+"px");
-      s.style.setProperty("--dy",(Math.random()*34-6).toFixed(1)+"px");
-      s.style.setProperty("--rot",(Math.random()*180-90).toFixed(1)+"deg");
-      const size=8+Math.random()*7;
-      s.style.fontSize=size+"px";
-      s.style.lineHeight=size+"px";
-      s.style.width=size+"px";
-      s.style.height=size+"px";
-      document.body.appendChild(s);
-      setTimeout(()=>s.remove(),900);
-    }
-  }
-  document.addEventListener("mousemove",e=>sparkle(e.clientX,e.clientY),{passive:true});
-})();
-</script><script id="magic-share-social-script">
-(function(){
-  const shareBtn=document.getElementById("magicShareBtn");
-  const options=document.getElementById("magicShareOptions");
-  if(!shareBtn)return;
-  const pageUrl=window.location.href.split("#")[0];
-  const shareText="Mirá Magic Kids en vivo y conocé toda la programación.";
-  const encodedUrl=encodeURIComponent(pageUrl);
-  const encodedText=encodeURIComponent(shareText);
-  const wa=document.getElementById("magicShareWhatsApp");
-  const fb=document.getElementById("magicShareFacebook");
-  const x=document.getElementById("magicShareX");
-  const tg=document.getElementById("magicShareTelegram");
-  if(wa)wa.href="https://wa.me/?text="+encodeURIComponent(shareText+" "+pageUrl);
-  if(fb)fb.href="https://www.facebook.com/sharer/sharer.php?u="+encodedUrl;
-  if(x)x.href="https://twitter.com/intent/tweet?text="+encodedText+"&url="+encodedUrl;
-  if(tg)tg.href="https://t.me/share/url?url="+encodedUrl+"&text="+encodedText;
-  shareBtn.addEventListener("click",async()=>{
-    const data={title:"Magic Kids | Sitio Oficial",text:shareText,url:pageUrl};
-    if(navigator.share){
-      try{
-        if(!navigator.canShare||navigator.canShare(data)){
-          await navigator.share(data);
-          return;
-        }
-      }catch(e){
-        if(e&&e.name==="AbortError")return;
-      }
-    }
-    options?.classList.toggle("show");
-  });
-  document.getElementById("magicCopyShare")?.addEventListener("click",async()=>{
-    const btn=document.getElementById("magicCopyShare");
-    try{
-      await navigator.clipboard.writeText(pageUrl);
-      btn.textContent="ENLACE COPIADO";
-      setTimeout(()=>btn.textContent="COPIAR ENLACE",1600);
-    }catch(e){
-      window.prompt("Copiá este enlace:",pageUrl);
-    }
-  });
-})();
-</script></body></html>
+<script src="assets/chat.js?v=2026.10.04.04"></script>
+</body></html>
