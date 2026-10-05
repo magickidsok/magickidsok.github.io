@@ -207,7 +207,20 @@ async function startViewerCounter(){
 async function loadAll(){await loadVideos();await loadCategories();await loadSchedule();await loadChannelState();renderCommercials();renderScheduleLibrary();startViewerCounter()}
 async function loadChannelState(){try{const d=await api("/api/channel/state");channel=d;renderChannel()}catch(e){}}
 function renderChannel(){const live=channel.status==="live",offair=channel.status==="offair",stopped=channel.status==="stopped";$("channelStatus").textContent=live?"🟢 REPRODUCIENDO VOD":offair?"🟣 FUERA DE AIRE":"🔴 DETENIDO";$("channelStatus").style.color=live?"#91f5b5":offair?"#c99cff":"#ff7b96";$("channelHint").textContent=live?"El reproductor público está reproduciendo automáticamente los videos en el orden guardado.":offair?"El reproductor público muestra FUERA DE AIRE mientras actualizás la programación.":"Subí y ordená tus videos y luego presioná INICIAR CANAL.";["startChannel","stopChannel","offAirChannel","restartChannel"].forEach(id=>$(id).classList.remove("activeState"));if(live)$("startChannel").classList.add("activeState");if(stopped)$("stopChannel").classList.add("activeState");if(offair)$("offAirChannel").classList.add("activeState");}
-async function setChannel(action){try{const d=await api("/api/admin/channel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action})});channel=d;renderChannel();await refreshAdminNowPlaying();}catch(e){alert(e.message)}}
+let channelActionBusy=false;
+async function setChannel(action){
+  if(channelActionBusy)return;
+  channelActionBusy=true;
+  const ids=["startChannel","stopChannel","offAirChannel","restartChannel"];
+  ids.forEach(id=>{const b=$(id);if(b)b.disabled=true});
+  try{
+    const d=await api("/api/admin/channel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action})});
+    channel=d;renderChannel();
+    $("channelHint").textContent=action==="restart"?"✓ CANAL REINICIADO. El reproductor público está recibiendo la nueva señal.":$("channelHint").textContent;
+    refreshAdminNowPlaying().catch(()=>{});
+  }catch(e){alert(e.message)}
+  finally{channelActionBusy=false;ids.forEach(id=>{const b=$(id);if(b)b.disabled=false})}
+}
 async function loadVideos(){try{try{await api("/api/admin/repair-r2-keys",{method:"POST"});}catch(e){}const d=await api("/api/videos");videos=d.videos||[];$("r2Warn").innerHTML=d.r2Configured?"":"<div class='warn'>⚠️ Falta conectar el binding VIDEOS de Cloudflare R2.</div>";renderVideos();fillQuick();renderCommercials();renderScheduleLibrary()}catch(e){$("videoRows").innerHTML="<tr><td colspan='6'>"+esc(e.message)+"</td></tr>"}}
 function renderVideos(){const type=v=>v.video_type==="commercial"?"<span class='kind commercial'>TANDA</span>":"<span class='kind'>SERIE</span>";$("videoRows").innerHTML=videos.map(v=>'<tr><td>🎞️</td><td><b>'+esc(v.title)+'</b></td><td>'+type(v)+'</td><td><span class="tag">'+esc(v.category||"Sin categoría")+'</span></td><td style="font-size:9px">'+esc(v.object_key)+'</td><td class="actions"><button class="btn red" onclick="delVideo('+v.id+')">Eliminar</button></td></tr>').join("")||'<tr><td colspan="6">Todavía no hay videos.</td></tr>'}
 function renderCommercials(){const cs=videos.filter(v=>v.video_type==="commercial");$("commercialLibrary").innerHTML=cs.map(v=>'<div class="libItem"><span>📢 '+esc(v.title)+'</span><button class="btn tiny" onclick="addVideoToSchedule('+v.id+')">+</button></div>').join("")||'<div class="hint">Todavía no hay tandas comerciales cargadas.</div>'}
@@ -266,7 +279,44 @@ $("clearScheduleSelection").onclick=()=>{selectedScheduleIndices.clear();updateS
 
 async function autoSave(){/* reservado; los cambios se publican con GUARDAR Y PUBLICAR ORDEN */}
 async function saveSchedule(showAlert=true){const items=schedule.map((x,i)=>({videoId:Number(x.video_id),startTime:String(x.start_time||"00:00")}));await api("/api/admin/schedule",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items})});if(showAlert)alert("Programación guardada y persistente.");}
-async function loadSchedule(){try{const d=await api("/api/schedule");schedule=(d.schedule||[]).map(x=>({...x}));selectedScheduleIndices.clear();renderSchedule();await refreshAdminNowPlaying(d)}catch(e){$("playlist").textContent=e.message;$("adminNowTitle").textContent="No disponible"}}
+let durationIndexRunning=false;
+async function indexMissingScheduleDurations(scheduleData){
+  if(durationIndexRunning)return;
+  const list=(scheduleData?.schedule||schedule).filter(x=>x&&x.object_key&&!Number(x.duration_seconds||0));
+  if(!list.length)return;
+  durationIndexRunning=true;
+  let done=0;const updates=[];
+  try{
+    $("adminNowMeta").textContent="Optimizando sincronización: 0/"+list.length+" duraciones…";
+    let cursor=0;
+    async function worker(){
+      while(true){
+        const i=cursor++;
+        if(i>=list.length)return;
+        const d=await adminVideoDuration(list[i]);
+        if(d>0)updates.push({id:Number(list[i].video_id),durationSeconds:d});
+        done++;
+        if(done%10===0||done===list.length)$("adminNowMeta").textContent="Optimizando sincronización: "+done+"/"+list.length+" duraciones…";
+      }
+    }
+    await Promise.all(Array.from({length:Math.min(8,list.length)},()=>worker()));
+    for(let i=0;i<updates.length;i+=100){
+      await api("/api/admin/video/durations",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:updates.slice(i,i+100)})});
+    }
+    schedule.forEach(item=>{const hit=updates.find(x=>Number(x.id)===Number(item.video_id));if(hit)item.duration_seconds=hit.durationSeconds;});
+    if(updates.length)$("adminNowMeta").textContent="✓ Sincronización optimizada: "+updates.length+" duraciones guardadas.";
+  }catch(e){
+    $("adminNowMeta").textContent="Sincronización parcial: "+e.message;
+  }finally{durationIndexRunning=false;}
+}
+async function loadSchedule(){
+  try{
+    const d=await api("/api/schedule");
+    schedule=(d.schedule||[]).map(x=>({...x}));
+    selectedScheduleIndices.clear();renderSchedule();await refreshAdminNowPlaying(d);
+    indexMissingScheduleDurations(d).catch(()=>{});
+  }catch(e){$("playlist").textContent=e.message;$("adminNowTitle").textContent="No disponible"}
+}
 function addVideoToSchedule(id,time){const v=videos.find(x=>x.id===Number(id));if(!v)return;schedule.push({video_id:v.id,title:v.title,start_time:time||$("quickTime").value||"00:00",video_type:v.video_type});renderSchedule();autoSave()}
 window.addVideoToSchedule=addVideoToSchedule;
 $("quickAdd").onclick=()=>addVideoToSchedule($("quickVideo").value);
@@ -315,8 +365,8 @@ async function uploadPartXHR(url,blob,onProgress){
   }
   throw lastError;
 }
-async function uploadLargeFile(file,type,categoryId,onProgress){
-  const init=await api("/api/admin/upload/initiate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:file.name,contentType:file.type||"video/mp4"})});
+async function uploadLargeFile(file,type,categoryId,durationSeconds,onProgress){
+  const init=await api("/api/admin/upload/initiate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:file.name,contentType:file.type||"video/mp4",durationSeconds})});
   const parts=[];
   try{
     const total=Math.ceil(file.size/MULTIPART_PART_SIZE);
@@ -349,11 +399,20 @@ async function uploadLargeFile(file,type,categoryId,onProgress){
     await Promise.all(Array.from({length:Math.min(MULTIPART_CONCURRENCY,total)},()=>worker()));
     if(fatal)throw fatal;
     for(let i=0;i<uploadedParts.length;i++)parts.push(uploadedParts[i]);
-    return await api("/api/admin/upload/complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:init.key,uploadId:init.uploadId,parts,title:file.name.replace(/\.[^.]+$/,""),categoryId,videoType:type})});
+    return await api("/api/admin/upload/complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:init.key,uploadId:init.uploadId,parts,title:file.name.replace(/.[^.]+$/,""),categoryId,videoType:type,durationSeconds})});
   }catch(e){
     try{await api("/api/admin/upload/abort",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:init.key,uploadId:init.uploadId})})}catch(_){}
     throw e;
   }
+}
+async async function getLocalVideoDuration(file){
+  return new Promise(resolve=>{
+    const url=URL.createObjectURL(file),v=document.createElement("video");let done=false;
+    const finish=()=>{if(done)return;done=true;const d=Number(v.duration);v.removeAttribute("src");v.load();URL.revokeObjectURL(url);resolve(Number.isFinite(d)&&d>0?d:0)};
+    v.preload="metadata";v.muted=true;v.playsInline=true;
+    v.addEventListener("loadedmetadata",finish,{once:true});v.addEventListener("error",finish,{once:true});
+    v.src=url;v.load();setTimeout(finish,10000);
+  });
 }
 async function uploadFiles(inputId,type,barId,msgId,queueId){
   const input=$(inputId),files=[...input.files];
@@ -366,6 +425,8 @@ async function uploadFiles(inputId,type,barId,msgId,queueId){
     const f=files[i],row=$(queueId+i),name=f.webkitRelativePath||f.name;
     row.lastElementChild.textContent=formatBytes(f.size)+" · subiendo…";
     try{
+      row.lastElementChild.textContent=formatBytes(f.size)+" · leyendo duración…";
+      const durationSeconds=await getLocalVideoDuration(f);
       if(f.size> MULTIPART_THRESHOLD){
         await uploadLargeFile(f,type,categoryId,(loaded,total,part,totalParts)=>{
           const pct=Math.min(100,Math.round(loaded/total*100));
@@ -375,7 +436,7 @@ async function uploadFiles(inputId,type,barId,msgId,queueId){
           $(msgId).textContent="Subiendo "+(i+1)+" de "+files.length+": "+name+" ("+pct+"%)";
         });
       }else{
-        const fd=new FormData();fd.append("file",f);fd.append("title",f.name.replace(/\.[^.]+$/,""));fd.append("categoryId",categoryId);fd.append("videoType",type);
+        const fd=new FormData();fd.append("file",f);fd.append("title",f.name.replace(/\.[^.]+$/,""));fd.append("categoryId",categoryId);fd.append("videoType",type);fd.append("durationSeconds",String(durationSeconds));
         await api("/api/admin/upload",{method:"POST",body:fd});
       }
       ok++;row.firstElementChild.textContent="✅";row.lastElementChild.textContent=formatBytes(f.size)+" · listo";row.lastElementChild.className="qok";
