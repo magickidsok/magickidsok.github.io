@@ -575,21 +575,22 @@ function setStreamState(state,msg){
 }
 function scheduleStreamRetry(){
   if(magicRetryTimer)return;
-  const delay=Math.min(15000,5000+magicRetryAttempt*2000);magicRetryAttempt++;
+  const delay=Math.min(15000,5000+magicRetryAttempt*2000);
+  magicRetryAttempt++;
   magicRetryTimer=setTimeout(async()=>{
     magicRetryTimer=null;
     try{
       const state=await fetchChannelControl();
       if(state?.status==="offair"){showOffAir(true);return;}
-      if(state?.status==="live"){
-        if(scheduledVideos.length){
-          setScheduledVideo(currentVideoIndex>=0?currentVideoIndex:chooseScheduledIndex(),true);
-        }else{
-          await startControlledChannel(false);
-        }
-      }else{
-        stopScheduledPlayer();
-      }
+      if(state?.status!=="live"){stopScheduledPlayer();return;}
+      if(!scheduledVideos.length){await startControlledChannel(false);return;}
+      const video=document.getElementById("magicVideo");
+      const index=currentVideoIndex>=0?currentVideoIndex:chooseScheduledIndex();
+      const resumeAt=video&&Number.isFinite(video.currentTime)?Math.max(0,Number(video.currentTime)):0;
+      /* Retry the same item and preserve its position; only advance normally
+         through the ended event. This avoids restarting a program from 00:00
+         after a brief network stall. */
+      setScheduledVideo(index,true,resumeAt);
     }catch(e){scheduleStreamRetry();}
   },delay);
   setStreamState("offline","La señal tuvo una interrupción. Reintentando automáticamente…");
