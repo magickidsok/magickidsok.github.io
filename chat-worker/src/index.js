@@ -350,30 +350,38 @@ async function adminLiveOverlay(request,env,origin){
   await env.DB.prepare("INSERT INTO live_overlay(id,message,expires_at,updated_at,visible) VALUES(1,?,?,?,1) ON CONFLICT(id) DO UPDATE SET message=?,expires_at=?,updated_at=?,visible=1").bind(message,expiresAt,now,message,expiresAt,now).run();
   return getLiveOverlay(request,env,origin);
 }
-async function ownPlaylist(request,env){
+async function ownPlaylist(request,env,liveMode=false){
   await ensureVideoSchema(env.DB);
   const rows=await env.DB.prepare("SELECT s.position,s.start_time,v.title,v.object_key,v.video_type,v.duration_seconds FROM video_schedule s JOIN videos v ON v.id=s.video_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
   const scheduleRows=rows.results||[];
   const state=await env.DB.prepare("SELECT status,started_at FROM channel_control WHERE id=1").first();
   const origin=new URL(request.url).origin;
   const durations=scheduleRows.map(x=>Number(x.duration_seconds||0));
-  let startIndex=0;
+  let startIndex=0,currentOffset=0;
   if(String(state?.status)==="live"&&Number(state?.started_at)>0&&durations.length&&durations.every(d=>d>0)){
     let elapsed=Math.max(0,(Date.now()-Number(state.started_at))/1000);
     const total=durations.reduce((a,b)=>a+b,0);
     if(total>0){
       elapsed%=total;
-      for(let i=0;i<durations.length;i++){if(elapsed<durations[i]){startIndex=i;break;}elapsed-=durations[i];}
+      for(let i=0;i<durations.length;i++){
+        const d=Number(durations[i]||0);
+        if(elapsed<d){startIndex=i;currentOffset=elapsed;break;}
+        elapsed-=d;
+      }
     }
   }
   const ordered=scheduleRows.length?scheduleRows.slice(startIndex).concat(scheduleRows.slice(0,startIndex)):[];
   const lines=["#EXTM3U","#EXT-X-VERSION:3","#EXT-X-PLAYLIST-TYPE:VOD"];
+  if(liveMode&&ordered.length&&currentOffset>0){
+    // Stable starting point for players that honor EXT-X-START.
+    lines.push("#EXT-X-START:TIME-OFFSET="+currentOffset.toFixed(3)+",PRECISE=YES");
+  }
   for(const x of ordered){
     const dur=Number(x.duration_seconds||0);
     lines.push("#EXTINF:"+(dur>0?dur.toFixed(3):"-1")+","+String(x.title||"Magic Kids").replace(/[\r\n]/g," "));
     lines.push(origin+"/media/"+String(x.object_key||"").split("/").map(encodeURIComponent).join("/"));
   }
-  const h=new Headers({"Content-Type":"application/vnd.apple.mpegurl; charset=utf-8","Cache-Control":"no-store, no-cache","Access-Control-Allow-Origin":"*"});
+  const h=new Headers({"Content-Type":"application/vnd.apple.mpegurl; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate","Access-Control-Allow-Origin":"*","Access-Control-Expose-Headers":"Content-Type"});
   return new Response(lines.join("\n")+"\n",{status:200,headers:h});
 }
 async function appCurrentVideo(request,env){
@@ -388,7 +396,7 @@ async function appCurrentVideo(request,env){
 async function adminM3u8(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   const base=new URL(request.url).origin;
-  return json({ok:true,url:base+"/magic-kids.m3u8",title:"Magic Kids — lista propia",note:"Generada automáticamente desde los videos y el orden guardados en tu panel. No depende de VDO Panel."},200,origin);
+  return json({ok:true,url:base+"/magic-kids-live.m3u8",title:"Magic Kids — M3U8 permanente",note:"Endpoint estable generado automáticamente desde la programación del panel. El reproductor web mantiene su sincronización con la programación."},200,origin);
 }
 async function channelState(request,env,origin){
   await ensureVideoSchema(env.DB);
@@ -722,7 +730,8 @@ export default {
       if(path==="/api/channel/state"&&request.method==="GET")return channelState(request,env,origin);
       if(path==="/api/admin/m3u8"&&request.method==="GET")return adminM3u8(request,env,origin);
       if(path==="/magic-kids-app.mp4"&&request.method==="GET")return appCurrentVideo(request,env);
-      if(path==="/magic-kids.m3u8"&&request.method==="GET")return ownPlaylist(request,env);
+      if(path==="/magic-kids.m3u8"&&request.method==="GET")return ownPlaylist(request,env,false);
+      if(path==="/magic-kids-live.m3u8"&&request.method==="GET")return ownPlaylist(request,env,true);
       if(path==="/api/admin/channel"&&request.method==="POST")return adminChannelControl(request,env,origin);
       if(path==="/api/schedule"&&request.method==="GET")return publicSchedule(request,env,origin);
       if(path==="/api/viewers/heartbeat"&&request.method==="POST")return viewerHeartbeat(request,env,origin);
