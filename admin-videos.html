@@ -49,7 +49,7 @@
 <button class="active" data-tab="videos">🎬 Biblioteca</button>
 <button data-tab="upload">⬆️ Subir series</button>
 <button data-tab="commercials">📢 Tandas comerciales</button>
-<button data-tab="schedule">🕒 Programación</button>
+<button data-tab="schedule">🕒 Programación</button><button data-tab="overlay">📢 Mensaje en vivo</button>
 <button data-tab="categories">📁 Categorías</button>
 </aside>
 <main class="main">
@@ -105,6 +105,10 @@
   </div>
 </div>
 <div class="row" style="margin-bottom:10px"><input id="scheduleSearch" class="field" placeholder="Buscar serie o comercial..."><button id="saveSchedule" class="btn blue">💾 GUARDAR Y PUBLICAR ORDEN</button></div><div class="scheduleBulkTools">
+<div class="bulkTitle">⚡ PROGRAMACIÓN AUTOMÁTICA SERIE + TANDA</div>
+<div class="hint" style="margin-bottom:8px">Detecta los videos marcados como SERIE y TANDA y arma automáticamente una secuencia alternada sin tocar tus archivos.</div>
+<div class="bulkActions"><button id="autoAlternateSchedule" class="btn" type="button">⚡ ARMAR AUTOMÁTICAMENTE</button><span id="autoAlternateMsg" class="hint"></span></div>
+</div><div class="scheduleBulkTools">
   <div class="bulkTitle">⚡ ORDENAR VARIAS SERIES DE UNA SOLA VEZ</div>
   <div class="bulkActions">
     <label class="scheduleSelectAll"><input id="scheduleSelectAll" type="checkbox"> Seleccionar todo</label>
@@ -335,6 +339,39 @@ function addVideoToSchedule(id,time){const v=videos.find(x=>x.id===Number(id));i
 window.addVideoToSchedule=addVideoToSchedule;
 $("quickAdd").onclick=()=>addVideoToSchedule($("quickVideo").value);
 $("startChannel").onclick=()=>setChannel("start");$("stopChannel").onclick=()=>setChannel("stop");$("offAirChannel").onclick=()=>setChannel("offair");$("restartChannel").onclick=()=>setChannel("restart");
+async function publishLiveOverlay(){
+  const message=String($("liveOverlayMessage").value||"").trim();
+  const duration=$("liveOverlayDuration").value||"60";
+  if(!message){$("liveOverlayMsg").textContent="Escribí un mensaje primero.";return;}
+  const btn=$("publishLiveOverlay");btn.disabled=true;
+  try{
+    const d=await api("/api/admin/live-overlay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message,duration})});
+    $("liveOverlayMsg").textContent=d.visible?"✓ Mensaje publicado. Aparecerá en pocos segundos.":"No se pudo publicar.";
+  }catch(e){$("liveOverlayMsg").textContent=e.message}
+  finally{btn.disabled=false}
+}
+async function clearLiveOverlay(){
+  const btn=$("clearLiveOverlay");btn.disabled=true;
+  try{await api("/api/admin/live-overlay",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"clear"}));$("liveOverlayMsg").textContent="✓ Mensaje retirado."}
+  catch(e){$("liveOverlayMsg").textContent=e.message}
+  finally{btn.disabled=false}
+}
+$("publishLiveOverlay").onclick=publishLiveOverlay;
+$("clearLiveOverlay").onclick=clearLiveOverlay;
+function autoAlternateSchedule(){
+  const series=videos.filter(v=>v.video_type!=="commercial");
+  const tandas=videos.filter(v=>v.video_type==="commercial");
+  if(!series.length||!tandas.length){$("autoAlternateMsg").textContent="Necesitás al menos 1 serie y 1 tanda cargadas.";return}
+  const out=[];
+  const max=Math.max(series.length,tandas.length);
+  for(let i=0;i<max;i++){
+    if(series[i%series.length])out.push({video_id:series[i%series.length].id,title:series[i%series.length].title,video_type:"program",start_time:"00:00",duration_seconds:Number(series[i%series.length].duration_seconds||0)});
+    if(tandas[i%tandas.length])out.push({video_id:tandas[i%tandas.length].id,title:tandas[i%tandas.length].title,video_type:"commercial",start_time:"00:00",duration_seconds:Number(tandas[i%tandas.length].duration_seconds||0)});
+  }
+  schedule=out;selectedScheduleIndices.clear();renderSchedule();$("autoAlternateMsg").textContent="✓ Secuencia creada: SERIE → TANDA → SERIE → TANDA.";
+  autoSave();
+}
+$("autoAlternateSchedule").onclick=autoAlternateSchedule;
 const FIXED_M3U8_URL="https://magickidsok-github-io.elmagickids.workers.dev/magic-kids.m3u8";
 function loadM3u8(){ $("m3u8Url").value=FIXED_M3U8_URL; $("m3u8Msg").textContent="✅ Lista M3U8 VOD permanente. Se actualiza con la programación guardada."; window.open(FIXED_M3U8_URL,"_blank","noopener"); return FIXED_M3U8_URL; }
 $("getM3u8").onclick=loadM3u8;$("copyM3u8").onclick=async()=>{const u=$("m3u8Url").value||FIXED_M3U8_URL;if(u){try{await navigator.clipboard.writeText(u);$("m3u8Msg").textContent="Lista copiada al portapapeles."; }catch(e){$("m3u8Msg").textContent="Seleccioná y copiá la URL manualmente.";}}};
