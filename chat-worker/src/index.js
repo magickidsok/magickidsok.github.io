@@ -319,7 +319,7 @@ async function adminDeleteVideo(request,env,origin){
 async function ownPlaylist(request,env){
   await ensureVideoSchema(env.DB);
   const rows=await env.DB.prepare("SELECT s.position,s.start_time,v.title,v.object_key,v.video_type FROM video_schedule s JOIN videos v ON v.id=s.video_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
-  const scheduleRows=await resolveScheduledR2Keys(env,rows.results||[]);
+  const scheduleRows=rows.results||[];
   const origin=new URL(request.url).origin;
   const lines=["#EXTM3U","#EXT-X-VERSION:3","#EXT-X-PLAYLIST-TYPE:VOD"];
   for(const x of scheduleRows){
