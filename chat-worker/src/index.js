@@ -426,8 +426,10 @@ async function adminSchedule(request,env,origin){
     statements.push(env.DB.prepare("INSERT INTO video_schedule(video_id,start_time,position,enabled,created_at) VALUES(?,?,?,?,?)").bind(x.videoId,x.start,x.position,1,now));
   }
   statements.push(env.DB.prepare("UPDATE channel_control SET updated_at=? WHERE id=1").bind(now));
-  for(let i=0;i<statements.length;i+=250){
-    await env.DB.batch(statements.slice(i,i+250));
+  if(clean.length<=999){
+    await env.DB.batch(statements);
+  }else{
+    for(let i=0;i<statements.length;i+=400)await env.DB.batch(statements.slice(i,i+400));
   }
   return publicSchedule(request,env,origin);
 }
