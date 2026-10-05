@@ -101,7 +101,7 @@ async function ensureVideoSchema(db){
     db.prepare("CREATE TABLE IF NOT EXISTS video_categories (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,created_at INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS videos (id INTEGER PRIMARY KEY AUTOINCREMENT,object_key TEXT NOT NULL UNIQUE,title TEXT NOT NULL,category_id INTEGER,thumbnail_key TEXT,video_type TEXT NOT NULL DEFAULT 'program',created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS video_schedule (id INTEGER PRIMARY KEY AUTOINCREMENT,video_id INTEGER NOT NULL,start_time TEXT NOT NULL,position INTEGER NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,created_at INTEGER NOT NULL)"),
-    db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_position ON video_schedule(position)"),db.prepare("CREATE TABLE IF NOT EXISTS viewer_presence (viewer_id TEXT PRIMARY KEY,last_seen INTEGER NOT NULL)")
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_position ON video_schedule(position)"),db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_enabled_position ON video_schedule(enabled,position)"),db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_video_id ON video_schedule(video_id)"),db.prepare("CREATE TABLE IF NOT EXISTS viewer_presence (viewer_id TEXT PRIMARY KEY,last_seen INTEGER NOT NULL)")
   ]);
   const cols=await db.prepare("PRAGMA table_info(videos)").all();
   if(!(cols.results||[]).some(x=>x.name==="video_type")){
@@ -119,8 +119,7 @@ async function ensureVideoSchema(db){
 async function adminVideos(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   const rows=await env.DB.prepare("SELECT v.id,v.object_key,v.title,v.category_id,c.name AS category,v.thumbnail_key,v.video_type,v.created_at,v.updated_at FROM videos v LEFT JOIN video_categories c ON c.id=v.category_id ORDER BY v.id DESC").all();
-  const videos=await resolveScheduledR2Keys(env,rows.results||[]);
-  return json({videos,r2Configured:!!env.VIDEOS},200,origin);
+  return json({videos:rows.results||[],r2Configured:!!env.VIDEOS},200,origin);
 }
 async function adminRepairR2Keys(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
@@ -325,7 +324,7 @@ async function adminM3u8(request,env,origin){
 }
 async function channelState(request,env,origin){
   await ensureVideoSchema(env.DB);
-  const state=await env.DB.prepare("SELECT status,generation,updated_at FROM channel_control WHERE id=1").first();
+  const state=await env.DB.prepare("SELECT status,generation,updated_at,started_at FROM channel_control WHERE id=1").first();
   return json({status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0),startedAt:Number(state?.started_at||0)},200,origin);
 }
 async function adminChannelControl(request,env,origin){
@@ -383,22 +382,29 @@ async function publicSchedule(request,env,origin){
   const rows=await env.DB.prepare("SELECT s.id,s.video_id,s.start_time,s.position,s.enabled,v.title,v.object_key,v.thumbnail_key,v.video_type,c.name AS category FROM video_schedule s JOIN videos v ON v.id=s.video_id LEFT JOIN video_categories c ON c.id=v.category_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
   const scheduleRows=await resolveScheduledR2Keys(env,rows.results||[]);
   const state=await env.DB.prepare("SELECT status,generation,updated_at,started_at FROM channel_control WHERE id=1").first();
-  return json({schedule:scheduleRows,channel:{status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0)}},200,origin);
+  return json({schedule:scheduleRows,channel:{status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0),startedAt:Number(state?.started_at||0)}},200,origin);
 }
 async function adminSchedule(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   if(request.method==="GET")return publicSchedule(request,env,origin);
   const b=await body(request),items=Array.isArray(b.items)?b.items:[];
-  await env.DB.prepare("DELETE FROM video_schedule").run();
+  const clean=[];
   let pos=0;
   for(const x of items){
-    const videoId=Number(x.videoId),start=String(x.startTime||"00:00").match(/^([01]\d|2[0-3]):[0-5]\d$/)?.[0];
+    const videoId=Number(x.videoId);
+    const start=String(x.startTime||"00:00").match(/^([01]\d|2[0-3]):[0-5]\d$/)?.[0];
     if(!videoId||!start)continue;
-    await env.DB.prepare("INSERT INTO video_schedule(video_id,start_time,position,enabled,created_at) VALUES(?,?,?,?,?)").bind(videoId,start,pos++,1,Date.now()).run();
+    clean.push({videoId,start,position:pos++});
   }
-  // Bump the public channel generation so every open player detects
-  // a programming change without requiring a page refresh.
-  await env.DB.prepare("UPDATE channel_control SET updated_at=? WHERE id=1").bind(Date.now()).run();
+  const statements=[env.DB.prepare("DELETE FROM video_schedule")];
+  const now=Date.now();
+  for(const x of clean){
+    statements.push(env.DB.prepare("INSERT INTO video_schedule(video_id,start_time,position,enabled,created_at) VALUES(?,?,?,?,?)").bind(x.videoId,x.start,x.position,1,now));
+  }
+  statements.push(env.DB.prepare("UPDATE channel_control SET updated_at=? WHERE id=1").bind(now));
+  for(let i=0;i<statements.length;i+=500){
+    await env.DB.batch(statements.slice(i,i+500));
+  }
   return publicSchedule(request,env,origin);
 }
 async function viewerHeartbeat(request,env,origin){
