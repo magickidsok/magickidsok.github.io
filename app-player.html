@@ -79,7 +79,13 @@ async function getDuration(item){
   });
 }
 async function prepare(){
-  durations=await Promise.all(items.map(getDuration));
+  /* Lightweight: trust API durations when available; otherwise let the
+     currently playing video report its duration instead of probing the
+     entire playlist at startup. */
+  durations=items.map(item=>{
+    const d=Number(item?.duration_seconds||item?.duration||0);
+    return Number.isFinite(d)&&d>0?d:0;
+  });
 }
 function timelinePosition(){
   if(!startedAt||!items.length||durations.some(x=>!x))return null;
