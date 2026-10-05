@@ -380,7 +380,10 @@ async function resolveScheduledR2Keys(env,rows){
 async function publicSchedule(request,env,origin){
   await ensureVideoSchema(env.DB);
   const rows=await env.DB.prepare("SELECT s.id,s.video_id,s.start_time,s.position,s.enabled,v.title,v.object_key,v.thumbnail_key,v.video_type,c.name AS category FROM video_schedule s JOIN videos v ON v.id=s.video_id LEFT JOIN video_categories c ON c.id=v.category_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
-  const scheduleRows=await resolveScheduledR2Keys(env,rows.results||[]);
+  // Las claves R2 guardadas en D1 son la fuente estable de reproducción.
+  // La reparación de claves se ejecuta explícitamente desde el panel; no hacemos
+  // cientos de HEAD de R2 en cada consulta pública de programación.
+  const scheduleRows=rows.results||[];
   const state=await env.DB.prepare("SELECT status,generation,updated_at,started_at FROM channel_control WHERE id=1").first();
   return json({schedule:scheduleRows,channel:{status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0),startedAt:Number(state?.started_at||0)}},200,origin);
 }
