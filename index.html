@@ -116,6 +116,7 @@ header{text-align:center;padding:4px 0 8px}
     <div id="hiddenSchedule"><div id="schedule"></div></div>
   </main>
 </div>
+<script>
 let schedule=[["22:00","DRAGON BALL"],["22:30","DRAGON BALL KAI"],["23:00","DRAGON BALL Z"],["01:00","DRAGON BALL SUPER"],["02:30","DRAGON BALL HEROES"],["03:30","DRAGON BALL GT"],["04:00","POKEMON"],["04:30","DIGIMON TAMERS"],["05:00","MIKAMI CAZAFANTASMAS"],["05:30","POWER RANGERS FUERZA DEL TIEMPO"],["06:00","MOB 100"],["06:30","DETECTIVE CONAN"],["07:30","LOS SIMPSONS"],["08:00","GAME LIFE"],["08:30","MONSTERS CIBERNETICOS"],["09:00","BLOQUE ANIMAX"],["11:00","RANMA 1/2"],["11:30","SAILOR MOON"]];
 async function loadMagicSchedule(){
   try{
@@ -500,5 +501,6 @@ document.addEventListener("DOMContentLoaded",async()=>{
   channelPollTimer=setInterval(()=>syncChannelState(),15000);setInterval(()=>syncScheduledToClock(),5000);
   document.getElementById("copyHome")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copyHome").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copyHome").textContent="COPIAR ALIAS",1600)}catch(e){}});
 });
+</script>
 <script src="assets/chat.js?v=2026.10.04.04"></script>
 </body></html>
