@@ -357,8 +357,8 @@ async function clearLiveOverlay(){
   catch(e){$("liveOverlayMsg").textContent=e.message}
   finally{btn.disabled=false}
 }
-$("publishLiveOverlay").onclick=publishLiveOverlay;
-$("clearLiveOverlay").onclick=clearLiveOverlay;
+$("publishLiveOverlay")?.addEventListener("click",publishLiveOverlay);
+$("clearLiveOverlay")?.addEventListener("click",clearLiveOverlay);
 function autoAlternateSchedule(){
   const series=videos.filter(v=>v.video_type!=="commercial");
   const tandas=videos.filter(v=>v.video_type==="commercial");
