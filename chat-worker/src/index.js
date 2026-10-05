@@ -101,7 +101,7 @@ async function ensureVideoSchema(db){
     db.prepare("CREATE TABLE IF NOT EXISTS video_categories (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,created_at INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS videos (id INTEGER PRIMARY KEY AUTOINCREMENT,object_key TEXT NOT NULL UNIQUE,title TEXT NOT NULL,category_id INTEGER,thumbnail_key TEXT,video_type TEXT NOT NULL DEFAULT 'program',duration_seconds REAL NOT NULL DEFAULT 0,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS video_schedule (id INTEGER PRIMARY KEY AUTOINCREMENT,video_id INTEGER NOT NULL,start_time TEXT NOT NULL,position INTEGER NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,created_at INTEGER NOT NULL)"),
-    db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_position ON video_schedule(position)"),db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_enabled_position ON video_schedule(enabled,position)"),db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_video_id ON video_schedule(video_id)"),db.prepare("CREATE TABLE IF NOT EXISTS viewer_presence (viewer_id TEXT PRIMARY KEY,last_seen INTEGER NOT NULL)")
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_position ON video_schedule(position)"),db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_enabled_position ON video_schedule(enabled,position)"),db.prepare("CREATE INDEX IF NOT EXISTS idx_video_schedule_video_id ON video_schedule(video_id)"),db.prepare("CREATE TABLE IF NOT EXISTS viewer_presence (viewer_id TEXT PRIMARY KEY,last_seen INTEGER NOT NULL)"),db.prepare("CREATE TABLE IF NOT EXISTS live_overlay (id INTEGER PRIMARY KEY CHECK(id=1),message TEXT NOT NULL DEFAULT '',expires_at INTEGER NOT NULL DEFAULT 0,updated_at INTEGER NOT NULL DEFAULT 0,visible INTEGER NOT NULL DEFAULT 0)")
   ]);
   const cols=await db.prepare("PRAGMA table_info(videos)").all();
   if(!(cols.results||[]).some(x=>x.name==="video_type")){
@@ -316,17 +316,54 @@ async function adminDeleteVideo(request,env,origin){
   await env.DB.prepare("DELETE FROM videos WHERE id=?").bind(id).run();
   return json({ok:true},200,origin);
 }
+async function getLiveOverlay(request,env,origin){
+  await ensureVideoSchema(env.DB);
+  const row=await env.DB.prepare("SELECT message,expires_at,updated_at,visible FROM live_overlay WHERE id=1").first();
+  const now=Date.now();
+  const active=!!(row?.visible && row?.message && (Number(row.expires_at||0)===0 || Number(row.expires_at)>now));
+  return json({visible:active,message:active?String(row.message):"",expiresAt:active?Number(row.expires_at||0):0,updatedAt:Number(row?.updated_at||0)},200,origin);
+}
+async function adminLiveOverlay(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  await ensureVideoSchema(env.DB);
+  const b=await body(request);
+  const action=String(b.action||"publish").toLowerCase();
+  const now=Date.now();
+  if(action==="clear"){
+    await env.DB.prepare("INSERT INTO live_overlay(id,message,expires_at,updated_at,visible) VALUES(1,'',0,?,0) ON CONFLICT(id) DO UPDATE SET message='',expires_at=0,updated_at=?,visible=0").bind(now,now).run();
+    return getLiveOverlay(request,env,origin);
+  }
+  const message=cleanText(b.message).slice(0,140);
+  if(!message)return json({error:"Escribí un mensaje."},400,origin);
+  const duration=String(b.duration||"60");
+  const expiresAt=duration==="forever"?0:now+Math.max(40000,Math.min(3600000,Number(duration)*1000||60000));
+  await env.DB.prepare("INSERT INTO live_overlay(id,message,expires_at,updated_at,visible) VALUES(1,?,?,?,1) ON CONFLICT(id) DO UPDATE SET message=?,expires_at=?,updated_at=?,visible=1").bind(message,expiresAt,now,message,expiresAt,now).run();
+  return getLiveOverlay(request,env,origin);
+}
 async function ownPlaylist(request,env){
   await ensureVideoSchema(env.DB);
-  const rows=await env.DB.prepare("SELECT s.position,s.start_time,v.title,v.object_key,v.video_type FROM video_schedule s JOIN videos v ON v.id=s.video_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
+  const rows=await env.DB.prepare("SELECT s.position,s.start_time,v.title,v.object_key,v.video_type,v.duration_seconds FROM video_schedule s JOIN videos v ON v.id=s.video_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
   const scheduleRows=rows.results||[];
+  const state=await env.DB.prepare("SELECT status,started_at FROM channel_control WHERE id=1").first();
   const origin=new URL(request.url).origin;
+  const durations=scheduleRows.map(x=>Number(x.duration_seconds||0));
+  let startIndex=0;
+  if(String(state?.status)==="live"&&Number(state?.started_at)>0&&durations.length&&durations.every(d=>d>0)){
+    let elapsed=Math.max(0,(Date.now()-Number(state.started_at))/1000);
+    const total=durations.reduce((a,b)=>a+b,0);
+    if(total>0){
+      elapsed%=total;
+      for(let i=0;i<durations.length;i++){if(elapsed<durations[i]){startIndex=i;break;}elapsed-=durations[i];}
+    }
+  }
+  const ordered=scheduleRows.length?scheduleRows.slice(startIndex).concat(scheduleRows.slice(0,startIndex)):[];
   const lines=["#EXTM3U","#EXT-X-VERSION:3","#EXT-X-PLAYLIST-TYPE:VOD"];
-  for(const x of scheduleRows){
-    lines.push("#EXTINF:-1,"+String(x.title||"Magic Kids").replace(/[\\r\\n]/g," "));
+  for(const x of ordered){
+    const dur=Number(x.duration_seconds||0);
+    lines.push("#EXTINF:"+(dur>0?dur.toFixed(3):"-1")+","+String(x.title||"Magic Kids").replace(/[\r\n]/g," "));
     lines.push(origin+"/media/"+String(x.object_key||"").split("/").map(encodeURIComponent).join("/"));
   }
-  const h=new Headers({"Content-Type":"application/vnd.apple.mpegurl; charset=utf-8","Cache-Control":"no-store","Access-Control-Allow-Origin":"*"});
+  const h=new Headers({"Content-Type":"application/vnd.apple.mpegurl; charset=utf-8","Cache-Control":"no-store, no-cache","Access-Control-Allow-Origin":"*"});
   return new Response(lines.join("\n")+"\n",{status:200,headers:h});
 }
 async function appCurrentVideo(request,env){
@@ -679,6 +716,8 @@ export default {
       if(path==="/api/admin/channel"&&request.method==="POST")return adminChannelControl(request,env,origin);
       if(path==="/api/schedule"&&request.method==="GET")return publicSchedule(request,env,origin);
       if(path==="/api/viewers/heartbeat"&&request.method==="POST")return viewerHeartbeat(request,env,origin);
+      if(path==="/api/live-overlay"&&request.method==="GET")return getLiveOverlay(request,env,origin);
+      if(path==="/api/admin/live-overlay"&&request.method==="POST")return adminLiveOverlay(request,env,origin);
       if(path==="/api/admin/viewers"&&request.method==="GET")return adminViewerCount(request,env,origin);
       if(path==="/api/admin/schedule"&&(request.method==="GET"||request.method==="POST"))return adminSchedule(request,env,origin);
       return json({error:"Ruta no encontrada."},404,origin);
