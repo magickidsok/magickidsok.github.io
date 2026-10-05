@@ -64,11 +64,11 @@
 <div class="row"><input id="m3u8Url" class="field" readonly value="https://magickidsok-github-io.elmagickids.workers.dev/magic-kids.m3u8"><button id="getM3u8" class="btn blue">🔗 ABRIR LISTA M3U8</button><button id="copyM3u8" class="btn">📋 COPIAR URL</button></div>
 <div id="m3u8Msg" class="msg"></div></div><div id="videos" class="tab">
 <div class="hero"><h2>Biblioteca de videos</h2><p>Series y tandas guardadas permanentemente en Cloudflare R2.</p></div>
-<div class="panel"><div class="row" style="justify-content:space-between"><h3>Todos los videos</h3><button class="btn blue" onclick="showTab('upload')">+ Cargar varios</button></div>
+<div class="panel"><div class="row" style="justify-content:space-between"><h3>Todos los videos</h3><div class="row"><button class="btn blue" onclick="showTab('upload')">+ Cargar varios</button><button id="deleteAllVideosBtn" class="btn red" type="button">🗑️ BORRAR TODOS LOS VIDEOS</button></div></div>
 <div id="r2Warn"></div><div class="tableWrap"><table class="table"><thead><tr><th></th><th>Título</th><th>Tipo</th><th>Categoría</th><th>Archivo</th><th>Acciones</th></tr></thead><tbody id="videoRows"></tbody></table></div></div></div>
 
 <div id="upload" class="tab hidden">
-<div class="hero"><h2>⬆️ Cargar varias series</h2><p>Podés seleccionar muchos MP4 o directamente una carpeta completa. El nombre del archivo se usa como título.</p></div>
+<div class="hero"><h2>⬆️ Cargar videos MP4</h2><p>Los videos se guardan como archivos MP4 en Cloudflare R2 y quedan listos para reproducirse mediante <b>/media/archivo.mp4</b> con HTTP Range / 206 y Plyr.js.</p></div>
 <div class="panel">
 <div class="bulk"><h3>📁 Seleccionar carpeta de series</h3><div class="hint">Seleccioná varios videos de una sola vez o una carpeta completa. Los videos de más de 60 MB se suben automáticamente por partes de 64 MB, así podés cargar series de 250 MB, 300 MB o más sin dividirlas manualmente.</div>
 <input id="seriesFiles" class="bigFile" type="file" accept="video/mp4,video/*" multiple><div class="row" style="margin-top:8px"><label class="btn" style="cursor:pointer">📁 ELEGIR CARPETA<input id="seriesFolder" type="file" accept="video/mp4,video/*" multiple webkitdirectory directory style="display:none"></label><span class="hint">o seleccioná varios archivos con Ctrl/Shift</span></div></div>
@@ -378,7 +378,7 @@ function loadM3u8(){ $("m3u8Url").value=FIXED_M3U8_URL; $("m3u8Msg").textContent
 $("getM3u8").onclick=loadM3u8;$("copyM3u8").onclick=async()=>{const u=$("m3u8Url").value||FIXED_M3U8_URL;if(u){try{await navigator.clipboard.writeText(u);$("m3u8Msg").textContent="Lista copiada al portapapeles."; }catch(e){$("m3u8Msg").textContent="Seleccioná y copiá la URL manualmente.";}}};
 $("addTanda").onclick=async()=>{const cs=videos.filter(v=>v.video_type==="commercial");if(!cs.length){alert("Primero cargá los comerciales en Tandas comerciales.");return}for(const v of cs)schedule.push({video_id:v.id,title:v.title,start_time:$("quickTime").value||"00:00",video_type:"commercial"});renderSchedule();await autoSave()};
 $("saveSchedule").onclick=()=>saveSchedule(true);
-const MULTIPART_THRESHOLD=60*1024*1024;
+const MULTIPART_THRESHOLD=60*1024*1024; // MP4 grandes se suben por partes a R2
 // R2 permite partes desde 5 MiB. Usamos 32 MiB y 4 partes simultáneas:
 // así una conexión de 600 Mbps puede aprovechar mucho mejor el ancho de banda
 // sin abrir una cantidad exagerada de conexiones.
@@ -601,6 +601,32 @@ $("catBtn").onclick=async()=>{
     await loadCategories();
   }catch(e){alert(e.message)}
 };
+async function deleteAllVideos(){
+  if(!videos.length){alert("La biblioteca ya está vacía.");return;}
+  const ok=confirm("⚠️ ATENCIÓN\\n\\nEsto eliminará TODOS los videos de la biblioteca y también los quitará de la programación.\\n\\n¿Querés continuar?");
+  if(!ok)return;
+  const btn=$("deleteAllVideosBtn");
+  if(btn)btn.disabled=true;
+  let done=0,failed=0;
+  try{
+    for(const v of [...videos]){
+      try{
+        await api("/api/admin/video/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:v.id})});
+        done++;
+      }catch(e){failed++;}
+    }
+    schedule=[];
+    await loadVideos();
+    renderSchedule();
+    await autoSave();
+    alert("Proceso terminado. Eliminados: "+done+(failed?" · Con error: "+failed:"")+"." );
+  }catch(e){
+    alert("No se pudo completar el borrado: "+e.message);
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
+$("deleteAllVideosBtn")?.addEventListener("click",deleteAllVideos);
 window.delVideo=async id=>{if(!confirm("¿Eliminar este video? También se quitará de la programación."))return;try{await api("/api/admin/video/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});schedule=schedule.filter(x=>x.video_id!==Number(id));await loadVideos();renderSchedule();await autoSave()}catch(e){alert(e.message)}};
 $("loginBtn").onclick=async()=>{const msg=$("loginMsg");msg.textContent="Ingresando…";try{await api("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:$("pin").value})});await boot()}catch(e){msg.textContent=e.message}};
 $("togglePin").onclick=()=>{const input=$("pin"),btn=$("togglePin");const visible=input.type==="text";input.type=visible?"password":"text";btn.textContent=visible?"👁️":"🙈";btn.title=visible?"Mostrar código":"Ocultar código";btn.setAttribute("aria-label",visible?"Mostrar código":"Ocultar código")};
