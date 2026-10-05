@@ -631,12 +631,14 @@ function loadVideoDuration(item){
   });
 }
 async function prepareSynchronizedTimeline(){
-  const durations=[];
-  for(let i=0;i<scheduledVideos.length;i+=8){
-    const batch=scheduledVideos.slice(i,i+8).map(loadVideoDuration);
-    durations.push(...await Promise.all(batch));
-  }
-  return durations;
+  /* Lightweight mode: use durations already supplied by the API.
+     Do NOT open metadata requests for the whole playlist at startup. */
+  return scheduledVideos.map(item=>{
+    const key=String(item?.object_key||"");
+    const known=Number(item?.duration_seconds||item?.duration||0);
+    if(key&&Number.isFinite(known)&&known>0)videoDurationCache.set(key,known);
+    return Number.isFinite(known)&&known>0?known:(key&&videoDurationCache.has(key)?Number(videoDurationCache.get(key)):0);
+  });
 }
 function synchronizedPosition(startedAt,durations){
   const total=durations.reduce((a,b)=>a+(Number.isFinite(b)?b:0),0);
