@@ -178,6 +178,14 @@ async function refreshAdminNowPlaying(scheduleData=null){
   const state=data?.channel||channel||{};
   if(String(state.status)!=="live"){titleEl.textContent=state.status==="offair"?"FUERA DE AIRE":"CANAL DETENIDO";metaEl.textContent=state.status==="offair"?"La web pública está fuera de aire.":"El canal no está reproduciendo.";nextEl.textContent=list[0]?.title||"Sin programación";nextMeta.textContent=list[0]?.start_time||"--:--";return}
   if(!list.length){titleEl.textContent="Sin programación";metaEl.textContent="No hay videos programados.";nextEl.textContent="--";nextMeta.textContent="--";return}
+  const missingCount=list.reduce((n,x)=>n+(Number(x.duration_seconds||0)>0?0:1),0);
+  if(list.length>120&&missingCount){
+    titleEl.textContent="PROGRAMACIÓN ACTIVA";
+    metaEl.textContent=list.length+" videos programados · optimizando duraciones en segundo plano…";
+    nextEl.textContent=list[0]?.title||"Video";
+    nextMeta.textContent="posición 1 · sincronización en preparación";
+    return;
+  }
   titleEl.textContent="Calculando…";metaEl.textContent="Calculando posición sincronizada…";
   const durations=[];
   for(let i=0;i<list.length;i+=4){const batch=list.slice(i,i+4).map(adminVideoDuration);durations.push(...await Promise.all(batch))}
