@@ -28,6 +28,16 @@ function json(data,status,origin,extraHeaders){
   }
   return new Response(JSON.stringify(data),{status:status||200,headers:h});
 }
+async function health(request,env,origin){
+  return json({
+    ok:true,
+    service:"magic-kids-worker",
+    time:new Date().toISOString(),
+    d1:!!env.DB,
+    r2:!!env.VIDEOS
+  },200,origin);
+}
+
 function cors(request){
   const allow=allowedOrigin(request.headers.get("Origin")||"");
   const h={
