@@ -413,7 +413,7 @@ async function uploadLargeFile(file,type,categoryId,durationSeconds,onProgress){
     throw e;
   }
 }
-async async function getLocalVideoDuration(file){
+async function getLocalVideoDuration(file){
   return new Promise(resolve=>{
     const url=URL.createObjectURL(file),v=document.createElement("video");let done=false;
     const finish=()=>{if(done)return;done=true;const d=Number(v.duration);v.removeAttribute("src");v.load();URL.revokeObjectURL(url);resolve(Number.isFinite(d)&&d>0?d:0)};
