@@ -210,9 +210,15 @@ async function startViewerCounter(){
   $("viewerCounter").classList.remove("hidden");
   await loadViewerCount();
   clearInterval(viewerPollTimer);
-  viewerPollTimer=setInterval(loadViewerCount,10000);
+  viewerPollTimer=setInterval(loadViewerCount,20000);
 }
-async function loadAll(){await loadVideos();await loadCategories();await loadSchedule();await loadChannelState();renderCommercials();renderScheduleLibrary();startViewerCounter()}
+async function loadAll(){
+  /* El contador se inicia primero para que aparezca inmediatamente al entrar.
+     Las cargas pesadas de biblioteca/programación se ejecutan en paralelo. */
+  startViewerCounter();
+  await Promise.allSettled([loadVideos(),loadCategories(),loadSchedule(),loadChannelState()]);
+  renderCommercials();renderScheduleLibrary();
+}
 async function loadChannelState(){try{const d=await api("/api/channel/state");channel=d;renderChannel()}catch(e){}}
 function renderChannel(){const live=channel.status==="live",offair=channel.status==="offair",stopped=channel.status==="stopped";$("channelStatus").textContent=live?"🟢 REPRODUCIENDO VOD":offair?"🟣 FUERA DE AIRE":"🔴 DETENIDO";$("channelStatus").style.color=live?"#91f5b5":offair?"#c99cff":"#ff7b96";$("channelHint").textContent=live?"El reproductor público está reproduciendo automáticamente los videos en el orden guardado.":offair?"El reproductor público muestra FUERA DE AIRE mientras actualizás la programación.":"Subí y ordená tus videos y luego presioná INICIAR CANAL.";["startChannel","stopChannel","offAirChannel","restartChannel"].forEach(id=>$(id).classList.remove("activeState"));if(live)$("startChannel").classList.add("activeState");if(stopped)$("stopChannel").classList.add("activeState");if(offair)$("offAirChannel").classList.add("activeState");}
 let channelActionBusy=false;
