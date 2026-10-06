@@ -118,16 +118,16 @@ header{text-align:center;padding:4px 0 8px}
 </div>
 <script>
 let schedule=[["22:00","DRAGON BALL"],["22:30","DRAGON BALL KAI"],["23:00","DRAGON BALL Z"],["01:00","DRAGON BALL SUPER"],["02:30","DRAGON BALL HEROES"],["03:30","DRAGON BALL GT"],["04:00","POKEMON"],["04:30","DIGIMON TAMERS"],["05:00","MIKAMI CAZAFANTASMAS"],["05:30","POWER RANGERS FUERZA DEL TIEMPO"],["06:00","MOB 100"],["06:30","DETECTIVE CONAN"],["07:30","LOS SIMPSONS"],["08:00","GAME LIFE"],["08:30","MONSTERS CIBERNETICOS"],["09:00","BLOQUE ANIMAX"],["11:00","RANMA 1/2"],["11:30","SAILOR MOON"]];
-const MAGIC_CONTROL="https://uifchrnvigkzantaehgz.supabase.co/functions/v1/mk-control-api";
+const MAGIC_CONTROL="https://uifchrnvigkzantaehgz.supabase.co/functions/v1/mk-vcdn-channel";
 const MAGIC_VIEWERS="https://uifchrnvigkzantaehgz.supabase.co/functions/v1/magic-kids-api";
-const MAGIC_B2_BASE="https://magic-kids-media-1991.s3.us-west-004.backblazeb2.com/";
 async function loadMagicSchedule(){
   try{
-    const r=await fetch(MAGIC_B2_BASE+"catalog.json?mk="+Date.now(),{cache:"no-store"});
+    const r=await fetch(MAGIC_CONTROL+"/public/catalog?mk="+Date.now(),{cache:"no-store"});
     if(!r.ok)throw new Error();
     const c=await r.json();
-    scheduledVideos=(Array.isArray(c.videos)?c.videos:[]).filter(v=>v&&v.key).map(v=>({...v,url:MAGIC_B2_BASE+String(v.key).split("/").map(encodeURIComponent).join("/")}));
-    schedule=scheduledVideos.map((v,i)=>["00:00",v.title||("Video "+(i+1)),v.key,v.id]);
+    scheduledVideos=(Array.isArray(c.videos)?c.videos:[]).filter(v=>v&&v.playback_url).map(v=>({...v,url:v.playback_url,durationSeconds:Number(v.duration_seconds||0)}));
+    schedule=scheduledVideos.map((v,i)=>["00:00",v.title||("Video "+(i+1)),v.vcdn_id,v.id]);
+    if(c.channel)lastScheduleChannelState=c.channel;
     fill();updateNowNext();
   }catch(e){scheduledVideos=[];fill();updateNowNext();}
   await refreshPublicChannelState();
