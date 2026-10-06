@@ -38,7 +38,7 @@ header{text-align:center;padding:4px 0 8px}
 .magicSyncStatusRow{margin-top:7px;text-align:center;color:#8fd2ff;font-size:9px;font-weight:900}
 .retryBtn{position:absolute;z-index:150;left:50%;top:50%;transform:translate(-50%,-50%);border:0;border-radius:9px;background:#e32635;color:#fff;padding:10px 13px;font-weight:900;cursor:pointer}
 .hidden{display:none!important}
-.offAirOverlay{position:absolute;inset:0;z-index:130;display:flex;align-items:center;justify-content:center;background:rgba(3,9,30,.94);padding:18px}.offAirOverlay.hidden{display:none}.offAirBox{text-align:center;border:1px solid #7b3cff;border-radius:13px;background:#12082a;padding:22px}.offAirTitle{font-size:30px;font-weight:900}.offAirText{margin-top:8px;font-size:14px;font-weight:800;line-height:1.35}.offAirIg{margin-top:12px;font-size:11px;color:#cbd8ea}
+
 .nowNext{display:grid;grid-template-columns:1fr 38px 1fr;gap:9px;align-items:stretch;margin-top:10px}
 .nowNext>div:not(.nextArrow){padding:11px 12px;border-radius:11px;background:rgba(3,25,83,.9);border:1px solid var(--line);min-width:0}
 .nowNext small{display:block;color:#7fd0ff;font-size:8px;font-weight:900;letter-spacing:1px}.nowNext strong{display:block;margin-top:3px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowNext span{display:block;margin-top:3px;color:#b8cfe7;font-size:9px}.nextArrow{display:grid;place-items:center;color:var(--yellow);font-size:24px;font-weight:900}
@@ -62,7 +62,6 @@ header{text-align:center;padding:4px 0 8px}
     <section class="playerCard">
       <div class="playerTitle"><h1>MAGIC KIDS EN VIVO</h1><span class="badge">● LIVE</span></div>
       <div class="screen magicSyncPlayer" id="screen">
-        <div id="offAirOverlay" class="offAirOverlay hidden"><div class="offAirBox"><div class="offAirTitle">FUERA DE AIRE</div><div class="offAirText">ESTAMOS ACTUALIZANDO LA PROGRAMACIÓN<br>EN INSTANTES VOLVEMOS</div><div class="offAirIg">INSTAGRAM: <b>ELMAGICTVOK</b></div></div></div>
         <video id="magicVideo" class="video-js vjs-big-play-centered" controls autoplay muted playsinline preload="auto" controlsList="nodownload" disablePictureInPicture></video>
         <img class="playerLogoOverlay" src="assets/magic-player-logo.svg" alt="Magic Kids" aria-hidden="true">
         <div id="status"></div>
@@ -178,16 +177,15 @@ function computeTimelinePosition(){
   for(let i=0;i<durations.length;i++){const d=durations[i];if(d>0&&elapsed<d)return {index:i,time:elapsed};elapsed-=d;}
   return {index:0,time:0};
 }
-function publicStateOverlay(status){
-  const overlay=document.getElementById("offAirOverlay"),title=document.querySelector(".offAirTitle"),text=document.querySelector(".offAirText"),ig=document.querySelector(".offAirIg");
-  if(!overlay)return;
-  if(status==="live"){overlay.classList.add("hidden");return;}
-  overlay.classList.remove("hidden");
-  if(status==="paused"){if(title)title.textContent="PAUSADO";if(text)text.innerHTML="LA TRANSMISIÓN ESTÁ PAUSADA<br>REANUDAREMOS EN INSTANTES";if(ig)ig.style.display="none";}
-  else if(status==="offair"){if(title)title.textContent="FUERA DE AIRE";if(text)text.innerHTML="ESTAMOS ACTUALIZANDO LA PROGRAMACIÓN<br>EN INSTANTES VOLVEMOS";if(ig)ig.style.display="";}
-  else {if(title)title.textContent="CANAL DETENIDO";if(text)text.innerHTML="LA TRANSMISIÓN ESTÁ DETENIDA<br>ESPERÁ EL PRÓXIMO INICIO";if(ig)ig.style.display="none";}
+function publicStateOverlay(status){}
+function showOffAir(show=true){
+  if(!show)return;
+  scheduledMode=false;magicStreamStarted=false;clearMagicStall();
+  if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}
+  destroyMagicHls();
+  const v=document.getElementById("magicVideo");
+  if(v){v.pause();v.removeAttribute("src");v.load();}
 }
-function showOffAir(show=true){publicStateOverlay(show?"offair":"live");if(show){scheduledMode=false;magicStreamStarted=false;clearMagicStall();if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}destroyMagicHls();const v=document.getElementById("magicVideo");if(v){v.pause();v.removeAttribute("src");v.load();}}}
 function stopScheduledPlayer(){const v=document.getElementById("magicVideo");scheduledMode=false;currentVideoIndex=-1;magicStreamStarted=false;clearMagicStall();if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}destroyMagicHls();if(v){v.pause();v.removeAttribute("src");v.load();}setStreamState("offline","El canal está detenido.");publicStateOverlay("stopped");}
 function setScheduledVideo(index,autoplay=true,seekTime=0){
   const v=document.getElementById("magicVideo");if(!v||!scheduledVideos.length)return;
