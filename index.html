@@ -3,7 +3,7 @@
 :root{--blue:#031a55;--blue2:#062b78;--line:rgba(119,190,255,.22);--white:#fff;--yellow:#ffd21b;--red:#e32635;--red2:#a80f1b}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;min-height:100vh;color:#fff;font-family:Arial,Segoe UI,sans-serif;background:#031a55 url("assets/magic-kids-stars.svg") center top/1600px auto repeat-y fixed}
+body{margin:0;min-height:100vh;color:#fff;font-family:Arial,Segoe UI,sans-serif;background:#031a55 url("https://raw.githubusercontent.com/magickidsok/magickidsok.github.io/main/assets/magic-kids-stars.svg") center top/1600px auto repeat-y fixed}
 a{text-decoration:none;color:inherit}
 .page{width:min(980px,calc(100% - 20px));margin:auto;padding:10px 0 34px}
 header{text-align:center;padding:4px 0 8px}
@@ -54,7 +54,7 @@ header{text-align:center;padding:4px 0 8px}
 <body>
 <div class="page">
   <header>
-    <img class="logo" src="assets/magic-kids-logo.webp" alt="Magic Kids">
+    <img class="logo" src="https://raw.githubusercontent.com/magickidsok/magickidsok.github.io/main/assets/magic-kids-logo.webp" alt="Magic Kids">
     <div class="liveLine"><span class="liveDot"></span>MAGIC KIDS · SEÑAL EN VIVO</div>
   </header>
 
@@ -63,7 +63,7 @@ header{text-align:center;padding:4px 0 8px}
       <div class="playerTitle"><h1>MAGIC KIDS EN VIVO</h1><span class="badge">● LIVE</span></div>
       <div class="screen magicSyncPlayer" id="screen">
         <video id="magicVideo" class="video-js vjs-big-play-centered" controls autoplay muted playsinline preload="auto" controlsList="nodownload" disablePictureInPicture></video>
-        <img class="playerLogoOverlay" src="assets/magic-player-logo.svg" alt="Magic Kids" aria-hidden="true">
+        <img class="playerLogoOverlay" src="https://raw.githubusercontent.com/magickidsok/magickidsok.github.io/main/assets/magic-player-logo.svg" alt="Magic Kids" aria-hidden="true">
         <div id="status"></div>
         <button class="retryBtn hidden" id="retryStream">↻ REINTENTAR</button>
         <div class="magicPlayerControlBar" aria-label="Controles del reproductor">
@@ -132,7 +132,7 @@ header{text-align:center;padding:4px 0 8px}
 </div>
 <script>
 let schedule=[["22:00","DRAGON BALL"],["22:30","DRAGON BALL KAI"],["23:00","DRAGON BALL Z"],["01:00","DRAGON BALL SUPER"],["02:30","DRAGON BALL HEROES"],["03:30","DRAGON BALL GT"],["04:00","POKEMON"],["04:30","DIGIMON TAMERS"],["05:00","MIKAMI CAZAFANTASMAS"],["05:30","POWER RANGERS FUERZA DEL TIEMPO"],["06:00","MOB 100"],["06:30","DETECTIVE CONAN"],["07:30","LOS SIMPSONS"],["08:00","GAME LIFE"],["08:30","MONSTERS CIBERNETICOS"],["09:00","BLOQUE ANIMAX"],["11:00","RANMA 1/2"],["11:30","SAILOR MOON"]];
-const MAGIC_API="https://magickidsok-github-io.elmagickids.workers.dev";
+const MAGIC_API="";
 let scheduledVideos=[];
 let currentVideoIndex=-1;
 let scheduledMode=false;
@@ -150,16 +150,15 @@ let magicVideoPlayer=null;
 let magicVideoPlayerReady=false;
 async function loadMagicSchedule(){
   try{
-    const r=await fetch(MAGIC_API+"/api/schedule?mk="+Date.now(),{cache:"no-store"});
+    const r=await fetch("/api/mk/catalog?mk="+Date.now(),{cache:"no-store"});
     if(!r.ok)throw new Error();
     const d=await r.json();
-    const rows=Array.isArray(d.schedule)?d.schedule:[];
-    scheduledVideos=rows.map(x=>({...x,url:MAGIC_API+"/media/"+String(x.object_key||"").split("/").map(encodeURIComponent).join("/"),durationSeconds:Number(x.duration_seconds||0)}));
-    schedule=scheduledVideos.map((v,i)=>[v.start_time||"00:00",v.title||("Video "+(i+1)),v.object_key,v.video_id]);
+    const rows=Array.isArray(d.videos)?d.videos:[];
+    scheduledVideos=rows.filter(x=>x.enabled!==false).sort((a,b)=>Number(a.order||0)-Number(b.order||0)).map(x=>({...x,url:String(x.url||""),durationSeconds:Number(x.durationSeconds||x.duration_seconds||0)})).filter(x=>x.url);
+    schedule=scheduledVideos.map((v,i)=>[v.startTime||v.start_time||"00:00",v.title||("Video "+(i+1)),v.pathname||v.url,v.id]);
     if(d.channel)lastScheduleChannelState=d.channel;
-    fill();updateNowNext();
-  }catch(e){scheduledVideos=[];fill();updateNowNext();}
-  await refreshPublicChannelState();
+    updateNowNext();
+  }catch(e){scheduledVideos=[];updateNowNext();}
 }
 function withBust(url){return String(url||"")+(String(url||"").includes("?")?"&":"?")+"mk="+Date.now();}
 function scheduledVideoUrl(item){
@@ -227,7 +226,10 @@ function playNextScheduled(){if(!scheduledVideos.length)return;setScheduledVideo
 function retryCurrentVideo(){if(!scheduledMode||currentVideoIndex<0||currentVideoIndex>=scheduledVideos.length)return;const v=document.getElementById("magicVideo");if(!v)return;const keep=Number(v.currentTime||0);setScheduledVideo(currentVideoIndex,true,keep);}
 function armMagicStall(){clearMagicStall();if(!scheduledMode)return;magicStallTimer=setTimeout(()=>{magicStallTimer=null;const v=document.getElementById("magicVideo");if(!v||!scheduledMode)return;if(v.readyState<3)retryCurrentVideo();},8000);}
 async function refreshPublicChannelState(){
-  try{const r=await fetch(MAGIC_API+"/api/channel/state?mk="+Date.now(),{cache:"no-store"});if(r.ok)lastScheduleChannelState=await r.json();}catch(e){}
+  try{
+    const r=await fetch("/api/mk/state?mk="+Date.now(),{cache:"no-store"});
+    if(r.ok)lastScheduleChannelState=await r.json();
+  }catch(e){}
 }
 function destroyMagicHls(){magicHls=null;}
 async function applyPublicChannelState(force=false){
@@ -282,19 +284,18 @@ function ensureMagicVideoPlayer(){
 }
 async function loadScheduledPlayer(){await applyPublicChannelState(true);}
 function stopPlaybackOnly(){const v=document.getElementById("magicVideo");scheduledMode=false;magicStreamStarted=false;clearMagicStall();if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}if(v)v.pause();setStreamState("scheduled","Transmisión pausada.");}
-async function syncChannelState(){await refreshPublicChannelState();await applyPublicChannelState(false);}
-function scheduleStreamRetry(){if(magicRetryTimer||!scheduledMode)return;magicRetryTimer=setTimeout(()=>{magicRetryTimer=null;retryCurrentVideo();},2500);}
-function updateScheduledNowNext(){
-  const nowEl=document.getElementById("nowShow"),nextEl=document.getElementById("nextShow"),nowTimeEl=document.getElementById("nowTime"),nextTimeEl=document.getElementById("nextTime");if(!nowEl||!nextEl)return;
-  if(!scheduledVideos.length){nowEl.textContent="Sin programación";nextEl.textContent="Esperando video";nowTimeEl.textContent="--:--";nextTimeEl.textContent="--:--";return;}
-  const i=Math.max(0,currentVideoIndex<0?0:currentVideoIndex),cur=scheduledVideos[i],next=scheduledVideos[(i+1)%scheduledVideos.length];
-  nowEl.textContent=cur?.title||"Video";nowTimeEl.textContent="POSICIÓN "+(i+1)+" / "+scheduledVideos.length;nextEl.textContent=next?.title||"Video";nextTimeEl.textContent="POSICIÓN "+(((i+1)%scheduledVideos.length)+1)+" / "+scheduledVideos.length;
+async function syncChannelState(){
+  const prev=Number(knownChannelGeneration||-1);
+  await refreshPublicChannelState();
+  const next=Number(lastScheduleChannelState?.generation||0);
+  if(next!==prev)await loadMagicSchedule();
+  await applyPublicChannelState(false);
 }
 async function heartbeatPublicViewer(){
   try{
     let id=sessionStorage.getItem("mk_public_viewer")||"";
     if(!id){id=crypto.randomUUID?crypto.randomUUID():"mk-"+Date.now()+"-"+Math.random().toString(36).slice(2);sessionStorage.setItem("mk_public_viewer",id);}
-    const r=await fetch(MAGIC_API+"/api/viewers/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({viewerId:id}),cache:"no-store",keepalive:true});
+    const r=await fetch("/api/mk/viewers",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({viewerId:id}),cache:"no-store",keepalive:true});
     const d=await r.json().catch(()=>({}));const el=document.getElementById("publicViewerCount");if(el&&Number.isFinite(Number(d.count)))el.textContent=String(d.count);
   }catch(e){}
 }
@@ -373,11 +374,11 @@ document.addEventListener("DOMContentLoaded",async()=>{
   await loadMagicSchedule();
   /* Inicio del reproductor priorizado: no modifica la sincronización ni la configuración protegida del player. */
   const playerStart=loadScheduledPlayer();
-  clock();fill();updateNowNext();heartbeatPublicViewer();setInterval(heartbeatPublicViewer,20000);setInterval(()=>{clock();updateNowNext()},1000);
+  clock();updateNowNext();heartbeatPublicViewer();setInterval(heartbeatPublicViewer,20000);setInterval(()=>{clock();updateNowNext()},1000);
   await playerStart;
   channelPollTimer=setInterval(()=>syncChannelState(),2500);
   document.getElementById("copyHome")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("MAGICKIDS.OK");document.getElementById("copyHome").textContent="ALIAS COPIADO";setTimeout(()=>document.getElementById("copyHome").textContent="COPIAR ALIAS",1600)}catch(e){}});
 });
 </script>
-<script src="https://vjs.zencdn.net/8.24.1/video.min.js"></script><script src="assets/chat.js?v=2026.10.04.04"></script>
+<script src="https://vjs.zencdn.net/8.24.1/video.min.js"></script><script src="https://raw.githubusercontent.com/magickidsok/magickidsok.github.io/main/assets/chat.js?v=2026.10.04.04"></script>
 </body></html>
