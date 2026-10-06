@@ -138,9 +138,8 @@ function computeTimelinePosition(){
   const total=durations.reduce((a,b)=>a+b,0);
   if(!total)return {index:0,time:0};
   if(lastScheduleChannelState?.status==="paused"||lastScheduleChannelState?.status==="offair"){
-    let elapsed=Math.max(0,Number(lastScheduleChannelState.pausedPosition||0)),index=0;
-    for(;index<durations.length;index++){const d=durations[index];if(d>0&&elapsed<d)break;elapsed-=d;}
-    return {index:index<durations.length?index:0,time:elapsed};
+    const index=Math.max(0,Math.min(durations.length-1,Number(lastScheduleChannelState.pausedIndex||0)));
+    return {index,index,time:Math.max(0,Number(lastScheduleChannelState.pausedPosition||0))};
   }
   const started=Number(lastScheduleChannelState?.startedAt||0);
   if(!started)return {index:0,time:0};
