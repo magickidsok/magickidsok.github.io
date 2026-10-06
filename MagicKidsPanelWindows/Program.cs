@@ -329,7 +329,20 @@ sealed class MagicCloud
             videoType = "program"
         };
         var d = await Send("/api/admin/upload/complete", HttpMethod.Post, body, ct: ct);
-        return d.Deserialize<CompleteResponse>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+        var result = d.Deserialize<CompleteResponse>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+        if (!result.Id.HasValue || result.Id.Value <= 0)
+            throw new InvalidOperationException("Cloudflare terminó la subida pero no devolvió el ID del video.");
+        return result;
+    }
+
+    public async Task Abort(string key, string uploadId, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(uploadId)) return;
+        try
+        {
+            await Send("/api/admin/upload/abort?key=" + Uri.EscapeDataString(key) + "&uploadId=" + Uri.EscapeDataString(uploadId), HttpMethod.Post, ct: ct);
+        }
+        catch { }
     }
 
     public async Task DeleteVideo(int id, CancellationToken ct = default)
@@ -793,6 +806,7 @@ sealed class MainForm : Form
         }
         catch
         {
+            try { await cloud.Abort(key, uploadId, CancellationToken.None); } catch { }
             v.Status = "ERROR · REINTENTABLE";
             RefreshUi();
             throw;
