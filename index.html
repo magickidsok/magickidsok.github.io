@@ -119,310 +119,116 @@ header{text-align:center;padding:4px 0 8px}
 <script>
 let schedule=[["22:00","DRAGON BALL"],["22:30","DRAGON BALL KAI"],["23:00","DRAGON BALL Z"],["01:00","DRAGON BALL SUPER"],["02:30","DRAGON BALL HEROES"],["03:30","DRAGON BALL GT"],["04:00","POKEMON"],["04:30","DIGIMON TAMERS"],["05:00","MIKAMI CAZAFANTASMAS"],["05:30","POWER RANGERS FUERZA DEL TIEMPO"],["06:00","MOB 100"],["06:30","DETECTIVE CONAN"],["07:30","LOS SIMPSONS"],["08:00","GAME LIFE"],["08:30","MONSTERS CIBERNETICOS"],["09:00","BLOQUE ANIMAX"],["11:00","RANMA 1/2"],["11:30","SAILOR MOON"]];
 async function loadMagicSchedule(){
+  const base="https://magic-kids-media-1991.s3.us-west-004.backblazeb2.com/";
   try{
-    const r=await fetch("https://magickidsok-github-io.elmagickids.workers.dev/api/schedule",{cache:"no-store"});
-    if(!r.ok)return;
-    const d=await r.json();
-    if(d.channel)lastScheduleChannelState=d.channel;
-    if(Array.isArray(d.schedule)&&d.schedule.length){
-      schedule=d.schedule.map(x=>[x.start_time,x.title,x.object_key,x.video_id]);
-      scheduledVideos=d.schedule.filter(x=>x&&x.object_key);
-      fill();updateNowNext();
-    }
-  }catch(e){}
-}function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}function fill(){const e=document.getElementById("schedule");if(e)e.innerHTML=schedule.slice(0,6).map(x=>'<div class="item"><time>'+x[0]+'</time><strong>'+x[1]+'</strong></div>').join("")}const STREAM_URL="";
-const VIDEO_API="https://uifchrnvigkzantaehgz.supabase.co/functions/v1/magic-kids-api";
-let magicHls=null, magicPlyr=null, magicRetryTimer=null, magicRetryAttempt=0, magicStreamStarted=false;
-let scheduledMode=false, currentVideoIndex=-1, scheduledVideos=[];
-let channelStartedAt=0;
-let lastScheduleChannelState={};
-const videoDurationCache=new Map();
-let playerVolume=0.5;
-let playerMuted=true;
-
-function setStreamState(state,msg){
-  const badge=document.getElementById("streamBadge"),label=document.getElementById("streamLabel"),status=document.getElementById("status"),retry=document.getElementById("retryStream");
-  if(status){status.textContent="";status.style.display="none";}
-  if(!badge||!label)return;
-  badge.classList.remove("offline","connecting");
-  if(state==="live"){label.textContent="EN VIVO";status.textContent="";retry?.classList.add("hidden");}
-  else if(state==="scheduled"){label.textContent="EN VIVO";status.textContent=msg||"";retry?.classList.add("hidden");}
-  else if(state==="offline"){badge.classList.add("offline");label.textContent="SIN SEÑAL";status.textContent=msg||"Señal no disponible.";retry?.classList.remove("hidden");}
-  else {badge.classList.add("connecting");label.textContent="CONECTANDO";status.textContent=msg||"Conectando Magic Kids…";retry?.classList.add("hidden");}
+    const r=await fetch(base+"catalog.json?v="+Date.now(),{cache:"no-store"});
+    if(!r.ok)throw new Error();
+    const c=await r.json();
+    scheduledVideos=Array.isArray(c.videos)?c.videos.filter(v=>v&&v.url):[];
+    schedule=scheduledVideos.map((v,i)=>["00:00",v.title||("Video "+(i+1)),v.key,i]);
+    fill();updateNowNext();
+  }catch(e){
+    scheduledVideos=[];fill();updateNowNext();
+  }
+  await refreshPublicChannelState();
 }
-function scheduleStreamRetry(){
-  if(magicRetryTimer)return;
-  const delay=Math.min(15000,5000+magicRetryAttempt*2000);
-  magicRetryAttempt++;
-  magicRetryTimer=setTimeout(async()=>{
-    magicRetryTimer=null;
-    try{
-      const state=await fetchChannelControl();
-      if(state?.status==="offair"){showOffAir(true);return;}
-      if(state?.status!=="live"){stopScheduledPlayer();return;}
-      if(!scheduledVideos.length){await startControlledChannel(false);return;}
-      const video=document.getElementById("magicVideo");
-      const index=currentVideoIndex>=0?currentVideoIndex:chooseScheduledIndex();
-      const resumeAt=video&&Number.isFinite(video.currentTime)?Math.max(0,Number(video.currentTime)):0;
-      /* Retry the same item and preserve its position; only advance normally
-         through the ended event. This avoids restarting a program from 00:00
-         after a brief network stall. */
-      setScheduledVideo(index,true,resumeAt);
-    }catch(e){scheduleStreamRetry();}
-  },delay);
-  setStreamState("offline","La señal tuvo una interrupción. Reintentando automáticamente…");
-}
-function destroyMagicHls(){if(magicHls){try{magicHls.destroy()}catch(e){}magicHls=null;}}
-function startLiveStream(isRetry=false){
-  const video=document.getElementById("magicVideo");if(!video)return;
-  scheduledMode=false;magicStreamStarted=false;destroyMagicHls();
-  if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}
-  video.pause();video.removeAttribute("src");video.load();video.autoplay=false;
-  setStreamState("offline","No hay programación disponible.");
-}
-function cleanMediaKey(key){return String(key||"").split("/").map(encodeURIComponent).join("/");}
-function scheduledVideoUrl(item){return item?.public_url||"";}
-function chooseScheduledIndex(){return scheduledVideos.length?0:-1;}
-function loadVideoDuration(item){
-  const key=String(item?.object_key||"");
-  if(!key)return Promise.resolve(0);
-  const known=Number(item?.duration_seconds||item?.duration||0);
-  if(Number.isFinite(known)&&known>0){videoDurationCache.set(key,known);return Promise.resolve(known);}
-  if(videoDurationCache.has(key))return Promise.resolve(videoDurationCache.get(key));
-  return new Promise(resolve=>{
-    const v=document.createElement("video");
-    let done=false;
-    const finish=()=>{
-      if(done)return;done=true;
-      const d=Number(v.duration);
-      v.removeAttribute("src");v.load();
-      const value=Number.isFinite(d)&&d>0?d:0;
-      if(value)videoDurationCache.set(key,value);
-      resolve(value);
-    };
-    v.preload="metadata";v.muted=true;v.playsInline=true;v.crossOrigin="anonymous";
-    v.addEventListener("loadedmetadata",finish,{once:true});
-    v.addEventListener("error",finish,{once:true});
-    v.src=scheduledVideoUrl(item);
-    v.load();
-    setTimeout(finish,8000);
-  });
-}
-async function prepareSynchronizedTimeline(){
-  /* Lightweight mode: use durations already supplied by the API.
-     Do NOT open metadata requests for the whole playlist at startup. */
-  return scheduledVideos.map(item=>{
-    const key=String(item?.object_key||"");
-    const known=Number(item?.duration_seconds||item?.duration||0);
-    if(key&&Number.isFinite(known)&&known>0)videoDurationCache.set(key,known);
-    return Number.isFinite(known)&&known>0?known:(key&&videoDurationCache.has(key)?Number(videoDurationCache.get(key)):0);
-  });
-}
-function synchronizedPosition(startedAt,durations){
-  const total=durations.reduce((a,b)=>a+(Number.isFinite(b)?b:0),0);
-  if(!startedAt||!total)return null;
-  let elapsed=Math.max(0,(Date.now()-startedAt)/1000)%total;
+function withBust(url){return String(url||"")+(String(url||"").includes("?")?"&":"?")+"mk="+Date.now();}
+function scheduledVideoUrl(item){return item?.url?withBust(item.url):"";}
+function computeTimelinePosition(){
+  const durations=scheduledVideos.map(v=>Math.max(0,Number(v.durationSeconds)||0));
+  const total=durations.reduce((a,b)=>a+b,0);
+  if(!total)return {index:0,time:0};
+  if(lastScheduleChannelState?.status==="paused"||lastScheduleChannelState?.status==="offair"){
+    return {index:Math.max(0,Number(lastScheduleChannelState.currentIndex||0)),time:Math.max(0,Number(lastScheduleChannelState.positionSeconds||0))};
+  }
+  const started=Number(lastScheduleChannelState?.startedAt||0);
+  if(!started)return {index:0,time:0};
+  let elapsed=Math.max(0,(Date.now()-started)/1000)%total;
   for(let i=0;i<durations.length;i++){
-    const d=Number(durations[i]||0);
+    const d=durations[i];
     if(d>0&&elapsed<d)return {index:i,time:elapsed};
     elapsed-=d;
   }
   return {index:0,time:0};
 }
-function setScheduledVideo(index,autoplay=true,seekTime=null){
-  const video=document.getElementById("magicVideo");if(!video||!scheduledVideos.length)return;
-  if(index<0)index=0;if(index>=scheduledVideos.length)index=0;
-  currentVideoIndex=index;scheduledMode=true;magicStreamStarted=false;
+function publicStateOverlay(status){
+  const overlay=document.getElementById("offAirOverlay"),title=document.querySelector(".offAirTitle"),text=document.querySelector(".offAirText"),ig=document.querySelector(".offAirIg");
+  if(!overlay)return;
+  if(status==="live"){overlay.classList.add("hidden");return;}
+  overlay.classList.remove("hidden");
+  if(status==="paused"){if(title)title.textContent="PAUSADO";if(text)text.innerHTML="LA TRANSMISIÓN ESTÁ PAUSADA<br>REANUDAREMOS EN INSTANTES";if(ig)ig.style.display="none";}
+  else if(status==="offair"){if(title)title.textContent="FUERA DE AIRE";if(text)text.innerHTML="ESTAMOS ACTUALIZANDO LA PROGRAMACIÓN<br>EN INSTANTES VOLVEMOS";if(ig)ig.style.display="";else{}}
+  else {if(title)title.textContent="CANAL DETENIDO";if(text)text.innerHTML="LA TRANSMISIÓN ESTÁ DETENIDA<br>ESPERÁ EL PRÓXIMO INICIO";if(ig)ig.style.display="none";}
+}
+function showOffAir(show=true){publicStateOverlay(show?"offair":"live");if(show){scheduledMode=false;magicStreamStarted=false;clearMagicStall();if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}destroyMagicHls();const v=document.getElementById("magicVideo");if(v){v.pause();v.removeAttribute("src");v.load();}}}
+function stopScheduledPlayer(){const v=document.getElementById("magicVideo");scheduledMode=false;currentVideoIndex=-1;magicStreamStarted=false;clearMagicStall();if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}destroyMagicHls();if(v){v.pause();v.removeAttribute("src");v.load();}setStreamState("offline","El canal está detenido.");publicStateOverlay("stopped");}
+function setScheduledVideo(index,autoplay=true,seekTime=0){
+  const v=document.getElementById("magicVideo");if(!v||!scheduledVideos.length)return;
+  if(index<0)index=scheduledVideos.length-1;if(index>=scheduledVideos.length)index=0;
+  currentVideoIndex=index;scheduledMode=true;magicStreamStarted=false;clearMagicStall();
   if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}destroyMagicHls();
-  const item=scheduledVideos[index],url=scheduledVideoUrl(item);
-  video.pause();video.removeAttribute("src");video.load();
-  video.crossOrigin="anonymous";video.volume=playerVolume;video.muted=playerMuted;video.defaultMuted=playerMuted;video.autoplay=true;
-  video.setAttribute("autoplay","");video.setAttribute("muted","");
-  video.controls=false;video.playsInline=true;video.disablePictureInPicture=true;
-  const target=Number.isFinite(seekTime)?Math.max(0,seekTime):0;
-  const seekAndPlay=()=>{
-    try{
-      if(Number.isFinite(video.duration)&&video.duration>0){
-        const t=Math.min(target,Math.max(0,video.duration-.15));
-        video.currentTime=t;
-        videoDurationCache.set(String(item.object_key||""),video.duration);
-      }
-    }catch(e){}
-    if(autoplay){
-      const p=video.play();
-      if(p&&p.catch)p.catch(()=>{});
-
-    }
-  };
-  video.src=url;video.load();if(magicPlyr){magicPlyr.volume=playerVolume;magicPlyr.muted=playerMuted;}
-  video.addEventListener("loadedmetadata",seekAndPlay,{once:true});
-  video.addEventListener("playing",()=>{}, {once:false});
-  setStreamState("scheduled",item.title||"Magic Kids");
-  updateScheduledNowNext();
+  const item=scheduledVideos[index],url=scheduledVideoUrl(item),target=Math.max(0,Number(seekTime)||0);
+  v.pause();v.removeAttribute("src");v.load();v.crossOrigin="anonymous";v.volume=playerVolume;v.muted=playerMuted;v.defaultMuted=playerMuted;v.autoplay=autoplay;v.controls=false;v.playsInline=true;v.disablePictureInPicture=true;
+  const seek=()=>{try{if(Number.isFinite(v.duration)&&v.duration>0)v.currentTime=Math.min(target,Math.max(0,v.duration-.2));}catch(e){}if(autoplay){const p=v.play();if(p&&p.catch)p.catch(()=>{})}};
+  v.addEventListener("loadedmetadata",seek,{once:true});v.src=url;v.load();setStreamState("scheduled",item.title||"Magic Kids");publicStateOverlay("live");updateScheduledNowNext();armMagicStall();
 }
-function playNextScheduled(){
-  if(!scheduledMode||!scheduledVideos.length)return;
-  /* El cambio normal usa la secuencia ya sincronizada. No hacemos una consulta
-     de red justo en el instante del cambio: esa consulta podía devolver una
-     lista actualizada mientras syncScheduledToClock todavía calculaba la
-     posición anterior y provocar un salto de una serie. */
-  const nextIndex=(currentVideoIndex+1)%scheduledVideos.length;
-  setScheduledVideo(nextIndex,true);
+function playNextScheduled(){if(!scheduledVideos.length)return;setScheduledVideo((currentVideoIndex+1)%scheduledVideos.length,true,0);}
+function retryCurrentVideo(){
+  if(!scheduledMode||currentVideoIndex<0||currentVideoIndex>=scheduledVideos.length)return;
+  const v=document.getElementById("magicVideo");if(!v)return;
+  const keep=Number(v.currentTime||0);setScheduledVideo(currentVideoIndex,true,keep);
 }
-function detectPlayingScheduledIndex(){
-  const video=document.getElementById("magicVideo");
-  if(!video||!scheduledVideos.length)return currentVideoIndex;
-  const current=String(video.currentSrc||video.src||"");
-  if(!current)return currentVideoIndex;
-  const found=scheduledVideos.findIndex(item=>scheduledVideoUrl(item)===current);
-  if(found>=0&&found!==currentVideoIndex)currentVideoIndex=found;
-  return currentVideoIndex;
+function armMagicStall(){clearMagicStall();if(!scheduledMode)return;magicStallTimer=setTimeout(()=>{magicStallTimer=null;const v=document.getElementById("magicVideo");if(!v||!scheduledMode)return;if(v.readyState<3)retryCurrentVideo();},10000);}
+async function refreshPublicChannelState(){
+  const base="https://magic-kids-media-1991.s3.us-west-004.backblazeb2.com/";
+  try{const r=await fetch(base+"channel.json?v="+Date.now(),{cache:"no-store"});if(r.ok)lastScheduleChannelState=await r.json();}catch(e){}
+}
+async function applyPublicChannelState(force=false){
+  const state=lastScheduleChannelState||{};
+  const generation=Number(state.generation||0);
+  const changed=force||generation!==Number(knownChannelGeneration||-1);
+  knownChannelGeneration=generation;
+  if(state.status==="offair"){showOffAir(true);updateNowNext();return;}
+  if(state.status==="paused"){publicStateOverlay("paused");stopPlaybackOnly();updateNowNext();return;}
+  if(state.status!=="live"){stopScheduledPlayer();updateNowNext();return;}
+  publicStateOverlay("live");
+  if(!scheduledVideos.length){setStreamState("offline","No hay videos cargados.");return;}
+  if(changed||!scheduledMode){
+    const p=computeTimelinePosition();
+    setScheduledVideo(p.index,true,p.time);
+  }
+}
+function stopPlaybackOnly(){const v=document.getElementById("magicVideo");scheduledMode=false;magicStreamStarted=false;clearMagicStall();if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}if(v){v.pause();}setStreamState("scheduled","Transmisión pausada.");}
+async function syncChannelState(){
+  await refreshPublicChannelState();
+  await applyPublicChannelState(false);
+}
+function scheduleStreamRetry(){
+  if(magicRetryTimer||!scheduledMode)return;
+  magicRetryTimer=setTimeout(()=>{magicRetryTimer=null;retryCurrentVideo();},2500);
 }
 function updateScheduledNowNext(){
   const nowEl=document.getElementById("nowShow"),nextEl=document.getElementById("nextShow"),nowTimeEl=document.getElementById("nowTime"),nextTimeEl=document.getElementById("nextTime");
   if(!nowEl||!nextEl)return;
   if(!scheduledVideos.length){nowEl.textContent="Sin programación";nextEl.textContent="Esperando video";nowTimeEl.textContent="--:--";nextTimeEl.textContent="--:--";return;}
-  const idx=detectPlayingScheduledIndex(),safeIdx=idx>=0?idx:0;
-  const cur=scheduledVideos[safeIdx],next=scheduledVideos[(safeIdx+1)%scheduledVideos.length];
-  nowEl.textContent=cur.title||"Video";nowTimeEl.textContent="POSICIÓN "+(safeIdx+1)+" / "+scheduledVideos.length;
-  nextEl.textContent=next.title||"Video";nextTimeEl.textContent="POSICIÓN "+(((safeIdx+1)%scheduledVideos.length)+1)+" / "+scheduledVideos.length;
-}
-function showOffAir(show=true){
-  const overlay=document.getElementById("offAirOverlay");if(!overlay)return;
-  if(show){scheduledMode=false;magicStreamStarted=false;if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}destroyMagicHls();const v=document.getElementById("magicVideo");if(v){v.pause();v.removeAttribute("src");v.load();}overlay.classList.remove("hidden");setStreamState("offline","Estamos actualizando la programación…");}
-  else overlay.classList.add("hidden");
-}
-let publicViewerId="";
-function getPublicViewerId(){
-  try{
-    publicViewerId=sessionStorage.getItem("mk_public_viewer")||"";
-    if(!publicViewerId){
-      publicViewerId=(crypto.randomUUID?crypto.randomUUID():("mk-"+Date.now()+"-"+Math.random().toString(36).slice(2)));
-      sessionStorage.setItem("mk_public_viewer",publicViewerId);
-    }
-  }catch(e){publicViewerId="mk-"+Date.now()+"-"+Math.random().toString(36).slice(2);}
-  return publicViewerId;
+  const i=Math.max(0,currentVideoIndex<0?0:currentVideoIndex),cur=scheduledVideos[i],next=scheduledVideos[(i+1)%scheduledVideos.length];
+  nowEl.textContent=cur?.title||"Video";nowTimeEl.textContent="POSICIÓN "+(i+1)+" / "+scheduledVideos.length;nextEl.textContent=next?.title||"Video";nextTimeEl.textContent="POSICIÓN "+(((i+1)%scheduledVideos.length)+1)+" / "+scheduledVideos.length;
 }
 async function heartbeatPublicViewer(){
   try{
-    const id=getPublicViewerId();
-    const r=await fetch(VIDEO_API+"/api/viewers/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({viewerId:id}),cache:"no-store",keepalive:true});\n    const d=await r.json().catch(()=>({}));\n    const el=document.getElementById("publicViewerCount");if(el&&Number.isFinite(Number(d.count)))el.textContent=String(d.count);
+    let id=sessionStorage.getItem("mk_public_viewer")||"";
+    if(!id){id=crypto.randomUUID?crypto.randomUUID():"mk-"+Date.now()+"-"+Math.random().toString(36).slice(2);sessionStorage.setItem("mk_public_viewer",id);}
+    const r=await fetch(VIDEO_API+"/viewers/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({viewerId:id}),cache:"no-store",keepalive:true});
+    const d=await r.json().catch(()=>({}));const el=document.getElementById("publicViewerCount");if(el&&Number.isFinite(Number(d.count)))el.textContent=String(d.count);
   }catch(e){}
 }
-async function fetchChannelControl(){
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),8000);
-  try{
-    const r=await fetch(VIDEO_API+"/api/channel/state",{cache:"no-store",signal:controller.signal});
-    if(!r.ok)throw new Error();
-    return await r.json();
-  }catch(e){return null}
-  finally{clearTimeout(timer);}
-}
-function stopScheduledPlayer(){
-  showOffAir(false);
-  const video=document.getElementById("magicVideo");if(!video)return;
-  scheduledMode=false;currentVideoIndex=-1;magicStreamStarted=false;
-  if(magicRetryTimer){clearTimeout(magicRetryTimer);magicRetryTimer=null;}
-  destroyMagicHls();video.pause();video.removeAttribute("src");video.load();video.autoplay=false;
-  setStreamState("offline","El canal está detenido.");
-  const nowEl=document.getElementById("nowShow"),nextEl=document.getElementById("nextShow"),nowTimeEl=document.getElementById("nowTime"),nextTimeEl=document.getElementById("nextTime");
-  if(nowEl)nowEl.textContent="CANAL DETENIDO";if(nextEl)nextEl.textContent="Esperando inicio";if(nowTimeEl)nowTimeEl.textContent="--:--";if(nextTimeEl)nextTimeEl.textContent="--:--";
-}
-async function startControlledChannel(forceRestart=false,knownState=null){
-  const state=knownState||await fetchChannelControl();
-  if(!state||state.status!=="live"){if(state?.status==="offair")showOffAir(true);else stopScheduledPlayer();return false;}
-  /* En la entrada inicial reutilizamos la programación que ya cargó loadMagicSchedule().
-     Solo volvemos a pedirla cuando hay un reinicio/cambio de generación, para que
-     el orden guardado en el panel privado siga siendo la fuente de verdad. */
-  if(forceRestart||!scheduledVideos.length){
-    const r=await fetch(VIDEO_API+"/api/schedule",{cache:"no-store"});if(!r.ok)throw new Error();
-    const d=await r.json();scheduledVideos=Array.isArray(d.schedule)?d.schedule.filter(x=>x&&x.object_key):[];
-    if(Array.isArray(d.schedule))schedule=d.schedule.map(x=>[x.start_time,x.title,x.object_key,x.video_id]);
-    if(d.channel)lastScheduleChannelState=d.channel;
-  }
-  channelStartedAt=Number(state.startedAt||state.updatedAt||channelStartedAt||0);
-  if(scheduledVideos.length){
-    const durations=await prepareSynchronizedTimeline();
-    const pos=synchronizedPosition(channelStartedAt,durations);
-    if(pos)setScheduledVideo(pos.index,true,pos.time);
-    else setScheduledVideo(chooseScheduledIndex(),true);
-    return true;
-  }
-  stopScheduledPlayer();
-  setStreamState("offline","No hay videos programados.");
-  return false;
-}
-async function syncScheduledToClock(){
-  if(!scheduledMode||!scheduledVideos.length||!channelStartedAt)return;
-  const durations=scheduledVideos.map(x=>videoDurationCache.get(String(x.object_key||""))||0);
-  const pos=synchronizedPosition(channelStartedAt,durations);
-  if(!pos)return;
-  const video=document.getElementById("magicVideo");
-  if(!video)return;
-
-  /* La señal maestra sigue siendo channelStartedAt + la línea de tiempo.
-     Pero no cambiamos de video mientras el actual todavía está reproduciendo:
-     hacerlo cada pocos segundos durante un comercial puede vaciar el elemento
-     <video> y producir parpadeos. El evento ended es quien realiza el cambio
-     normal y conserva el orden exacto. */
-  if(pos.index!==currentVideoIndex){
-    const currentDuration=Number(video.duration||0);
-    const nearEnd=currentDuration>0&&Number(video.currentTime||0)>=Math.max(0,currentDuration-0.35);
-    if(video.ended||nearEnd){
-      setScheduledVideo(pos.index,true,pos.time);
-    }
-    return;
-  }
-
-  /* No hacemos seek agresivo en comerciales cortos. Un seek sobre el mismo
-     elemento multimedia puede provocar un frame vacío/parpadeo. */
-  const duration=Number(video.duration||durations[pos.index]||0);
-  const drift=Math.abs(Number(video.currentTime||0)-pos.time);
-  const correctionThreshold=duration>0&&duration<15?6:5;
-  if(video.readyState>=1&&drift>correctionThreshold){
-    try{video.currentTime=pos.time;}catch(e){}
-  }
-  if(video.paused&&!video.ended){
-    const p=video.play();
-    if(p&&p.catch)p.catch(()=>{});
-  }
-}
-let channelPollTimer=null,knownChannelGeneration=-1,knownChannelStatus="";
-let magicStallTimer=null;
-function clearMagicStall(){if(magicStallTimer){clearTimeout(magicStallTimer);magicStallTimer=null;}}
-function armMagicStall(){clearMagicStall();if(!scheduledMode)return;magicStallTimer=setTimeout(()=>{magicStallTimer=null;const v=document.getElementById("magicVideo");if(!v||!scheduledMode)return;if(v.readyState<3)scheduleStreamRetry();},12000);}
-async function syncChannelState(){
-  const state=await fetchChannelControl();if(!state)return;
-  const changed=state.status!==knownChannelStatus||Number(state.generation)!==Number(knownChannelGeneration);
-  knownChannelStatus=state.status;knownChannelGeneration=Number(state.generation||0);
-  channelStartedAt=Number(state.startedAt||state.updatedAt||channelStartedAt||0);
-  if(!changed){if(state.status==="live")await syncScheduledToClock();return;}
-  if(state.status==="offair"){showOffAir(true);return;}
-  if(state.status==="live"){showOffAir(false);await startControlledChannel(true,state);return;}
-  stopScheduledPlayer();
-}
-async function loadScheduledPlayer(){
-  let state=await fetchChannelControl();
-  if(!state&&lastScheduleChannelState){
-    state={status:lastScheduleChannelState.status,generation:lastScheduleChannelState.generation,updatedAt:lastScheduleChannelState.updatedAt,startedAt:lastScheduleChannelState.startedAt||0};
-  }
-  if(!state)return false;
-  knownChannelStatus=state.status;knownChannelGeneration=Number(state.generation||0);
-  if(state.status==="offair"){showOffAir(true);return false;}
-  if(state.status!=="live"){stopScheduledPlayer();return false;}
-  showOffAir(false);
-  try{return await startControlledChannel(false,state);}
-  catch(e){
-    if(scheduledVideos.length){
-      setScheduledVideo(chooseScheduledIndex(),true);
-      return true;
-    }
-    setStreamState("offline","No se pudo cargar la programación. Reintentando…");
-    return false;
-  }
-}
-document.getElementById("retryStream")?.addEventListener("click",()=>{magicRetryAttempt=0;startLiveStream(true)});
+document.getElementById("retryStream")?.addEventListener("click",()=>retryCurrentVideo());
+document.getElementById("magicVideo")?.addEventListener("error",()=>{if(scheduledMode){setStreamState("offline","Reintentando el mismo video…");scheduleStreamRetry();}});
+document.getElementById("magicVideo")?.addEventListener("stalled",()=>{if(scheduledMode)armMagicStall();});
+document.getElementById("magicVideo")?.addEventListener("waiting",()=>{if(scheduledMode)armMagicStall();});
+document.getElementById("magicVideo")?.addEventListener("loadedmetadata",()=>{if(scheduledMode)updateScheduledNowNext();});
+document.getElementById("magicVideo")?.addEventListener("playing",()=>{clearMagicStall();magicRetryAttempt=0;setStreamState("scheduled",scheduledVideos[currentVideoIndex]?.title||"Magic Kids");updateScheduledNowNext();});
+document.getElementById("magicVideo")?.addEventListener("ended",()=>{if(scheduledMode)playNextScheduled();});
 function updatePlayerVolumeUI(){
   const video=document.getElementById("magicVideo"),btn=document.getElementById("playerMute"),range=document.getElementById("playerVolume");
   if(!video||!btn)return;
