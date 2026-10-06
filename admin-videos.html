@@ -31,7 +31,7 @@ progress{width:100%;height:8px}
 
 <section id="login" class="card login">
 <h2 style="margin-top:0">Panel Magic Kids</h2>
-<p class="muted">Acceso único al panel. Sin PIN antiguo.</p>
+<p class="muted">Acceso protegido con código maestro 1991.</p>
 <input id="code" type="password" inputmode="numeric" placeholder="Código del panel">
 <button id="enter" style="width:100%">INGRESAR</button>
 <div id="loginMsg" class="msg"></div>
@@ -117,7 +117,7 @@ function showApp(){$("login").classList.add("hidden");$("app").classList.remove(
 $("enter").onclick=async()=>{
   const msg=$("loginMsg");msg.textContent="Conectando…";
   try{
-    await api("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:$("code").value.trim()})});
+    const accessCode=$("code").value.trim();let logged=false;try{await api("/api/admin/master-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:accessCode}));logged=true}catch(masterErr){try{await api("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:accessCode})});logged=true}catch(pinErr){throw new Error(masterErr.message||pinErr.message||"Código incorrecto.")}}
     showApp();msg.textContent="";await loadAll();
   }catch(e){msg.textContent=e.message}
 };
