@@ -667,7 +667,7 @@ async function adminLinkLogin(request,env,origin){
   const token=String(request.headers.get("X-MK-PANEL-TOKEN")||"");
   if(token!==PANEL_LINK_TOKEN)return json({error:"Panel no autorizado."},403,origin);
   const session=await makeAdminSessionToken(env.SESSION_SECRET);
-  return json({ok:true,user:{id:"admin-link",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin,{"Set-Cookie":setAdminSessionCookie(session)});
+  return json({ok:true,token:session,user:{id:"admin-link",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin,{"Set-Cookie":setAdminSessionCookie(session)});
 }
 async function adminPinLogin(request,env,origin){
   if(!env.ADMIN_PIN)return json({error:"Falta configurar ADMIN_PIN en el Worker de Cloudflare."},500,origin);
