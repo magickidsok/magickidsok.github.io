@@ -1,0 +1,1 @@
+{"$schema":"https://openapi.vercel.sh/vercel.json","headers":[{"source":"/magic-panel/(.*)","headers":[{"key":"Cache-Control","value":"no-store"}]},{"source":"/api/mk/(.*)","headers":[{"key":"Cache-Control","value":"no-store"}]}]}
