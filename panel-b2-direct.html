@@ -33,72 +33,97 @@
 <div id="preview" class="preview"><div class="previewBox"><button id="closePreview" class="red" style="float:right">CERRAR</button><video id="pv" controls playsinline preload="metadata"></video></div></div>
 
 <script>
-const API="https://magickidsok-github-io.elmagickids.workers.dev";
-const PANEL_TOKEN="MKPANEL-7X4D-92QF-8N3L-6V2Z-4K7P";
+const CONTROL_API="https://uifchrnvigkzantaehgz.supabase.co/functions/v1/mk-control-api";
+const VIEWER_API="https://uifchrnvigkzantaehgz.supabase.co/functions/v1/magic-kids-api";
+const DEFAULT_ENDPOINT="https://s3.us-west-004.backblazeb2.com";
 const $=id=>document.getElementById(id);
-let adminToken="",videos=[],categories=[],schedule=[],channel={status:"stopped",generation:0,startedAt:0,pausedPosition:0},storage={limitBytes:10737418240,usedBytes:0,freeBytes:10737418240};
-const stateNames={live:"EN VIVO",paused:"PAUSADO",offair:"FUERA DE AIRE",stopped:"DETENIDO"};
+let cfg=null,catalog={version:1,categories:["Series","Tandas","Especiales","Otros"],videos:[]},categories=[],schedule=[],channel={status:"stopped",generation:0,startedAt:0,currentIndex:0,positionSeconds:0},storage={limitBytes:10*1024*1024*1024,usedBytes:0,freeBytes:10*1024*1024*1024},player=null;
 
-async function api(path,opt={}){
-  const headers=new Headers(opt.headers||{}); if(adminToken)headers.set("Authorization","Bearer "+adminToken);
-  const r=await fetch(API+path+(path.includes("?")?"&":"?")+"mk="+Date.now(),{...opt,headers,cache:"no-store",credentials:"include"});
-  const d=await r.json().catch(()=>({})); if(!r.ok)throw Error(d.error||("HTTP "+r.status)); return d;
-}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
 function fmtBytes(n){n=Number(n||0);const u=["B","KB","MB","GB","TB"];let i=0;while(n>=1024&&i<u.length-1){n/=1024;i++}return n.toFixed(i?2:0)+" "+u[i]}
 function time(s){s=Number(s||0);if(!s)return"—";s=Math.round(s);return String(Math.floor(s/3600)).padStart(2,"0")+":"+String(Math.floor(s%3600/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
-function mediaUrl(key){return API+"/media/"+String(key||"").split("/").map(encodeURIComponent).join("/")}
-function paintChannel(){const s=channel.status||"stopped";$("channelText").textContent="Estado: "+(stateNames[s]||s);["start","pause","resume","offair","stop"].forEach(id=>$(id).classList.remove("active"));const a=s==="live"?"start":s==="paused"?"pause":s==="offair"?"offair":"stop";$(a).classList.add("active");}
-async function loadVideos(){const d=await api("/api/videos");videos=d.videos||[];renderVideos()}
-async function loadCategories(){const d=await api("/api/admin/categories");categories=d.categories||[];$("category").innerHTML=categories.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join("")}
-async function loadSchedule(){const d=await api("/api/admin/schedule");schedule=d.schedule||[];renderSchedule()}
-async function loadStorage(){try{storage=await api("/api/admin/storage");const free=Number(storage.freeBytes||0);$("freeGb").textContent=(free/1073741824).toFixed(2)+" GB";$("storageText").textContent=fmtBytes(storage.usedBytes)+" usados de 10 GB · "+fmtBytes(free)+" libres";$("storageBar").style.width=Math.min(100,Number(storage.percentUsed||0))+"%"}catch(e){$("storageText").textContent="No se pudo consultar el almacenamiento."}}
-async function loadViewers(){try{const d=await api("/api/admin/viewers");$("viewersCount").textContent=String(d.count??0)}catch(e){}}
-function renderVideos(){const by={};videos.forEach(v=>(by[v.category||"Otros"]??=[]).push(v));$("videosCount").textContent=videos.length;$("catsCount").textContent=categories.length;$("library").innerHTML=Object.keys(by).map(cat=>'<div class="catHead">'+esc(cat)+' · '+by[cat].length+'</div><div class="grid">'+by[cat].map(v=>'<article class="video"><small>#'+v.id+' · '+fmtBytes(v.file_size||0)+'</small><h4>'+esc(v.title)+'</h4><small>'+time(v.duration_seconds)+'</small><div class="actions"><button onclick="window.playVideo('+v.id+')">▶ VER</button><button class="red" onclick="window.delVideo('+v.id+')">BORRAR</button></div></article>').join("")+'</div>').join("")||'<p class="muted">Todavía no hay videos.</p>'}
-function renderSchedule(){let html="";schedule.forEach((x,i)=>{html+='<div class="schedRow"><button class="gray" onclick="window.moveSchedule('+i+',-1)">▲</button><button class="gray" onclick="window.moveSchedule('+i+',1)">▼</button><select data-idx="'+i+'" class="sv">'+videos.map(v=>'<option value="'+v.id+'" '+(Number(v.id)===Number(x.video_id)?"selected":"")+'>'+esc(v.title)+'</option>').join("")+'</select><input data-time="'+i+'" class="stime" value="'+esc(x.start_time||"00:00")+'" placeholder="HH:MM"></div>'});$("schedule").innerHTML=html||'<div class="muted">No hay videos programados.</div>'}
-window.moveSchedule=(i,dir)=>{const j=i+dir;if(j<0||j>=schedule.length)return;[schedule[i],schedule[j]]=[schedule[j],schedule[i]];renderSchedule()};
-$("saveSchedule").onclick=async()=>{try{const items=[...document.querySelectorAll(".sv")].map((s,i)=>({videoId:Number(s.value),startTime:(document.querySelectorAll(".stime")[i]?.value||"00:00").trim()}));await api("/api/admin/schedule",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items})});await loadSchedule();$("scheduleMsg").textContent="✓ Programación guardada";$("scheduleMsg").className="msg ok";setTimeout(()=>$("scheduleMsg").textContent="",1200)}catch(e){$("scheduleMsg").textContent="Error: "+e.message;$("scheduleMsg").className="msg err"}};
-window.playVideo=id=>{const v=videos.find(x=>Number(x.id)===Number(id));if(!v)return;$("preview").style.display="flex";$("pv").src=mediaUrl(v.object_key)+"?mk="+Date.now();$("pv").play().catch(()=>{})};
-$("closePreview").onclick=()=>{$("pv").pause();$("pv").removeAttribute("src");$("pv").load();$("preview").style.display="none"};
-window.delVideo=async id=>{if(!confirm("¿Borrar este video?"))return;try{await api("/api/admin/video/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});await Promise.all([loadVideos(),loadSchedule(),loadStorage()])}catch(e){alert(e.message)}};
-
+function host(){return cfg.endpoint.replace(/^https?:\/\//,"").replace(/\/$/,"")}
+function publicUrl(key,bust=false){return "https://"+cfg.bucket+"."+host()+"/"+String(key).split("/").map(encodeURIComponent).join("/")+(bust?"?mk="+Date.now():"")}
+function amzEncode(v){return encodeURIComponent(String(v)).replace(/[!'()*]/g,c=>"%"+c.charCodeAt(0).toString(16).toUpperCase())}
+function bytesToHex(a){return [...new Uint8Array(a)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+function hexToBytes(h){const out=new Uint8Array(h.length/2);for(let i=0;i<out.length;i++)out[i]=parseInt(h.slice(i*2,i*2+2),16);return out}
+async function hmacBytes(key,data){const k=await crypto.subtle.importKey("raw",key,{name:"HMAC",hash:"SHA-256"},false,["sign"]);return new Uint8Array(await crypto.subtle.sign("HMAC",k,new TextEncoder().encode(data)))}
+async function sha256(text){return bytesToHex(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(text)))}
+async function signingKey(secret,date,region,service){let k=await hmacBytes(new TextEncoder().encode("AWS4"+secret),date);k=await hmacBytes(k,region);k=await hmacBytes(k,service);return hmacBytes(k,"aws4_request")}
+function amzParts(){const iso=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d{3}Z$/,"Z");return {amz:iso,date:iso.slice(0,8)}}
+async function presign(method,key,contentType=""){
+  const {amz,date}=amzParts(),region=cfg.region,service="s3",hostName=cfg.bucket+"."+host(),scope=date+"/"+region+"/"+service+"/aws4_request",uri="/"+String(key).split("/").map(amzEncode).join("/");
+  const qp=[["X-Amz-Algorithm","AWS4-HMAC-SHA256"],["X-Amz-Credential",cfg.keyId+"/"+scope],["X-Amz-Date",amz],["X-Amz-Expires","900"],["X-Amz-SignedHeaders",contentType?"content-type;host":"host"],["X-Amz-Content-Sha256","UNSIGNED-PAYLOAD"]].sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v])=>amzEncode(k)+"="+amzEncode(v)).join("&");
+  const canonHeaders=contentType?"content-type:"+contentType+"\nhost:"+hostName+"\n":"host:"+hostName+"\n";
+  const signed=contentType?"content-type;host":"host";
+  const canonical=method+"\n"+uri+"\n"+qp+"\n"+canonHeaders+"\n"+signed+"\nUNSIGNED-PAYLOAD";
+  const toSign="AWS4-HMAC-SHA256\n"+amz+"\n"+scope+"\n"+await sha256(canonical);
+  const sig=bytesToHex(await signingKey(cfg.appKey,date,region,service).then(k=>hmacBytes(k,toSign)));
+  return "https://"+hostName+uri+"?"+qp+"&X-Amz-Signature="+sig;
+}
+function xhr(method,url,body,contentType,onProgress){return new Promise((resolve,reject)=>{const x=new XMLHttpRequest();x.open(method,url,true);if(contentType)x.setRequestHeader("Content-Type",contentType);x.upload.onprogress=e=>{if(e.lengthComputable&&onProgress)onProgress(e.loaded,e.total)};x.onload=()=>x.status>=200&&x.status<300?resolve(x):reject(new Error("HTTP "+x.status+" de B2"));x.onerror=()=>reject(new Error("B2 rechazó la petición desde este dominio. Revisá CORS del bucket."));x.ontimeout=()=>reject(new Error("B2 agotó el tiempo de espera."));x.timeout=0;x.send(body)})}
+async function putJson(key,data,type="application/json"){const body=JSON.stringify({...data,updatedAt:new Date().toISOString()});const url=await presign("PUT",key,type);await xhr("PUT",url,new Blob([body],{type}),type);return body}
+async function putText(key,text,type){const url=await presign("PUT",key,type);await xhr("PUT",url,new Blob([text],{type}),type)}
+async function deleteObject(key){const url=await presign("DELETE",key);await xhr("DELETE",url,null,"")}
+function catalogUsed(){return catalog.videos.reduce((n,v)=>n+Number(v.sizeBytes||v.file_size||0),0)}
+async function loadCatalog(){try{const r=await fetch(publicUrl("catalog.json",true),{cache:"no-store"});if(r.ok)catalog=await r.json()}catch(_){ }catalog.categories=Array.isArray(catalog.categories)&&catalog.categories.length?catalog.categories:["Series","Tandas","Especiales","Otros"];catalog.videos=Array.isArray(catalog.videos)?catalog.videos:[];render()}
+async function saveCatalog(){await putJson("catalog.json",catalog);await generateM3U();render()}
+async function generateM3U(){const lines=["#EXTM3U","#EXT-X-VERSION:3","#EXT-X-PLAYLIST-TYPE:VOD"];for(const v of catalog.videos){lines.push("#EXTINF:"+(Number(v.durationSeconds)>0?Math.round(v.durationSeconds):-1)+","+String(v.title||"Video"));lines.push(publicUrl(v.key||v.object_key))}await putText("playlist.m3u8",lines.join("\n")+"\n","application/vnd.apple.mpegurl")}
+async function loadChannel(){try{const r=await fetch(CONTROL_API+"/state?mk="+Date.now(),{cache:"no-store"});if(r.ok)channel=await r.json()}catch(_){ }paintChannel()}
 async function setStatus(action){
+  const map={start:"live",pause:"paused",resume:"live",offair:"offair",stop:"stopped"};const desired=map[action]||"stopped";
   $("controlMsg").textContent="Aplicando…";$("controlMsg").className="msg";
-  try{channel=await api("/api/admin/channel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action})});paintChannel();$("controlMsg").textContent="✓ "+(stateNames[channel.status]||channel.status);$("controlMsg").className="msg ok";setTimeout(()=>$("controlMsg").textContent="",900)}catch(e){$("controlMsg").textContent="Error: "+e.message;$("controlMsg").className="msg err"}
+  try{
+    let current=await (await fetch(CONTROL_API+"/state?mk="+Date.now(),{cache:"no-store"})).json();
+    let next={status:desired,generation:Number(current.generation||0)+1,startedAt:Number(current.startedAt||0),currentIndex:Number(current.currentIndex||0),positionSeconds:Number(current.positionSeconds||0)};
+    if(desired==="live"&&current.status!=="paused"){next.startedAt=Date.now();next.currentIndex=0;next.positionSeconds=0}
+    if(desired==="stopped"){next.startedAt=0;next.currentIndex=0;next.positionSeconds=0}
+    if(desired==="offair"){next.startedAt=Number(current.startedAt||0);next.currentIndex=Number(current.currentIndex||0);next.positionSeconds=Number(current.positionSeconds||0)}
+    const r=await fetch(CONTROL_API+"/set",{method:"POST",headers:{"Content-Type":"application/json"},cache:"no-store",body:JSON.stringify(next)});
+    const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"No se pudo guardar el estado");
+    channel=d.state||next;paintChannel();$("controlMsg").textContent="✓ "+(stateNames[channel.status]||channel.status);$("controlMsg").className="msg ok";setTimeout(()=>$("controlMsg").textContent="",900);
+  }catch(e){$("controlMsg").textContent="Error: "+e.message;$("controlMsg").className="msg err"}
 }
-$("start").onclick=()=>setStatus("start");$("pause").onclick=()=>setStatus("pause");$("resume").onclick=()=>setStatus("resume");$("offair").onclick=()=>setStatus("offair");$("stop").onclick=()=>setStatus("stop");
-
-async function uploadOne(file,categoryId,ui){
+const stateNames={live:"EN VIVO",paused:"PAUSADO",offair:"FUERA DE AIRE",stopped:"DETENIDO"};
+function paintChannel(){const s=channel.status||"stopped";$("channelText").textContent="Estado: "+(stateNames[s]||s);["start","pause","resume","offair","stop"].forEach(id=>$(id)?.classList.remove("active"));const id=s==="live"?"start":s==="paused"?"pause":s==="offair"?"offair":"stop";$(id)?.classList.add("active")}
+function loadViewers(){return fetch(VIEWER_API+"/viewers/count?mk="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(d=>$("viewersCount").textContent=String(d.count??0)).catch(()=>{})}
+async function loadSchedule(){schedule=catalog.videos.map((v,i)=>({video_id:v.id,index:i,title:v.title,start_time:"00:00"}));renderSchedule()}
+function renderVideos(){const by={};catalog.videos.forEach(v=>(by[v.category||"Otros"]??=[]).push(v));$("videosCount").textContent=catalog.videos.length;$("catsCount").textContent=catalog.categories.length;$("library").innerHTML=Object.keys(by).map(cat=>'<div class="catHead">'+esc(cat)+' · '+by[cat].length+'</div><div class="grid">'+by[cat].map(v=>'<article class="video"><small>MP4 · '+fmtBytes(v.sizeBytes||v.file_size)+'</small><h4>'+esc(v.title)+'</h4><small>'+time(v.durationSeconds)+'</small><div class="actions"><button onclick="window.playVideo('+JSON.stringify(v.key)+')">▶ VER</button><button class="red" onclick="window.delVideo('+JSON.stringify(v.key)+')">BORRAR</button></div></article>').join("")+'</div>').join("")||'<p class="muted">Todavía no hay videos.</p>'}
+function renderSchedule(){let html="";catalog.videos.forEach((v,i)=>{html+='<div class="schedRow"><button class="gray" onclick="window.moveVideo('+i+',-1)">▲</button><button class="gray" onclick="window.moveVideo('+i+',1)">▼</button><select disabled><option>'+esc(v.title)+'</option></select><span style="font-size:9px;color:#9297b0">'+(i+1)+"</span></div>"});$("schedule").innerHTML=html||'<div class="muted">No hay videos programados.</div>'}
+window.moveVideo=(i,dir)=>{const j=i+dir;if(j<0||j>=catalog.videos.length)return;[catalog.videos[i],catalog.videos[j]]=[catalog.videos[j],catalog.videos[i]];renderVideos();renderSchedule()}
+$("saveSchedule").onclick=async()=>{try{await saveCatalog();$("scheduleMsg").textContent="✓ Programación guardada";$("scheduleMsg").className="msg ok";setTimeout(()=>$("scheduleMsg").textContent="",1200)}catch(e){$("scheduleMsg").textContent="Error: "+e.message;$("scheduleMsg").className="msg err"}}
+window.playVideo=key=>{$("preview").style.display="flex";$("pv").src=publicUrl(key,true);$("pv").play().catch(()=>{})}
+$("closePreview").onclick=()=>{$("pv").pause();$("pv").removeAttribute("src");$("pv").load();$("preview").style.display="none"}
+window.delVideo=async key=>{if(!confirm("¿Borrar este video?"))return;try{await deleteObject(key);catalog.videos=catalog.videos.filter(v=>v.key!==key&&v.object_key!==key);await saveCatalog();await loadStorage()}catch(e){alert(e.message)}}
+async function loadStorage(){const used=catalogUsed(),limit=10*1024*1024*1024,free=Math.max(0,limit-used),pc=Math.min(100,used/limit*100);storage={limitBytes:limit,usedBytes:used,freeBytes:free};$("freeGb").textContent=(free/1073741824).toFixed(2)+" GB";$("storageText").textContent=fmtBytes(used)+" usados de 10 GB · "+fmtBytes(free)+" libres";$("storageBar").style.width=pc+"%"}
+function render(){renderVideos();loadSchedule();loadStorage();$("m3uLink").textContent=publicUrl("playlist.m3u8");$("openM3U").href=publicUrl("playlist.m3u8");}
+async function uploadOne(file,cat,ui){
   const pct=ui.querySelector(".uploadTop span"),bar=ui.querySelector(".bar"),state=ui.querySelector(".uploadState");
-  const name=file.name;
-  state.textContent="Iniciando…";
-  const init=await api("/api/admin/upload/initiate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,contentType:file.type||"video/mp4"})});
-  const partSize=16*1024*1024,parts=[];let pn=1;
-  for(let offset=0;offset<file.size;offset+=partSize){
-    const end=Math.min(file.size,offset+partSize),part=file.slice(offset,end);
-    state.textContent="Subiendo… "+Math.round(offset/file.size*100)+"%";
-    const resp=await api("/api/admin/upload/part?key="+encodeURIComponent(init.key)+"&uploadId="+encodeURIComponent(init.uploadId)+"&partNumber="+pn,{method:"PUT",body:part});
-    parts.push({partNumber:resp.part.partNumber,etag:resp.part.etag});const pc=Math.min(99,Math.round(end/file.size*100));pct.textContent=pc+"%";bar.style.width=pc+"%";pn++;
-  }
-  const v=document.createElement("video");v.preload="metadata";const duration=await new Promise(resolve=>{v.onloadedmetadata=()=>{const d=Number.isFinite(v.duration)?v.duration:0;URL.revokeObjectURL(v.src);resolve(d)};v.onerror=()=>resolve(0);v.src=URL.createObjectURL(file)});
-  state.textContent="Finalizando…";
-  await api("/api/admin/upload/complete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:init.key,uploadId:init.uploadId,parts,title:name.replace(/.[^.]+$/,""),categoryId,durationSeconds:duration,videoType:"program"})});
-  pct.textContent="100%";bar.style.width="100%";state.textContent="✓ LISTO";state.className="uploadState ok";
+  const safe=file.name.replace(/[^a-zA-Z0-9._-]+/g,"-"),key="videos/"+cat.toLowerCase().replace(/[^a-z0-9]+/g,"-")+"/"+Date.now()+"-"+crypto.randomUUID()+"-"+safe;
+  try{
+    state.textContent="Firmando…";const url=await presign("PUT",key,file.type||"video/mp4");
+    state.textContent="Subiendo…";await xhr("PUT",url,file,file.type||"video/mp4",(loaded,total)=>{const pc=Math.min(100,Math.round(loaded/total*100));pct.textContent=pc+"%";bar.style.width=pc+"%";state.textContent="Subiendo… "+pc+"%"});
+    state.textContent="Calculando duración…";
+    const duration=await new Promise(res=>{const v=document.createElement("video");v.preload="metadata";v.onloadedmetadata=()=>{const d=Number.isFinite(v.duration)?v.duration:0;URL.revokeObjectURL(v.src);res(d)};v.onerror=()=>res(0);v.src=URL.createObjectURL(file)});
+    catalog.videos.push({id:crypto.randomUUID(),title:file.name.replace(/\.[^.]+$/,""),category:cat,sizeBytes:file.size,durationSeconds:duration,key,createdAt:new Date().toISOString()});
+    state.textContent="✓ LISTO";state.className="uploadState ok";
+  }catch(e){state.textContent="ERROR: "+e.message;state.className="uploadState err";throw e}
 }
-$("upload").onclick=async()=>{const fs=[...$("files").files];if(!fs.length)return alert("Elegí uno o varios videos.");$("upload").disabled=true;const cat=Number($("category").value||0)||null;let cursor=0;const worker=async()=>{while(cursor<fs.length){const i=cursor++,f=fs[i],ui=document.createElement("div");ui.className="uploadItem";ui.innerHTML='<div class="uploadTop"><b>'+esc(f.name)+'</b><span>0%</span></div><div class="progress"><div class="bar"></div></div><div class="uploadState">En cola…</div>';$("uploads").prepend(ui);try{await uploadOne(f,cat,ui)}catch(e){ui.querySelector(".uploadState").textContent="ERROR: "+e.message;ui.querySelector(".uploadState").className="uploadState err"}}};try{await Promise.all([worker(),worker(),worker()]);$("files").value="";await Promise.all([loadVideos(),loadSchedule(),loadStorage()])}finally{$("upload").disabled=false}};
-
-$("refresh").onclick=async()=>{await Promise.all([loadVideos(),loadCategories(),loadSchedule(),loadStorage(),loadViewers()])};
-
+$("upload").onclick=async()=>{const fs=[...$("files").files];if(!fs.length)return alert("Elegí uno o varios videos.");$("upload").disabled=true;const cat=$("category").value||"Otros";let cursor=0;const worker=async()=>{while(cursor<fs.length){const i=cursor++,f=fs[i],ui=document.createElement("div");ui.className="uploadItem";ui.innerHTML='<div class="uploadTop"><b>'+esc(f.name)+'</b><span>0%</span></div><div class="barBox"><div class="bar"></div></div><div class="uploadState">En cola…</div>';$("uploads").prepend(ui);try{await uploadOne(f,cat,ui)}catch(_){} }};try{await Promise.all([worker(),worker(),worker()]);await saveCatalog();$("files").value="";render()}finally{$("upload").disabled=false}}
+$("refresh").onclick=async()=>{await Promise.all([loadCatalog(),loadChannel(),loadViewers()])}
+$("regen").onclick=async()=>{try{await generateM3U();$("controlMsg").textContent="✓ Lista actualizada";$("controlMsg").className="msg ok"}catch(e){$("controlMsg").textContent="Error: "+e.message;$("controlMsg").className="msg err"}}
+$("copyM3U").onclick=async()=>{try{await navigator.clipboard.writeText(publicUrl("playlist.m3u8"));$("copyM3U").textContent="COPIADO";setTimeout(()=>$("copyM3U").textContent="COPIAR LISTA",1000)}catch(_){}} 
 async function connect(){
   try{
-    const auth=await fetch(API+"/api/admin/link-login",{method:"POST",headers:{"X-MK-PANEL-TOKEN":PANEL_TOKEN},cache:"no-store",credentials:"include"});
-    const d=await auth.json().catch(()=>({}));if(!auth.ok||!d.user?.isAdmin)throw Error(d.error||"No se pudo abrir el panel.");
-    adminToken=d.token||"";
-    await Promise.all([loadVideos(),loadCategories(),loadSchedule(),loadChannel(),loadStorage(),loadViewers()]);
+    const raw=sessionStorage.getItem("mk-b2-config")||localStorage.getItem("mk-b2-config");
+    if(!raw)throw new Error("No encuentro la conexión B2 guardada en este navegador.");
+    cfg=JSON.parse(raw);if(!cfg.keyId||!cfg.appKey)throw new Error("La conexión B2 guardada no está completa.");
+    localStorage.setItem("mk-b2-config",JSON.stringify(cfg));
+    $("state").textContent="CONECTANDO…";
+    await Promise.all([loadCatalog(),loadChannel(),loadViewers()]);
     $("login").classList.add("hidden");$("app").classList.remove("hidden");$("state").textContent="ONLINE";$("state").style.color="#76f0a0";
-    const m3u=API+"/magic-kids-live.m3u8";$("m3uLink").textContent=m3u;$("openM3U").href=m3u;
-  }catch(e){$("loginMsg").textContent="No se pudo conectar: "+e.message;$("loginMsg").className="msg err";$("state").textContent="ERROR"}
+  }catch(e){$("loginMsg").textContent=e.message;$("loginMsg").className="msg err";$("state").textContent="ERROR"}
 }
+$("start").onclick=()=>setStatus("start");$("pause").onclick=()=>setStatus("pause");$("resume").onclick=()=>setStatus("resume");$("offair").onclick=()=>setStatus("offair");$("stop").onclick=()=>setStatus("stop");
 $("enter").onclick=connect;connect();
-$("copyM3U").onclick=async()=>{try{await navigator.clipboard.writeText($("m3uLink").textContent);$("copyM3U").textContent="COPIADO";setTimeout(()=>$("copyM3U").textContent="COPIAR LISTA",1000)}catch(e){}};
 </script></body></html>
