@@ -162,7 +162,20 @@ async function loadMagicSchedule(){
   await refreshPublicChannelState();
 }
 function withBust(url){return String(url||"")+(String(url||"").includes("?")?"&":"?")+"mk="+Date.now();}
-function scheduledVideoUrl(item){return item?.url||"";}
+function scheduledVideoUrl(item){
+  if(item?.stream_url)return item.stream_url;
+  if(item?.url)return item.url;
+  return "";
+}
+function scheduledVideoType(item,url){
+  const declared=String(item?.mime_type||item?.content_type||"").toLowerCase();
+  if(declared.includes("mpegurl")||declared.includes("x-mpegurl")||declared.includes("m3u8")||declared.includes("hls"))return "application/x-mpegURL";
+  const clean=String(url||"").split("?")[0].toLowerCase();
+  if(clean.endsWith(".m3u8"))return "application/x-mpegURL";
+  if(clean.endsWith(".webm"))return "video/webm";
+  if(clean.endsWith(".ogv")||clean.endsWith(".ogg"))return "video/ogg";
+  return "video/mp4";
+}
 function computeTimelinePosition(){
   const durations=scheduledVideos.map(v=>Math.max(0,Number(v.durationSeconds||v.duration_seconds||0)));
   const total=durations.reduce((a,b)=>a+b,0);
@@ -200,7 +213,7 @@ function setScheduledVideo(index,autoplay=true,seekTime=0){
       magicVideoPlayer.autoplay(autoplay);
       magicVideoPlayer.muted(playerMuted);
       magicVideoPlayer.volume(playerVolume);
-      magicVideoPlayer.src({src:url,type:"video/mp4"});
+      magicVideoPlayer.src({src:url,type:scheduledVideoType(item,url)});
       magicVideoPlayer.load();
       const seek=()=>{try{if(Number.isFinite(magicVideoPlayer.duration())&&magicVideoPlayer.duration()>0&&target>0)magicVideoPlayer.currentTime(Math.min(target,Math.max(0,magicVideoPlayer.duration()-.2)));}catch(e){}};
       magicVideoPlayer.one("loadedmetadata",seek);
@@ -234,6 +247,7 @@ function ensureMagicVideoPlayer(){
     muted:true,
     preload:"auto",
     techOrder:["html5"],
+    html5:{vhs:{overrideNative:false},nativeTextTracks:false},
     controlBar:{
       children:[
         "playToggle",
