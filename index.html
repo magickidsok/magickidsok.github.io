@@ -59,7 +59,7 @@ header{text-align:center;padding:4px 0 8px}
           <button id="playerFull" class="magicPlayerControl" type="button">⛶</button>
         </div>
       </div>
-      <div class="magicSyncStatusRow">● SEÑAL SINCRONIZADA CON LA PROGRAMACIÓN</div>
+      <div class="magicSyncStatusRow">● SEÑAL SINCRONIZADA CON LA PROGRAMACIÓN</div><div id="publicViewerCountRow" style="margin-top:6px;text-align:center;color:#9fd8ff;font-size:10px;font-weight:900">👁 <span id="publicViewerCount">0</span> PERSONAS VIENDO AHORA</div>
     </section>
 
     <section class="nowNext" aria-label="Programación actual">
@@ -131,7 +131,7 @@ async function loadMagicSchedule(){
     }
   }catch(e){}
 }function clock(){const e=document.getElementById("clock");if(e)e.textContent=new Intl.DateTimeFormat("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}function fill(){const e=document.getElementById("schedule");if(e)e.innerHTML=schedule.slice(0,6).map(x=>'<div class="item"><time>'+x[0]+'</time><strong>'+x[1]+'</strong></div>').join("")}const STREAM_URL="";
-const VIDEO_API="https://magickidsok-github-io.elmagickids.workers.dev";
+const VIDEO_API="https://uifchrnvigkzantaehgz.supabase.co/functions/v1/magic-kids-api";
 let magicHls=null, magicPlyr=null, magicRetryTimer=null, magicRetryAttempt=0, magicStreamStarted=false;
 let scheduledMode=false, currentVideoIndex=-1, scheduledVideos=[];
 let channelStartedAt=0;
@@ -181,7 +181,7 @@ function startLiveStream(isRetry=false){
   setStreamState("offline","No hay programación disponible.");
 }
 function cleanMediaKey(key){return String(key||"").split("/").map(encodeURIComponent).join("/");}
-function scheduledVideoUrl(item){return VIDEO_API+"/media/"+cleanMediaKey(item.object_key);}
+function scheduledVideoUrl(item){return item?.public_url||"";}
 function chooseScheduledIndex(){return scheduledVideos.length?0:-1;}
 function loadVideoDuration(item){
   const key=String(item?.object_key||"");
@@ -306,7 +306,7 @@ function getPublicViewerId(){
 async function heartbeatPublicViewer(){
   try{
     const id=getPublicViewerId();
-    await fetch(VIDEO_API+"/api/viewers/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({viewerId:id}),cache:"no-store",keepalive:true});
+    const r=await fetch(VIDEO_API+"/api/viewers/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({viewerId:id}),cache:"no-store",keepalive:true});\n    const d=await r.json().catch(()=>({}));\n    const el=document.getElementById("publicViewerCount");if(el&&Number.isFinite(Number(d.count)))el.textContent=String(d.count);
   }catch(e){}
 }
 async function fetchChannelControl(){
