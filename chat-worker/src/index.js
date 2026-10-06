@@ -129,8 +129,9 @@ async function ensureVideoSchema(db){
   if(!(cc.results||[]).some(x=>x.name==="started_at")) await db.prepare("ALTER TABLE channel_control ADD COLUMN started_at INTEGER NOT NULL DEFAULT 0").run();
   const cc2=await db.prepare("PRAGMA table_info(channel_control)").all();
   if(!(cc2.results||[]).some(x=>x.name==="paused_position")) await db.prepare("ALTER TABLE channel_control ADD COLUMN paused_position REAL NOT NULL DEFAULT 0").run();
+  if(!(cc2.results||[]).some(x=>x.name==="paused_index")) await db.prepare("ALTER TABLE channel_control ADD COLUMN paused_index INTEGER NOT NULL DEFAULT 0").run();
   const state=await db.prepare("SELECT id FROM channel_control WHERE id=1").first();
-  if(!state)await db.prepare("INSERT INTO channel_control(id,status,generation,updated_at,started_at,paused_position) VALUES(1,'stopped',0,?,0,0)").bind(Date.now()).run();
+  if(!state)await db.prepare("INSERT INTO channel_control(id,status,generation,updated_at,started_at,paused_position,paused_index) VALUES(1,'stopped',0,?,0,0,0)").bind(Date.now()).run();
 }
 async function adminVideos(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
@@ -369,11 +370,13 @@ async function ownPlaylist(request,env,liveMode=false){
   await ensureVideoSchema(env.DB);
   const rows=await env.DB.prepare("SELECT s.position,s.start_time,v.title,v.object_key,v.video_type,v.duration_seconds FROM video_schedule s JOIN videos v ON v.id=s.video_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
   const scheduleRows=rows.results||[];
-  const state=await env.DB.prepare("SELECT status,started_at,paused_position FROM channel_control WHERE id=1").first();
+  const state=await env.DB.prepare("SELECT status,started_at,paused_position,paused_index FROM channel_control WHERE id=1").first();
   const origin=new URL(request.url).origin;
   const durations=scheduleRows.map(x=>Number(x.duration_seconds||0));
   let startIndex=0,currentOffset=0;
-  if((String(state?.status)==="live"||String(state?.status)==="paused"||String(state?.status)==="offair")&&Number(state?.started_at)>0&&durations.length&&durations.every(d=>d>0)){
+  if((String(state?.status)==="paused"||String(state?.status)==="offair")&&durations.length&&durations.every(d=>d>0)){
+    startIndex=Math.max(0,Math.min(scheduleRows.length-1,Number(state?.paused_index||0)));currentOffset=Math.max(0,Number(state?.paused_position||0));
+  }else if(String(state?.status)==="live"&&Number(state?.started_at)>0&&durations.length&&durations.every(d=>d>0)){
     let elapsed=String(state.status)==="paused"||String(state.status)==="offair"?Number(state.paused_position||0):Math.max(0,(Date.now()-Number(state.started_at))/1000);
     const total=durations.reduce((a,b)=>a+b,0);
     if(total>0){
@@ -415,8 +418,8 @@ async function adminM3u8(request,env,origin){
 }
 async function channelState(request,env,origin){
   await ensureVideoSchema(env.DB);
-  const state=await env.DB.prepare("SELECT status,generation,updated_at,started_at,paused_position FROM channel_control WHERE id=1").first();
-  return json({status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0),startedAt:Number(state?.started_at||0),pausedPosition:Number(state?.paused_position||0)},200,origin);
+  const state=await env.DB.prepare("SELECT status,generation,updated_at,started_at,paused_position,paused_index FROM channel_control WHERE id=1").first();
+  return json({status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0),startedAt:Number(state?.started_at||0),pausedPosition:Number(state?.paused_position||0),pausedIndex:Number(state?.paused_index||0)},200,origin);
 }
 function schedulePositionAt(startedAt,rows){
   const items=Array.isArray(rows)?rows:[];
@@ -430,30 +433,28 @@ function schedulePositionAt(startedAt,rows){
 async function adminChannelControl(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   const b=await body(request),action=String(b.action||"").toLowerCase();
-  const current=await env.DB.prepare("SELECT status,generation,started_at,paused_position FROM channel_control WHERE id=1").first();
+  const current=await env.DB.prepare("SELECT status,generation,started_at,paused_position,paused_index FROM channel_control WHERE id=1").first();
   if(!current)return json({error:"Estado de canal no inicializado."},500,origin);
   const rows=await env.DB.prepare("SELECT v.duration_seconds FROM video_schedule s JOIN videos v ON v.id=s.video_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
   const now=Date.now();
-  let status,currentStarted=Number(current.started_at||0),paused=Number(current.paused_position||0),generation=Number(current.generation||0);
-  if(action==="start"){status="live";currentStarted=now;paused=0;generation++;}
+  let status,currentStarted=Number(current.started_at||0),paused=Number(current.paused_position||0),pausedIndex=Number(current.paused_index||0),generation=Number(current.generation||0);
+  if(action==="start"){status="live";currentStarted=now;paused=0;pausedIndex=0;generation++;}
   else if(action==="restart"){status="live";currentStarted=now;paused=0;generation++;}
   else if(action==="pause"){
     if(String(current.status)!=="live")return channelState(request,env,origin);
     const pos=schedulePositionAt(currentStarted,rows.results||[]);
-    status="paused";paused=pos.position;generation++;
+    status="paused";paused=pos.position;pausedIndex=pos.index;generation++;
   }else if(action==="resume"){
     if(String(current.status)!=="paused")return channelState(request,env,origin);
-    const pos=Number(current.paused_position||0);
+    const pos=Number(current.paused_position||0),pauseIndex=Math.max(0,Number(current.paused_index||0));
     const durations=(rows.results||[]).map(x=>Math.max(0,Number(x.duration_seconds||0)));
-    let before=0,idx=0;let remaining=pos;
-    while(idx<durations.length&&durations[idx]>0&&remaining>=durations[idx]){remaining-=durations[idx];idx++;}
-    for(let i=0;i<idx;i++)before+=durations[i];
-    currentStarted=now-Math.round((before+remaining)*1000);
-    status="live";paused=remaining;generation++;
-  }else if(action==="offair"){status="offair";generation++;}
-  else if(action==="stop"){status="stopped";currentStarted=0;paused=0;generation++;}
+    let before=0;for(let i=0;i<pauseIndex&&i<durations.length;i++)before+=durations[i];
+    currentStarted=now-Math.round((before+pos)*1000);
+    status="live";paused=pos;pausedIndex=pauseIndex;generation++;
+  }else if(action==="offair"){const pos=schedulePositionAt(currentStarted,rows.results||[]);status="offair";paused=pos.position;pausedIndex=pos.index;generation++;}
+  else if(action==="stop"){status="stopped";currentStarted=0;paused=0;pausedIndex=0;generation++;}
   else return json({error:"Acción inválida."},400,origin);
-  await env.DB.prepare("UPDATE channel_control SET status=?,generation=?,updated_at=?,started_at=?,paused_position=? WHERE id=1").bind(status,generation,now,currentStarted,paused).run();
+  await env.DB.prepare("UPDATE channel_control SET status=?,generation=?,updated_at=?,started_at=?,paused_position=?,paused_index=? WHERE id=1").bind(status,generation,now,currentStarted,paused,pausedIndex).run();
   return channelState(request,env,origin);
 }
 
