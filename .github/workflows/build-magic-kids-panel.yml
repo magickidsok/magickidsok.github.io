@@ -1,0 +1,49 @@
+name: Build Magic Kids Panel Windows
+on:
+  push:
+    paths:
+      - "MagicKidsPanelWindows/**"
+      - ".github/workflows/build-magic-kids-panel.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: MagicKidsPanelWindows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Publish app
+        run: dotnet publish MagicKidsPanel.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o publish
+      - name: Install Inno Setup
+        shell: powershell
+        run: choco install innosetup --yes --no-progress
+      - name: Build installer
+        shell: powershell
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\MagicKidsPanel.iss'
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MagicKidsPanel-Windows-Installer
+          path: MagicKidsPanelWindows/dist-installer/MagicKidsPanelSetup.exe
+          retention-days: 30
+      - name: Publish installer to site downloads
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path downloads | Out-Null
+          Copy-Item "dist-installer\MagicKidsPanelSetup.exe" "..\downloads\MagicKidsPanelSetup.exe" -Force
+      - name: Commit public installer
+        shell: powershell
+        working-directory: .
+        run: |
+          git config user.name "Magic Kids Build Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add downloads/MagicKidsPanelSetup.exe
+          if (git diff --cached --quiet) { exit 0 }
+          git commit -m "Publicar instalador Magic Kids Panel"
+          git push
