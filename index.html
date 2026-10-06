@@ -118,16 +118,16 @@ header{text-align:center;padding:4px 0 8px}
 </div>
 <script>
 let schedule=[["22:00","DRAGON BALL"],["22:30","DRAGON BALL KAI"],["23:00","DRAGON BALL Z"],["01:00","DRAGON BALL SUPER"],["02:30","DRAGON BALL HEROES"],["03:30","DRAGON BALL GT"],["04:00","POKEMON"],["04:30","DIGIMON TAMERS"],["05:00","MIKAMI CAZAFANTASMAS"],["05:30","POWER RANGERS FUERZA DEL TIEMPO"],["06:00","MOB 100"],["06:30","DETECTIVE CONAN"],["07:30","LOS SIMPSONS"],["08:00","GAME LIFE"],["08:30","MONSTERS CIBERNETICOS"],["09:00","BLOQUE ANIMAX"],["11:00","RANMA 1/2"],["11:30","SAILOR MOON"]];
-const MAGIC_CONTROL="https://uifchrnvigkzantaehgz.supabase.co/functions/v1/mk-vcdn-channel";
-const MAGIC_VIEWERS="https://uifchrnvigkzantaehgz.supabase.co/functions/v1/magic-kids-api";
+const MAGIC_API="https://magickidsok-github-io.elmagickids.workers.dev";
 async function loadMagicSchedule(){
   try{
-    const r=await fetch(MAGIC_CONTROL+"/public/catalog?mk="+Date.now(),{cache:"no-store"});
+    const r=await fetch(MAGIC_API+"/api/schedule?mk="+Date.now(),{cache:"no-store"});
     if(!r.ok)throw new Error();
-    const c=await r.json();
-    scheduledVideos=(Array.isArray(c.videos)?c.videos:[]).filter(v=>v&&v.playback_url).map(v=>({...v,url:v.playback_url,durationSeconds:Number(v.duration_seconds||0)}));
-    schedule=scheduledVideos.map((v,i)=>["00:00",v.title||("Video "+(i+1)),v.vcdn_id,v.id]);
-    if(c.channel)lastScheduleChannelState=c.channel;
+    const d=await r.json();
+    const rows=Array.isArray(d.schedule)?d.schedule:[];
+    scheduledVideos=rows.map(x=>({...x,url:MAGIC_API+"/media/"+String(x.object_key||"").split("/").map(encodeURIComponent).join("/"),durationSeconds:Number(x.duration_seconds||0)}));
+    schedule=scheduledVideos.map((v,i)=>[v.start_time||"00:00",v.title||("Video "+(i+1)),v.object_key,v.video_id]);
+    if(d.channel)lastScheduleChannelState=d.channel;
     fill();updateNowNext();
   }catch(e){scheduledVideos=[];fill();updateNowNext();}
   await refreshPublicChannelState();
@@ -135,7 +135,7 @@ async function loadMagicSchedule(){
 function withBust(url){return String(url||"")+(String(url||"").includes("?")?"&":"?")+"mk="+Date.now();}
 function scheduledVideoUrl(item){return item?.url?withBust(item.url):"";}
 function computeTimelinePosition(){
-  const durations=scheduledVideos.map(v=>Math.max(0,Number(v.durationSeconds||0)));
+  const durations=scheduledVideos.map(v=>Math.max(0,Number(v.durationSeconds||v.duration_seconds||0)));
   const total=durations.reduce((a,b)=>a+b,0);
   if(!total)return {index:0,time:0};
   if(lastScheduleChannelState?.status==="paused"||lastScheduleChannelState?.status==="offair"){
@@ -173,7 +173,7 @@ function playNextScheduled(){if(!scheduledVideos.length)return;setScheduledVideo
 function retryCurrentVideo(){if(!scheduledMode||currentVideoIndex<0||currentVideoIndex>=scheduledVideos.length)return;const v=document.getElementById("magicVideo");if(!v)return;const keep=Number(v.currentTime||0);setScheduledVideo(currentVideoIndex,true,keep);}
 function armMagicStall(){clearMagicStall();if(!scheduledMode)return;magicStallTimer=setTimeout(()=>{magicStallTimer=null;const v=document.getElementById("magicVideo");if(!v||!scheduledMode)return;if(v.readyState<3)retryCurrentVideo();},10000);}
 async function refreshPublicChannelState(){
-  try{const r=await fetch(MAGIC_CONTROL+"/state?mk="+Date.now(),{cache:"no-store"});if(r.ok)lastScheduleChannelState=await r.json();}catch(e){}
+  try{const r=await fetch(MAGIC_API+"/api/channel/state?mk="+Date.now(),{cache:"no-store"});if(r.ok)lastScheduleChannelState=await r.json();}catch(e){}
 }
 function destroyMagicHls(){magicHls=null;}
 async function applyPublicChannelState(force=false){
@@ -197,7 +197,7 @@ async function heartbeatPublicViewer(){
   try{
     let id=sessionStorage.getItem("mk_public_viewer")||"";
     if(!id){id=crypto.randomUUID?crypto.randomUUID():"mk-"+Date.now()+"-"+Math.random().toString(36).slice(2);sessionStorage.setItem("mk_public_viewer",id);}
-    const r=await fetch(MAGIC_VIEWERS+"/viewers/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({viewerId:id}),cache:"no-store",keepalive:true});
+    const r=await fetch(MAGIC_API+"/api/viewers/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({viewerId:id}),cache:"no-store",keepalive:true});
     const d=await r.json().catch(()=>({}));const el=document.getElementById("publicViewerCount");if(el&&Number.isFinite(Number(d.count)))el.textContent=String(d.count);
   }catch(e){}
 }
