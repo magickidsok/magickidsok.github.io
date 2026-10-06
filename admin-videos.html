@@ -31,18 +31,9 @@
 <div class="wrap">
 <header class="top"><div class="brand"><img src="assets/magic-kids-logo.webp" alt="Magic Kids"><div><h1>Panel de Administración</h1><small>Gestión privada de videos, tandas y programación</small></div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span id="adminBuildBadge" style="font-size:9px;font-weight:900;color:#cdb8ff;border:1px solid #713cff;background:#ffffff08;border-radius:999px;padding:6px 9px">PANEL VOD v2026.10.05.3</span><span id="workerStatus" style="font-size:9px;font-weight:900;color:#ffd36a;border:1px solid #8a5d00;background:#ffffff08;border-radius:999px;padding:6px 9px">● SERVIDOR: comprobando…</span><button id="quickScheduleBtn" class="btn tiny" type="button">⚡ ORDENAR SERIES</button><div id="viewerCounter" class="viewerCounter hidden">👥 WEB EN VIVO: <b id="viewerCount">0</b></div><button id="logout" class="btn red hidden">Cerrar sesión</button></div></header>
 
-<section id="login" class="login"><h2>🔐 Panel privado</h2><p>Ingresá con el <b>código de 4 dígitos</b> del administrador.</p>
-<div style="position:relative"><input id="pin" class="field" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="one-time-code" placeholder="Código de 4 dígitos" style="padding-right:52px;margin-bottom:0"><button id="togglePin" type="button" aria-label="Mostrar código" title="Mostrar código" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#fff;font-size:20px;cursor:pointer">👁️</button></div>
-<button id="loginBtn" class="btn blue" style="width:100%;margin-top:8px">INGRESAR</button><div id="loginMsg" class="msg"></div>
-<div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)">
-  <button id="forgotBtn" type="button" class="btn red" style="width:100%">🔑 ¿OLVIDASTE TU CONTRASEÑA?</button>
-  <div id="masterBox" style="display:none;margin-top:10px">
-    <p style="font-size:12px;opacity:.82;margin:0 0 8px">Ingresá tu código maestro de recuperación. Este código se configura como Secret en Cloudflare y no se guarda en la página.</p>
-    <div style="position:relative"><input id="masterCode" class="field" type="password" inputmode="numeric" autocomplete="off" placeholder="Código maestro" style="padding-right:52px;margin-bottom:0"><button id="toggleMaster" type="button" aria-label="Mostrar código maestro" title="Mostrar código maestro" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#fff;font-size:20px;cursor:pointer">👁️</button></div>
-    <button id="masterLoginBtn" type="button" class="btn blue" style="width:100%;margin-top:8px">RECUPERAR ACCESO</button>
-    <div id="masterMsg" class="msg"></div>
-  </div>
-</div></section>
+<section id="login" class="login"><h2>🔐 Panel Magic Kids</h2><p>Acceso de administrador.</p>
+<div style="position:relative"><input id="masterCode" class="field" type="password" autocomplete="off" placeholder="Código de administrador" style="padding-right:52px;margin-bottom:0"><button id="toggleMaster" type="button" aria-label="Mostrar código" title="Mostrar código" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#fff;font-size:20px;cursor:pointer">👁️</button></div>
+<button id="masterLoginBtn" type="button" class="btn blue" style="width:100%;margin-top:8px">INGRESAR</button><div id="masterMsg" class="msg"></div></section>
 
 <section id="app" class="app">
 <div class="layout"><aside class="panel side">
@@ -628,10 +619,7 @@ async function deleteAllVideos(){
 }
 $("deleteAllVideosBtn")?.addEventListener("click",deleteAllVideos);
 window.delVideo=async id=>{if(!confirm("¿Eliminar este video? También se quitará de la programación."))return;try{await api("/api/admin/video/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});schedule=schedule.filter(x=>x.video_id!==Number(id));await loadVideos();renderSchedule();await autoSave()}catch(e){alert(e.message)}};
-$("loginBtn").onclick=async()=>{const msg=$("loginMsg");msg.textContent="Ingresando…";try{await api("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:$("pin").value})});await boot()}catch(e){msg.textContent=e.message}};
-$("togglePin").onclick=()=>{const input=$("pin"),btn=$("togglePin");const visible=input.type==="text";input.type=visible?"password":"text";btn.textContent=visible?"👁️":"🙈";btn.title=visible?"Mostrar código":"Ocultar código";btn.setAttribute("aria-label",visible?"Mostrar código":"Ocultar código")};
-$("forgotBtn").onclick=()=>{$("masterBox").style.display=$("masterBox").style.display==="none"?"block":"none";$("masterMsg").textContent="";if($("masterBox").style.display!=="none")$("masterCode").focus()};
-$("toggleMaster").onclick=()=>{const input=$("masterCode"),btn=$("toggleMaster");const visible=input.type==="text";input.type=visible?"password":"text";btn.textContent=visible?"👁️":"🙈";btn.title=visible?"Mostrar código maestro":"Ocultar código maestro";btn.setAttribute("aria-label",visible?"Mostrar código maestro":"Ocultar código maestro")};
+$("toggleMaster").onclick=()=>{const input=$("masterCode"),btn=$("toggleMaster");const visible=input.type==="text";input.type=visible?"password":"text";btn.textContent=visible?"👁️":"🙈";btn.title=visible?"Mostrar código":"Ocultar código";btn.setAttribute("aria-label",visible?"Mostrar código":"Ocultar código")};
 $("masterLoginBtn").onclick=async()=>{const msg=$("masterMsg");msg.textContent="Verificando…";try{await api("/api/admin/master-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:$("masterCode").value})});await boot()}catch(e){msg.textContent=e.message}};
 $("logout").onclick=async()=>{await api("/api/logout",{method:"POST"});location.reload()};
 document.querySelectorAll(".side button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
