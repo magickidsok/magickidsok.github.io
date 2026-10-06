@@ -27,7 +27,17 @@
 .adminNowArrow{font-size:22px;color:#c99cff;font-weight:900}
 .adminNowNext{text-align:right}
 @media(max-width:700px){.adminNowGrid{grid-template-columns:1fr}.adminNowNext{text-align:left}.adminNowArrow{display:none}.playItem{grid-template-columns:24px 24px 1fr 72px 30px}}
-</style></head><body>
+</style><link rel="stylesheet" href="https://cdn.plyr.io/3.8.4/plyr.css">
+<style>
+#videoPreviewModal{position:fixed;inset:0;z-index:9999;background:rgba(2,2,15,.94);display:none;align-items:center;justify-content:center;padding:18px}
+#videoPreviewModal.open{display:flex}
+#videoPreviewBox{width:min(960px,96vw);background:#0d0b39;border:1px solid #713cff;border-radius:16px;padding:12px;box-shadow:0 20px 80px #000}
+#videoPreviewTitle{font-weight:900;margin:0 0 10px;font-size:15px}
+#adminPreviewPlayer{width:100%;aspect-ratio:16/9;background:#000}
+#closeVideoPreview{float:right;margin-bottom:8px}
+</style>
+</head><body>
+<div id="videoPreviewModal" aria-hidden="true"><div id="videoPreviewBox"><button id="closeVideoPreview" class="btn red tiny" type="button">CERRAR</button><div id="videoPreviewTitle">Vista previa</div><video id="adminPreviewPlayer" playsinline controls preload="metadata"></video></div></div>
 <div class="wrap">
 <header class="top"><div class="brand"><img src="assets/magic-kids-logo.webp" alt="Magic Kids"><div><h1>Panel de Administración</h1><small>Gestión privada de videos, tandas y programación</small></div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span id="adminBuildBadge" style="font-size:9px;font-weight:900;color:#cdb8ff;border:1px solid #713cff;background:#ffffff08;border-radius:999px;padding:6px 9px">PANEL VOD v2026.10.05.4</span><span id="workerStatus" style="font-size:9px;font-weight:900;color:#ffd36a;border:1px solid #8a5d00;background:#ffffff08;border-radius:999px;padding:6px 9px">● SERVIDOR: comprobando…</span><button id="quickScheduleBtn" class="btn tiny" type="button">⚡ ORDENAR SERIES</button><div id="viewerCounter" class="viewerCounter hidden">👥 WEB EN VIVO: <b id="viewerCount">0</b></div><button id="logout" class="btn red hidden">Cerrar sesión</button></div></header>
 
@@ -144,6 +154,7 @@
 </div>
 
 </main></div></section></div>
+<script src="https://cdn.plyr.io/3.8.4/plyr.min.js"></script>
 <script>
 const API="https://magickidsok-github-io.elmagickids.workers.dev";
 let videos=[],schedule=[],channel={status:"stopped",generation:0};
@@ -233,7 +244,19 @@ async function setChannel(action){
   finally{channelActionBusy=false;ids.forEach(id=>{const b=$(id);if(b)b.disabled=false})}
 }
 async function loadVideos(){try{const d=await api("/api/videos");videos=d.videos||[];$("r2Warn").innerHTML=d.r2Configured?"":"<div class='warn'>⚠️ Falta conectar el binding VIDEOS de Cloudflare R2.</div>";renderVideos();fillQuick();renderCommercials();renderScheduleLibrary()}catch(e){$("videoRows").innerHTML="<tr><td colspan='6'>"+esc(e.message)+"</td></tr>"}}
-function renderVideos(){const type=v=>v.video_type==="commercial"?"<span class='kind commercial'>TANDA</span>":"<span class='kind'>SERIE</span>";$("videoRows").innerHTML=videos.map(v=>'<tr><td>🎞️</td><td><b>'+esc(v.title)+'</b></td><td>'+type(v)+'</td><td><span class="tag">'+esc(v.category||"Sin categoría")+'</span></td><td style="font-size:9px">'+esc(v.object_key)+'</td><td class="actions"><button class="btn red" onclick="delVideo('+v.id+')">Eliminar</button></td></tr>').join("")||'<tr><td colspan="6">Todavía no hay videos.</td></tr>'}
+function renderVideos(){const type=v=>v.video_type==="commercial"?"<span class='kind commercial'>TANDA</span>":"<span class='kind'>SERIE</span>";$("videoRows").innerHTML=videos.map(v=>'<tr><td>🎞️</td><td><b>'+esc(v.title)+'</b></td><td>'+type(v)+'</td><td><span class="tag">'+esc(v.category||"Sin categoría")+'</span></td><td style="font-size:9px">'+esc(v.object_key)+'</td><td class="actions"><button class="btn blue tiny" onclick="previewVideo('+v.id+')">▶ Ver</button><button class="btn red tiny" onclick="delVideo('+v.id+')">Eliminar</button></td></tr>').join("")||'<tr><td colspan="6">Todavía no hay videos.</td></tr>'}
+let adminPlyr=null;
+window.previewVideo=function(id){
+  const v=videos.find(x=>Number(x.id)===Number(id));if(!v)return;
+  const modal=$("videoPreviewModal"),video=$("adminPreviewPlayer");
+  $("videoPreviewTitle").textContent=v.title||"Vista previa";
+  if(adminPlyr){try{adminPlyr.destroy()}catch(e){}adminPlyr=null}
+  video.src=API+"/media/"+String(v.object_key||"").split("/").map(encodeURIComponent).join("/");
+  modal.classList.add("open");modal.setAttribute("aria-hidden","false");
+  adminPlyr=new Plyr(video,{controls:["play-large","play","progress","current-time","mute","volume","settings","fullscreen"],settings:["speed"],speed:{selected:1,options:[0.75,1,1.25,1.5,2]},autoplay:false});
+};
+function closeVideoPreview(){const modal=$("videoPreviewModal"),video=$("adminPreviewPlayer");if(adminPlyr){try{adminPlyr.destroy()}catch(e){}adminPlyr=null}video.removeAttribute("src");video.load();modal.classList.remove("open");modal.setAttribute("aria-hidden","true")}
+$("closeVideoPreview").onclick=closeVideoPreview;$("videoPreviewModal").addEventListener("click",e=>{if(e.target.id==="videoPreviewModal")closeVideoPreview()});
 function renderCommercials(){const cs=videos.filter(v=>v.video_type==="commercial");$("commercialLibrary").innerHTML=cs.map(v=>'<div class="libItem"><span>📢 '+esc(v.title)+'</span><button class="btn tiny" onclick="addVideoToSchedule('+v.id+')">+</button></div>').join("")||'<div class="hint">Todavía no hay tandas comerciales cargadas.</div>'}
 function renderScheduleLibrary(){const list=videos.filter(v=>v.video_type!=="commercial");$("scheduleLibrary").innerHTML=list.map(v=>'<div class="libItem"><span>🎬 '+esc(v.title)+'</span><button class="btn tiny" onclick="addVideoToSchedule('+v.id+')">+</button></div>').join("")||'<div class="hint">Todavía no hay series cargadas.</div>'}
 function fillQuick(){const opts=videos.map(v=>'<option value="'+v.id+'">'+(v.video_type==="commercial"?"📢 ":"🎬 ")+esc(v.title)+'</option>').join("");$("quickVideo").innerHTML=opts||'<option value="">No hay videos</option>'}
