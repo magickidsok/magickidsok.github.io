@@ -4,6 +4,7 @@ const ADMIN_COOKIE = "MKADMIN_SESSION";
 const ADMIN_SESSION_SECONDS = 60 * 60 * 12;
 const SESSION_SECONDS = 60 * 60 * 24 * 14;
 const PASSWORD_ITERATIONS = 120000;
+const PANEL_LINK_TOKEN = "MKPANEL-7X4D-92QF-8N3L-6V2Z-4K7P";
 
 function allowedOrigin(origin){
   const value=String(origin||"").trim();
@@ -126,13 +127,27 @@ async function ensureVideoSchema(db){
   await db.prepare("CREATE TABLE IF NOT EXISTS channel_control (id INTEGER PRIMARY KEY CHECK(id=1),status TEXT NOT NULL DEFAULT 'stopped',generation INTEGER NOT NULL DEFAULT 0,updated_at INTEGER NOT NULL,started_at INTEGER NOT NULL DEFAULT 0)").run();
   const cc=await db.prepare("PRAGMA table_info(channel_control)").all();
   if(!(cc.results||[]).some(x=>x.name==="started_at")) await db.prepare("ALTER TABLE channel_control ADD COLUMN started_at INTEGER NOT NULL DEFAULT 0").run();
+  const cc2=await db.prepare("PRAGMA table_info(channel_control)").all();
+  if(!(cc2.results||[]).some(x=>x.name==="paused_position")) await db.prepare("ALTER TABLE channel_control ADD COLUMN paused_position REAL NOT NULL DEFAULT 0").run();
   const state=await db.prepare("SELECT id FROM channel_control WHERE id=1").first();
-  if(!state)await db.prepare("INSERT INTO channel_control(id,status,generation,updated_at,started_at) VALUES(1,'stopped',0,?,0)").bind(Date.now()).run();
+  if(!state)await db.prepare("INSERT INTO channel_control(id,status,generation,updated_at,started_at,paused_position) VALUES(1,'stopped',0,?,0,0)").bind(Date.now()).run();
 }
 async function adminVideos(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   const rows=await env.DB.prepare("SELECT v.id,v.object_key,v.title,v.category_id,c.name AS category,v.thumbnail_key,v.video_type,v.duration_seconds,v.created_at,v.updated_at FROM videos v LEFT JOIN video_categories c ON c.id=v.category_id ORDER BY v.id DESC").all();
   return json({videos:rows.results||[],r2Configured:!!env.VIDEOS},200,origin);
+}
+async function adminStorageUsage(request,env,origin){
+  if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
+  const bucket=requireR2(env);
+  let cursor,used=0,objects=0,pages=0;
+  do{
+    const page=await bucket.list({prefix:"videos/",limit:1000,cursor});
+    for(const o of page.objects||[]){used+=Number(o.size||0);objects++;}
+    cursor=page.truncated?page.cursor:undefined; pages++;
+  }while(cursor&&pages<100);
+  const limit=10*1024*1024*1024;
+  return json({ok:true,limitBytes:limit,usedBytes:used,freeBytes:Math.max(0,limit-used),percentUsed:Math.min(100,used/limit*100),objects,updatedAt:Date.now()},200,origin);
 }
 async function adminRepairR2Keys(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
@@ -354,12 +369,12 @@ async function ownPlaylist(request,env,liveMode=false){
   await ensureVideoSchema(env.DB);
   const rows=await env.DB.prepare("SELECT s.position,s.start_time,v.title,v.object_key,v.video_type,v.duration_seconds FROM video_schedule s JOIN videos v ON v.id=s.video_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
   const scheduleRows=rows.results||[];
-  const state=await env.DB.prepare("SELECT status,started_at FROM channel_control WHERE id=1").first();
+  const state=await env.DB.prepare("SELECT status,started_at,paused_position FROM channel_control WHERE id=1").first();
   const origin=new URL(request.url).origin;
   const durations=scheduleRows.map(x=>Number(x.duration_seconds||0));
   let startIndex=0,currentOffset=0;
-  if(String(state?.status)==="live"&&Number(state?.started_at)>0&&durations.length&&durations.every(d=>d>0)){
-    let elapsed=Math.max(0,(Date.now()-Number(state.started_at))/1000);
+  if((String(state?.status)==="live"||String(state?.status)==="paused"||String(state?.status)==="offair")&&Number(state?.started_at)>0&&durations.length&&durations.every(d=>d>0)){
+    let elapsed=String(state.status)==="paused"||String(state.status)==="offair"?Number(state.paused_position||0):Math.max(0,(Date.now()-Number(state.started_at))/1000);
     const total=durations.reduce((a,b)=>a+b,0);
     if(total>0){
       elapsed%=total;
@@ -400,25 +415,48 @@ async function adminM3u8(request,env,origin){
 }
 async function channelState(request,env,origin){
   await ensureVideoSchema(env.DB);
-  const state=await env.DB.prepare("SELECT status,generation,updated_at,started_at FROM channel_control WHERE id=1").first();
-  return json({status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0),startedAt:Number(state?.started_at||0)},200,origin);
+  const state=await env.DB.prepare("SELECT status,generation,updated_at,started_at,paused_position FROM channel_control WHERE id=1").first();
+  return json({status:state?.status||"stopped",generation:Number(state?.generation||0),updatedAt:Number(state?.updated_at||0),startedAt:Number(state?.started_at||0),pausedPosition:Number(state?.paused_position||0)},200,origin);
+}
+function schedulePositionAt(startedAt,rows){
+  const items=Array.isArray(rows)?rows:[];
+  const durations=items.map(x=>Math.max(0,Number(x.duration_seconds||0)));
+  const total=durations.reduce((a,b)=>a+b,0);
+  if(!total||!startedAt)return {index:0,position:0};
+  let elapsed=Math.max(0,(Date.now()-Number(startedAt))/1000)%total;
+  for(let i=0;i<durations.length;i++){const d=durations[i];if(d>0&&elapsed<d)return {index:i,position:elapsed};elapsed-=d;}
+  return {index:0,position:0};
 }
 async function adminChannelControl(request,env,origin){
   if(!await requireAdmin(request,env))return json({error:"No autorizado."},403,origin);
   const b=await body(request),action=String(b.action||"").toLowerCase();
-  const state=await env.DB.prepare("SELECT generation FROM channel_control WHERE id=1").first();
-  let status="";
-  if(action==="start")status="live";
-  else if(action==="stop")status="stopped";
-  else if(action==="offair")status="offair";
-  else if(action==="restart")status="live";
-  else return json({error:"Acción inválida."},400,origin);
-  const generation=Number(state?.generation||0)+(action==="restart"?1:0);
+  const current=await env.DB.prepare("SELECT status,generation,started_at,paused_position FROM channel_control WHERE id=1").first();
+  if(!current)return json({error:"Estado de canal no inicializado."},500,origin);
+  const rows=await env.DB.prepare("SELECT v.duration_seconds FROM video_schedule s JOIN videos v ON v.id=s.video_id WHERE s.enabled=1 ORDER BY s.position ASC,s.start_time ASC").all();
   const now=Date.now();
-  const startedAt=(action==="start"||action==="restart")?now:Number((await env.DB.prepare("SELECT started_at FROM channel_control WHERE id=1").first())?.started_at||0);
-  await env.DB.prepare("UPDATE channel_control SET status=?,generation=?,updated_at=?,started_at=? WHERE id=1").bind(status,generation,now,startedAt).run();
+  let status,currentStarted=Number(current.started_at||0),paused=Number(current.paused_position||0),generation=Number(current.generation||0);
+  if(action==="start"){status="live";currentStarted=now;paused=0;generation++;}
+  else if(action==="restart"){status="live";currentStarted=now;paused=0;generation++;}
+  else if(action==="pause"){
+    if(String(current.status)!=="live")return channelState(request,env,origin);
+    const pos=schedulePositionAt(currentStarted,rows.results||[]);
+    status="paused";paused=pos.position;generation++;
+  }else if(action==="resume"){
+    if(String(current.status)!=="paused")return channelState(request,env,origin);
+    const pos=Number(current.paused_position||0);
+    const durations=(rows.results||[]).map(x=>Math.max(0,Number(x.duration_seconds||0)));
+    let before=0,idx=0;let remaining=pos;
+    while(idx<durations.length&&durations[idx]>0&&remaining>=durations[idx]){remaining-=durations[idx];idx++;}
+    for(let i=0;i<idx;i++)before+=durations[i];
+    currentStarted=now-Math.round((before+remaining)*1000);
+    status="live";paused=remaining;generation++;
+  }else if(action==="offair"){status="offair";generation++;}
+  else if(action==="stop"){status="stopped";currentStarted=0;paused=0;generation++;}
+  else return json({error:"Acción inválida."},400,origin);
+  await env.DB.prepare("UPDATE channel_control SET status=?,generation=?,updated_at=?,started_at=?,paused_position=? WHERE id=1").bind(status,generation,now,currentStarted,paused).run();
   return channelState(request,env,origin);
 }
+
 async function resolveScheduledR2Keys(env,rows){
   const listRows=Array.isArray(rows)?rows:[];
   if(!listRows.length)return listRows;
@@ -530,7 +568,7 @@ async function media(request,env){
   const h=new Headers();
   object.writeHttpMetadata(h);
   if(!h.get("Content-Type"))h.set("Content-Type","video/mp4");
-  h.set("Cache-Control","public, max-age=31536000, immutable");
+  h.set("Cache-Control","no-store, no-cache, must-revalidate");
   h.set("Accept-Ranges","bytes");
   h.set("Access-Control-Allow-Origin","*");
   h.set("Access-Control-Allow-Methods","GET,HEAD,OPTIONS");
@@ -622,6 +660,13 @@ async function register(request,env,origin){
     if(/UNIQUE|constraint/i.test(message))return json({error:"Ese correo o nick ya está registrado."},409,origin);
     return json({error:"No se pudo crear la cuenta. Revisá la configuración del chat."},500,origin);
   }
+}
+async function adminLinkLogin(request,env,origin){
+  if(!env.SESSION_SECRET)return json({error:"Falta SESSION_SECRET."},500,origin);
+  const token=String(request.headers.get("X-MK-PANEL-TOKEN")||"");
+  if(token!==PANEL_LINK_TOKEN)return json({error:"Panel no autorizado."},403,origin);
+  const session=await makeAdminSessionToken(env.SESSION_SECRET);
+  return json({ok:true,user:{id:"admin-link",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin,{"Set-Cookie":setAdminSessionCookie(session)});
 }
 async function adminPinLogin(request,env,origin){
   if(!env.ADMIN_PIN)return json({error:"Falta configurar ADMIN_PIN en el Worker de Cloudflare."},500,origin);
@@ -729,10 +774,13 @@ export default {
       if(path==="/api/admin/video/category-order"&&request.method==="POST")return adminVideoCategoryOrder(request,env,origin);
       if(path==="/api/channel/state"&&request.method==="GET")return channelState(request,env,origin);
       if(path==="/api/admin/m3u8"&&request.method==="GET")return adminM3u8(request,env,origin);
+      if(path==="/api/admin/storage"&&request.method==="GET")return adminStorageUsage(request,env,origin);
+
       if(path==="/magic-kids-app.mp4"&&request.method==="GET")return appCurrentVideo(request,env);
       if(path==="/magic-kids.m3u8"&&request.method==="GET")return ownPlaylist(request,env,false);
       if(path==="/magic-kids-live.m3u8"&&request.method==="GET")return ownPlaylist(request,env,true);
       if(path==="/api/admin/channel"&&request.method==="POST")return adminChannelControl(request,env,origin);
+      if(path==="/api/admin/link-login"&&request.method==="POST")return adminLinkLogin(request,env,origin);
       if(path==="/api/schedule"&&request.method==="GET")return publicSchedule(request,env,origin);
       if(path==="/api/viewers/heartbeat"&&request.method==="POST")return viewerHeartbeat(request,env,origin);
       if(path==="/api/live-overlay"&&request.method==="GET")return getLiveOverlay(request,env,origin);
