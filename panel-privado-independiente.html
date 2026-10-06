@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Magic Kids — Panel privado independiente</title>
+<link rel="stylesheet" href="https://cdn.plyr.io/3.8.4/plyr.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#080522;color:#fff;font-family:Arial,sans-serif}.wrap{max-width:1100px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #342070;padding-bottom:14px;gap:12px}.logo{font-size:28px;font-weight:900;color:#ffd400}.pill{border:1px solid #7b3cff;border-radius:999px;padding:7px 12px;font-size:12px}.card{background:#100a3a;border:1px solid #4c2a9a;border-radius:14px;padding:18px;margin-top:16px}.welcome{max-width:480px;margin:90px auto;text-align:center}.hidden{display:none!important}.muted{color:#aaa}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.row>*{flex:1;min-width:150px}button,input{font:inherit}button{border:0;border-radius:9px;padding:11px 15px;font-weight:800;cursor:pointer;background:#7b35ff;color:#fff}button.gray{background:#2c2750}button.red{background:#b52b35}input{width:100%;background:#080522;color:#fff;border:1px solid #49358b;border-radius:9px;padding:11px}.msg{color:#ffd400;font-size:13px;min-height:20px;margin-top:8px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:12px}.video{background:#0a0628;border:1px solid #302067;border-radius:11px;padding:12px}.video h3{margin:7px 0;font-size:14px}.video small{color:#999}.actions{display:flex;gap:6px;margin-top:9px}.actions button{flex:1;font-size:12px;padding:8px}#player{position:fixed;inset:0;background:rgba(0,0,0,.93);display:none;align-items:center;justify-content:center;padding:18px;z-index:999}.inner{width:min(900px,96vw);background:#09052a;padding:12px;border-radius:13px}@media(max-width:650px){.top{align-items:flex-start;flex-direction:column}.welcome{margin:45px auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><div><div class="logo">MAGIC KIDS</div><div>Panel privado independiente</div></div><span class="pill">SIN CLOUDFLARE</span></header>
+
+<section id="welcome" class="card welcome">
+<h2>Panel Magic Kids</h2>
+<p class="muted">Acceso directo. No se solicita contraseña ni PIN.</p>
+<button id="enter" style="width:100%;font-size:16px">ENTRAR AL PANEL</button>
+<div class="msg">Acceso mediante esta dirección privada.</div>
+</section>
+
+<main id="app" class="hidden">
+<section class="card">
+<h3>Reproductor MP4 · Range 206</h3>
+<p class="muted">Esta versión no llama a ningún Worker ni endpoint de Cloudflare. Para probar un MP4, seleccioná un archivo local.</p>
+<div class="row"><input id="file" type="file" accept="video/mp4,video/*"><button id="playFile">▶ REPRODUCIR</button></div>
+<div id="msg" class="msg"></div>
+</section>
+
+<section class="card">
+<h3>Biblioteca local de prueba</h3>
+<div class="row"><input id="title" placeholder="Nombre del video"><button id="add">AGREGAR A LA LISTA</button><button id="clear" class="red">VACIAR LISTA</button></div>
+<div id="videos" class="grid"></div>
+</section>
+
+<section class="card">
+<h3>Estado</h3>
+<p class="muted">Panel independiente: <b>OK</b></p>
+<p class="muted">Backend externo: <b id="backend">NO CONFIGURADO</b></p>
+<p class="muted">Rango HTTP 206: <b>se utilizará cuando el nuevo servidor de videos esté conectado.</b></p>
+<div class="msg">ADVERTENCIA: GitHub Pages es estático. Sin un backend externo, este panel no puede subir, borrar ni guardar MP4 en un servidor. No voy a simular que esas funciones funcionan.</div>
+</section>
+</main>
+</div>
+
+<div id="player"><div class="inner"><button id="close" class="red" style="float:right">CERRAR</button><video id="video" controls playsinline style="width:100%"></video></div></div>
+<script src="https://cdn.plyr.io/3.8.4/plyr.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);let plyr=null;
+$("enter").onclick=()=>{$("welcome").classList.add("hidden");$("app").classList.remove("hidden")};
+$("playFile").onclick=()=>{const f=$("file").files[0];if(!f){$("msg").textContent="Elegí un MP4 primero.";return}openFile(f)};
+$("add").onclick=()=>{const f=$("file").files[0],t=$("title").value.trim()||f?.name||"Video";if(!f){$("msg").textContent="Elegí un MP4 primero.";return}const url=URL.createObjectURL(f);const list=JSON.parse(sessionStorage.getItem("mk_local_videos")||"[]");list.push({title:t,url});sessionStorage.setItem("mk_local_videos",JSON.stringify(list));render()};
+$("clear").onclick=()=>{sessionStorage.removeItem("mk_local_videos");render()};
+function openFile(f){$("player").style.display="flex";$("video").src=URL.createObjectURL(f);if(plyr)plyr.destroy();plyr=new Plyr("#video",{controls:["play-large","play","progress","current-time","mute","volume","settings","fullscreen"],settings:["speed"],speed:{selected:1,options:[.75,1,1.25,1.5,2]}});$("video").play().catch(()=>{})}
+function render(){const list=JSON.parse(sessionStorage.getItem("mk_local_videos")||"[]");$("videos").innerHTML=list.map((x,i)=>'<article class="video"><small>LOCAL #'+(i+1)+'</small><h3>'+esc(x.title)+'</h3><div class="actions"><button onclick="playStored('+i+')">▶ VER</button><button class="red" onclick="removeStored('+i+')">BORRAR</button></div></article>').join("")||'<div class="muted">Todavía no hay videos de prueba.</div>'}
+function playStored(i){const list=JSON.parse(sessionStorage.getItem("mk_local_videos")||"[]");$("player").style.display="flex";$("video").src=list[i].url;if(plyr)plyr.destroy();plyr=new Plyr("#video",{controls:["play-large","play","progress","current-time","mute","volume","settings","fullscreen"],settings:["speed"]});$("video").play().catch(()=>{})}
+function removeStored(i){const list=JSON.parse(sessionStorage.getItem("mk_local_videos")||"[]");list.splice(i,1);sessionStorage.setItem("mk_local_videos",JSON.stringify(list));render()}
+$("close").onclick=()=>{$("video").pause();$("video").removeAttribute("src");$("video").load();if(plyr){plyr.destroy();plyr=null}$("player").style.display="none"};
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+render();
+</script>
+</body></html>
