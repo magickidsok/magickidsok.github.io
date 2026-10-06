@@ -261,18 +261,59 @@ sealed class MagicCloud
 
     public async Task<string> UploadPart(string key, string uploadId, int partNumber, Stream stream, long contentLength, CancellationToken ct)
     {
-        using var content = new StreamContent(stream, 1024 * 1024);
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-        content.Headers.ContentLength = contentLength;
+        Exception? last = null;
+        for (var attempt = 1; attempt <= 4; attempt++)
+        {
+            try
+            {
+                if (stream.CanSeek) stream.Position = 0;
+                using var content = new StreamContent(stream, 1024 * 1024);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                content.Headers.ContentLength = contentLength;
 
-        using var req = new HttpRequestMessage(HttpMethod.Put, Base + "/api/admin/upload/part?key=" + Uri.EscapeDataString(key) + "&uploadId=" + Uri.EscapeDataString(uploadId) + "&partNumber=" + partNumber);
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
-        req.Content = content;
-        using var res = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
-        var text = await res.Content.ReadAsStringAsync(ct);
-        if (!res.IsSuccessStatusCode) throw new InvalidOperationException(text);
-        using var doc = JsonDocument.Parse(text);
-        return doc.RootElement.GetProperty("part").GetProperty("etag").GetString() ?? "";
+                using var req = new HttpRequestMessage(HttpMethod.Put,
+                    Base + "/api/admin/upload/part?key=" + Uri.EscapeDataString(key) +
+                    "&uploadId=" + Uri.EscapeDataString(uploadId) +
+                    "&partNumber=" + partNumber);
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+                req.Headers.TryAddWithoutValidation("Accept", "application/json");
+                req.Content = content;
+
+                using var res = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+                var text = await res.Content.ReadAsStringAsync(ct);
+
+                if (!res.IsSuccessStatusCode)
+                    throw new InvalidOperationException($"Parte {partNumber}: HTTP {(int)res.StatusCode} — {text}");
+
+                using var doc = JsonDocument.Parse(text);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("part", out var part) &&
+                    part.TryGetProperty("etag", out var etag1) &&
+                    !string.IsNullOrWhiteSpace(etag1.GetString()))
+                    return etag1.GetString()!;
+
+                if (root.TryGetProperty("etag", out var etag2) &&
+                    !string.IsNullOrWhiteSpace(etag2.GetString()))
+                    return etag2.GetString()!;
+
+                var serverError = root.TryGetProperty("error", out var err) ? err.GetString() : null;
+                throw new InvalidOperationException(
+                    $"Respuesta inesperada al subir la parte {partNumber}. " +
+                    (string.IsNullOrWhiteSpace(serverError) ? text : serverError));
+            }
+            catch (Exception ex) when (attempt < 4 && ex is not OperationCanceledException)
+            {
+                last = ex;
+                await Task.Delay(TimeSpan.FromMilliseconds(500 * attempt * attempt), ct);
+            }
+            catch (Exception ex)
+            {
+                last = ex;
+                break;
+            }
+        }
+        throw new InvalidOperationException(last?.Message ?? $"No se pudo subir la parte {partNumber}.");
     }
 
     public async Task<CompleteResponse> Complete(string key, string uploadId, IEnumerable<(int Number, string Etag)> parts, string title, int categoryId, double duration, CancellationToken ct)
@@ -366,11 +407,44 @@ sealed class MainForm : Form
             {
                 activityLabel.Text = "ERROR: " + ex.Message;
                 activityLabel.ForeColor = Color.OrangeRed;
+                activityLabel.AutoEllipsis = true;
+                activityLabel.Cursor = Cursors.Hand;
+                activityLabel.Tag = ex.ToString();
+                activityLabel.Click -= ActivityLabel_Click;
+                activityLabel.Click += ActivityLabel_Click;
             }
             finally { b.Enabled = true; }
         };
         actionButtons[key] = b;
         return b;
+    }
+
+    void ActivityLabel_Click(object? sender, EventArgs e)
+    {
+        var details = activityLabel.Tag as string;
+        if (string.IsNullOrWhiteSpace(details)) return;
+        using var dlg = new Form
+        {
+            Text = "Detalle del error — MAGIC KIDS",
+            Width = 820,
+            Height = 430,
+            StartPosition = FormStartPosition.CenterParent,
+            BackColor = Bg,
+            ForeColor = Color.White
+        };
+        var box = new TextBox
+        {
+            Dock = DockStyle.Fill,
+            Multiline = true,
+            ReadOnly = true,
+            ScrollBars = ScrollBars.Both,
+            WordWrap = false,
+            BackColor = Color.FromArgb(12, 7, 39),
+            ForeColor = Color.White,
+            Text = details
+        };
+        dlg.Controls.Add(box);
+        dlg.ShowDialog(this);
     }
 
     void FlashSuccess(Button b)
@@ -667,43 +741,62 @@ sealed class MainForm : Form
     async Task UploadOne(VideoItem v, CancellationToken ct)
     {
         v.Status = "INICIANDO…"; RefreshUi();
-        var (key, uploadId) = await cloud.Initiate(Path.GetFileName(v.SourcePath), GetContentType(v.SourcePath), ct);
-
-        const int partSize = 16 * 1024 * 1024;
-        var parts = new List<(int Number, string Etag)>();
-        var fi = new FileInfo(v.SourcePath);
-        var total = fi.Length;
-        long sent = 0;
-        var partNo = 1;
-
-        await using var fs = new FileStream(v.SourcePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, true);
-        while (sent < total)
+        string key = "";
+        string uploadId = "";
+        try
         {
-            ct.ThrowIfCancellationRequested();
-            var bytes = (int)Math.Min(partSize, total - sent);
-            var buffer = new byte[bytes];
-            var read = 0;
-            while (read < bytes)
-            {
-                var n = await fs.ReadAsync(buffer.AsMemory(read, bytes - read), ct);
-                if (n == 0) break;
-                read += n;
-            }
-            using var ms = new MemoryStream(buffer, 0, read, writable: false);
-            v.Status = $"SUBIENDO {Math.Round((sent + read) * 100.0 / total)}%";
-            RefreshUi();
-            var etag = await cloud.UploadPart(key, uploadId, partNo, ms, read, ct);
-            parts.Add((partNo, etag));
-            sent += read;
-            uploadProgress.Value = Math.Min(100, (int)Math.Round(sent * 100.0 / total));
-            partNo++;
-        }
+            (key, uploadId) = await cloud.Initiate(Path.GetFileName(v.SourcePath), GetContentType(v.SourcePath), ct);
 
-        v.Status = "FINALIZANDO…"; RefreshUi();
-        var done = await cloud.Complete(key, uploadId, parts, v.Title, v.CategoryId, v.DurationSeconds, ct);
-        v.ServerId = done.Id ?? 0;
-        v.Status = v.DurationSeconds > 0 ? "LISTO" : "LISTO · DURACIÓN NO DETECTADA";
-        activityLabel.Text = "✓ " + v.Title + " subido a Cloudflare R2.";
+            const int partSize = 16 * 1024 * 1024;
+            var parts = new List<(int Number, string Etag)>();
+            var fi = new FileInfo(v.SourcePath);
+            var total = Math.Max(1L, fi.Length);
+            long sent = 0;
+            var partNo = 1;
+
+            await using var fs = new FileStream(v.SourcePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, true);
+            while (sent < fi.Length)
+            {
+                ct.ThrowIfCancellationRequested();
+                var bytes = (int)Math.Min(partSize, fi.Length - sent);
+                var buffer = GC.AllocateUninitializedArray<byte>(bytes);
+                var read = 0;
+                while (read < bytes)
+                {
+                    var n = await fs.ReadAsync(buffer.AsMemory(read, bytes - read), ct);
+                    if (n == 0) break;
+                    read += n;
+                }
+                if (read == 0) throw new IOException("No se pudieron leer más datos del archivo.");
+
+                using var ms = new MemoryStream(buffer, 0, read, writable: false);
+                v.Status = $"SUBIENDO · PARTE {partNo} · {Math.Round((sent + read) * 100.0 / total)}%";
+                RefreshUi();
+
+                var etag = await cloud.UploadPart(key, uploadId, partNo, ms, read, ct);
+                if (string.IsNullOrWhiteSpace(etag))
+                    throw new InvalidOperationException($"Cloudflare no devolvió el ETag de la parte {partNo}.");
+
+                parts.Add((partNo, etag));
+                sent += read;
+                uploadProgress.Value = Math.Min(100, (int)Math.Round(sent * 100.0 / total));
+                partNo++;
+            }
+
+            v.Status = "FINALIZANDO…"; RefreshUi();
+            var done = await cloud.Complete(key, uploadId, parts, v.Title, v.CategoryId, v.DurationSeconds, ct);
+            v.ServerId = done.Id ?? 0;
+            v.Status = v.ServerId > 0
+                ? (v.DurationSeconds > 0 ? "LISTO" : "LISTO · DURACIÓN NO DETECTADA")
+                : "SUBIDO · ID PENDIENTE";
+            activityLabel.Text = "✓ " + v.Title + " subido a Cloudflare R2.";
+        }
+        catch
+        {
+            v.Status = "ERROR · REINTENTABLE";
+            RefreshUi();
+            throw;
+        }
     }
 
     async Task DeleteSelected(string category)
