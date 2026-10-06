@@ -377,7 +377,7 @@ sealed class MainForm : Form
     {
         var old = b.BackColor;
         b.BackColor = Green;
-        var t = new Timer { Interval = 700 };
+        var t = new System.Windows.Forms.Timer { Interval = 700 };
         t.Tick += (_, _) => { t.Stop(); t.Dispose(); b.BackColor = old; };
         t.Start();
     }
