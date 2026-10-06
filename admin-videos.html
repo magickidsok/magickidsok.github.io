@@ -44,6 +44,7 @@ progress{width:100%;height:8px}
 <button id="refresh" class="gray">Actualizar</button>
 <button id="purge" class="red">Borrar TODOS los videos</button>
 </div>
+<div class="row" style="margin-top:10px"><input id="search" placeholder="Buscar video…" autocomplete="off"><button id="prev" class="gray">‹</button><button id="next" class="gray">›</button></div>
 <div id="count" class="msg"></div>
 <div id="videos" class="grid"></div>
 </section>
@@ -77,7 +78,7 @@ progress{width:100%;height:8px}
 <section class="card">
 <h3>Programación</h3>
 <div id="schedule"></div>
-<button id="saveSchedule" class="green" style="margin-top:10px">GUARDAR PROGRAMACIÓN</button>
+<button id="addSchedule" class="gray" style="margin-top:10px">+ AGREGAR BLOQUE</button><button id="saveSchedule" class="green" style="margin-top:10px">GUARDAR PROGRAMACIÓN</button>
 <div id="scheduleMsg" class="msg"></div>
 </section>
 </main>
@@ -88,7 +89,7 @@ progress{width:100%;height:8px}
 <script>
 const API="https://magickidsok-github-io.elmagickids.workers.dev";
 const $=id=>document.getElementById(id);
-let videos=[],categories=[],plyr=null;
+let videos=[],categories=[],plyr=null,videoPage=0;const PAGE_SIZE=30;
 
 async function api(path,opt={}){
   const c=new AbortController(), t=setTimeout(()=>c.abort(),10000);
@@ -124,19 +125,26 @@ $("enter").onclick=async()=>{
 $("code").addEventListener("keydown",e=>{if(e.key==="Enter")$("enter").click()});
 async function loadAll(){await Promise.all([loadVideos(),loadCategories(),loadSchedule(),loadChannel()])}
 async function loadVideos(){
-  const d=await api("/api/videos");videos=d.videos||[];
-  $("count").textContent=videos.length+" videos";
-  $("videos").innerHTML=videos.map(v=>'<article class="video"><small>#'+v.id+' · '+(v.category||"Sin categoría")+'</small><h3>'+esc(v.title)+'</h3><small>'+fmt(v.duration_seconds)+'</small><div class="actions"><button onclick="playVideo('+v.id+')">▶ VER</button><button class="red" onclick="delVideo('+v.id+')">BORRAR</button></div></article>').join("")||'<div class="muted">No hay videos.</div>';
+  const d=await api("/api/videos");videos=d.videos||[];videoPage=0;renderVideos();
+}
+function renderVideos(){
+  const q=$("search")?.value.trim().toLowerCase()||"";
+  const filtered=q?videos.filter(v=>String(v.title||"").toLowerCase().includes(q)||String(v.category||"").toLowerCase().includes(q)||String(v.id).includes(q)):videos;
+  const pages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));videoPage=Math.min(videoPage,pages-1);
+  const start=videoPage*PAGE_SIZE,items=filtered.slice(start,start+PAGE_SIZE);
+  $("count").textContent=filtered.length+" videos · página "+(videoPage+1)+"/"+pages;
+  $("prev").disabled=videoPage<=0;$("next").disabled=videoPage>=pages-1;
+  $("videos").innerHTML=items.map(v=>'<article class="video"><small>#'+v.id+' · '+(v.category||"Sin categoría")+'</small><h3>'+esc(v.title)+'</h3><small>'+fmt(v.duration_seconds)+'</small><div class="actions"><button onclick="playVideo('+v.id+')">▶ VER</button><button class="red" onclick="delVideo('+v.id+')">BORRAR</button></div></article>').join("")||'<div class="muted">No hay videos.</div>';
 }
 async function loadCategories(){
   const d=await api("/api/admin/categories");categories=d.categories||[];
   $("category").innerHTML='<option value="">Sin categoría</option>'+categories.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join("");
 }
 async function loadSchedule(){
-  const d=await api("/api/admin/schedule");const s=d.schedule||[];
-  $("schedule").innerHTML=(s.length?s:videos).map((x,i)=>'<div class="row" style="margin:6px 0"><input class="stime" value="'+esc(x.start_time||"00:00")+'" placeholder="HH:MM"><select class="svid"><option value="'+(x.video_id||x.id)+'">'+esc(x.title)+'</option></select></div>').join("");
+  const d=await api("/api/admin/schedule");const s=d.schedule||[];const rows=s.length?s:[{start_time:"00:00",video_id:videos[0]?.id,title:videos[0]?.title||""}];
+  $("schedule").innerHTML=rows.map((x,i)=>'<div class="row" style="margin:6px 0"><input class="stime" value="'+esc(x.start_time||"00:00")+'" placeholder="HH:MM"><select class="svid"></select></div>').join("");
   const selects=[...document.querySelectorAll(".svid")];
-  selects.forEach((sel,i)=>{sel.innerHTML=videos.map(v=>'<option value="'+v.id+'" '+((s[i]?.video_id||videos[i]?.id)==v.id?"selected":"")+'>'+esc(v.title)+'</option>').join("")});
+  selects.forEach((sel,i)=>{sel.innerHTML=videos.map(v=>'<option value="'+v.id+'" '+((s[i]?.video_id||rows[i]?.video_id)==v.id?"selected":"")+'>'+esc(v.title)+'</option>').join("")});
 }
 async function loadChannel(){try{const d=await api("/api/channel/state");$("channel").textContent="Estado: "+d.status}catch(e){$("channel").textContent="Estado: error"}}
 function playVideo(id){const v=videos.find(x=>x.id==id);if(!v)return;$("playerBox").style.display="flex";$("preview").src=API+"/media/"+String(v.object_key||"").split("/").map(encodeURIComponent).join("/");if(plyr)plyr.destroy();plyr=new Plyr("#preview",{controls:["play-large","play","progress","current-time","mute","volume","settings","fullscreen"],settings:["speed"],speed:{selected:1,options:[.75,1,1.25,1.5,2]}});$("preview").play().catch(()=>{})}
@@ -155,8 +163,9 @@ $("upload").onclick=async()=>{
   }catch(e){msg.textContent=e.message}
 };
 document.querySelectorAll("[data-channel]").forEach(b=>b.onclick=async()=>{try{await api("/api/admin/channel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:b.dataset.channel})});await loadChannel()}catch(e){alert(e.message)}});
+$("addSchedule").onclick=()=>{const box=$("schedule");const row=document.createElement("div");row.className="row";row.style.margin="6px 0";row.innerHTML='<input class="stime" value="00:00" placeholder="HH:MM"><select class="svid">'+videos.map(v=>'<option value="'+v.id+'">'+esc(v.title)+'</option>').join("")+'</select>';box.appendChild(row)};
 $("saveSchedule").onclick=async()=>{const times=[...document.querySelectorAll(".stime")],sels=[...document.querySelectorAll(".svid")];const items=sels.map((s,i)=>({videoId:Number(s.value),startTime:times[i].value.trim()}));try{await api("/api/admin/schedule",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items})});$("scheduleMsg").textContent="Programación guardada.";await loadSchedule()}catch(e){$("scheduleMsg").textContent=e.message}};
-$("refresh").onclick=loadAll;
+$("refresh").onclick=loadAll;$("search").oninput=()=>{videoPage=0;renderVideos()};$("prev").onclick=()=>{videoPage--;renderVideos()};$("next").onclick=()=>{videoPage++;renderVideos()};
 function fmt(s){s=Number(s||0);if(!s)return"Duración no registrada";const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=Math.floor(s%60);return (h?h+":":"")+(h?String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0")}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
 boot();
