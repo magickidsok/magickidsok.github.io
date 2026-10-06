@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Magic Kids — Panel privado</title>
+<link rel="stylesheet" href="https://cdn.plyr.io/3.8.4/plyr.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#080522;color:#fff;font-family:Arial,sans-serif}.wrap{max-width:1120px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid #342070;padding-bottom:14px}.logo{font-size:28px;font-weight:900;color:#ffd400}.pill{border:1px solid #7b3cff;border-radius:999px;padding:7px 12px;font-size:12px}.card{background:#100a3a;border:1px solid #4c2a9a;border-radius:14px;padding:16px;margin-top:16px}.welcome{max-width:480px;margin:90px auto;text-align:center}.muted{color:#aaa}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.row>*{flex:1;min-width:150px}button,input,select{font:inherit}button{border:0;border-radius:9px;padding:11px 14px;font-weight:800;cursor:pointer;background:#7b35ff;color:#fff}button.gray{background:#2c2750}button.red{background:#b52b35}button.green{background:#159447}input,select{width:100%;background:#080522;color:#fff;border:1px solid #49358b;border-radius:9px;padding:11px;margin:4px 0}.hidden{display:none!important}.msg{min-height:20px;color:#ffd400;font-size:13px;margin-top:8px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:12px}.video{background:#0a0628;border:1px solid #302067;border-radius:11px;padding:11px}.video h3{font-size:14px;margin:7px 0}.video small{color:#999}.actions{display:flex;gap:6px;margin-top:9px}.actions button{flex:1;font-size:12px;padding:8px}progress{width:100%;height:8px;margin-top:8px}#playerBox{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:999;padding:18px}#playerBox .inner{width:min(900px,96vw);background:#09052a;padding:12px;border-radius:13px}.close{float:right;margin-bottom:8px}@media(max-width:650px){.top{align-items:flex-start;flex-direction:column}.welcome{margin:45px auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div><div class="logo">MAGIC KIDS</div><div>Panel privado · MP4 / HTTP Range 206</div></div>
+  <div class="row" style="justify-content:flex-end"><span class="pill">RANGE 206</span><span id="server" class="pill">● comprobando…</span></div>
+</header>
+
+<section id="welcome" class="card welcome">
+  <h2>Panel Magic Kids</h2>
+  <p class="muted">Acceso directo. No tenés que escribir ninguna contraseña.</p>
+  <button id="enter" style="width:100%;font-size:16px">ENTRAR AL PANEL</button>
+  <div id="loginMsg" class="msg"></div>
+</section>
+
+<main id="app" class="hidden">
+<section class="card">
+  <div class="row">
+    <div><b>Biblioteca</b><div class="muted">Videos MP4 con reproducción por rangos HTTP.</div></div>
+    <button id="refresh" class="gray">ACTUALIZAR</button>
+  </div>
+  <div class="row" style="margin-top:9px"><input id="search" placeholder="Buscar video…"><button id="prev" class="gray">‹</button><button id="next" class="gray">›</button></div>
+  <div id="count" class="msg"></div><div id="videos" class="grid"></div>
+</section>
+
+<section class="card">
+  <h3>Subir MP4</h3>
+  <div class="row"><input id="file" type="file" accept="video/mp4,video/*"><input id="title" placeholder="Título (opcional)"></div>
+  <div class="row"><select id="category"><option value="">Sin categoría</option></select><select id="type"><option value="program">Programa</option><option value="commercial">Publicidad</option><option value="other">Otro</option></select><button id="upload">SUBIR VIDEO</button></div>
+  <progress id="progress" value="0" max="100" class="hidden"></progress><div id="uploadMsg" class="msg"></div>
+</section>
+
+<section class="card">
+  <h3>Canal</h3>
+  <div class="row"><button data-channel="start" class="green">▶ INICIAR</button><button data-channel="restart">↻ REINICIAR</button><button data-channel="offair" class="gray">OFF AIR</button><button data-channel="stop" class="red">■ DETENER</button></div>
+  <div id="channel" class="msg">Estado: comprobando…</div>
+</section>
+
+<section class="card">
+  <h3>Programación</h3>
+  <div id="schedule"></div>
+  <div class="row" style="margin-top:9px"><button id="addSchedule" class="gray">+ AGREGAR BLOQUE</button><button id="saveSchedule" class="green">GUARDAR PROGRAMACIÓN</button></div>
+  <div id="scheduleMsg" class="msg"></div>
+</section>
+</main>
+</div>
+
+<div id="playerBox"><div class="inner"><button id="closePlayer" class="close red">CERRAR</button><video id="preview" controls playsinline></video></div></div>
+<script src="https://cdn.plyr.io/3.8.4/plyr.min.js"></script>
+<script>
+const API="https://magickidsok-github-io.elmagickids.workers.dev";
+const $=id=>document.getElementById(id);
+let ADMIN_TOKEN="",videos=[],categories=[],plyr=null,videoPage=0;
+const PAGE_SIZE=30;
+
+async function api(path,opt={}){
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),12000);
+  try{
+    const sep=path.includes("?")?"&":"?";
+    const headers=new Headers(opt.headers||{});
+    if(ADMIN_TOKEN)headers.set("Authorization","Bearer "+ADMIN_TOKEN);
+    const r=await fetch(API+path+sep+"_="+Date.now(),{...opt,headers,cache:"no-store",credentials:"include",signal:c.signal});
+    let d={};try{d=await r.json()}catch(_){}
+    if(!r.ok)throw Error(d.error||("Error "+r.status));
+    return d;
+  }catch(e){if(e.name==="AbortError")throw Error("El servidor tardó demasiado en responder.");throw e}
+  finally{clearTimeout(t)}
+}
+
+async function loginOneClick(){
+  $("loginMsg").textContent="Conectando…";
+  try{
+    const r=await api("/api/admin/master-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:"1991"})});
+    if(!r.token)throw Error("El servidor no devolvió la sesión.");
+    ADMIN_TOKEN=r.token;
+    $("welcome").classList.add("hidden");$("app").classList.remove("hidden");
+    $("loginMsg").textContent="";
+    await loadAll();
+  }catch(e){$("loginMsg").textContent="No se pudo abrir el panel: "+e.message}
+}
+$("enter").onclick=loginOneClick;
+
+async function boot(){
+  try{const h=await fetch(API+"/api/health?_"+Date.now(),{cache:"no-store"});$("server").textContent=h.ok?"● SERVIDOR: ONLINE":"● SERVIDOR: ERROR"}catch(e){$("server").textContent="● SERVIDOR: OFFLINE"}
+}
+async function loadAll(){await Promise.all([loadVideos(),loadCategories(),loadSchedule(),loadChannel()])}
+async function loadVideos(){const d=await api("/api/videos");videos=d.videos||[];videoPage=0;renderVideos()}
+function renderVideos(){
+  const q=$("search").value.trim().toLowerCase();
+  const f=q?videos.filter(v=>String(v.title||"").toLowerCase().includes(q)||String(v.category||"").toLowerCase().includes(q)||String(v.id).includes(q)):videos;
+  const pages=Math.max(1,Math.ceil(f.length/PAGE_SIZE));videoPage=Math.min(videoPage,pages-1);
+  $("count").textContent=f.length+" videos · página "+(videoPage+1)+"/"+pages;
+  $("prev").disabled=videoPage<=0;$("next").disabled=videoPage>=pages-1;
+  $("videos").innerHTML=f.slice(videoPage*PAGE_SIZE,videoPage*PAGE_SIZE+PAGE_SIZE).map(v=>'<article class="video"><small>#'+v.id+' · '+esc(v.category||"Sin categoría")+'</small><h3>'+esc(v.title)+'</h3><small>'+fmt(v.duration_seconds)+'</small><div class="actions"><button onclick="playVideo('+v.id+')">▶ VER</button><button class="red" onclick="delVideo('+v.id+')">BORRAR</button></div></article>').join("")||'<div class="muted">No hay videos.</div>';
+}
+async function loadCategories(){const d=await api("/api/admin/categories");categories=d.categories||[];$("category").innerHTML='<option value="">Sin categoría</option>'+categories.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join("")}
+async function loadChannel(){try{const d=await api("/api/channel/state");$("channel").textContent="Estado: "+(d.status||"desconocido")}catch(e){$("channel").textContent="Estado: error"}}
+async function loadSchedule(){
+  const d=await api("/api/admin/schedule"),s=d.schedule||[];
+  const rows=s.length?s:[{start_time:"00:00",video_id:videos[0]?.id}];
+  $("schedule").innerHTML=rows.map((x,i)=>'<div class="row" style="margin:6px 0"><input class="stime" value="'+esc(x.start_time||"00:00")+'" placeholder="HH:MM"><select class="svid"></select></div>').join("");
+  [...document.querySelectorAll(".svid")].forEach((sel,i)=>{sel.innerHTML=videos.map(v=>'<option value="'+v.id+'" '+((s[i]?.video_id||rows[i]?.video_id)==v.id?"selected":"")+'>'+esc(v.title)+'</option>').join("")});
+}
+function playVideo(id){
+  const v=videos.find(x=>x.id==id);if(!v)return;
+  $("playerBox").style.display="flex";
+  $("preview").src=API+"/media/"+String(v.object_key||"").split("/").map(encodeURIComponent).join("/");
+  if(plyr)plyr.destroy();
+  plyr=new Plyr("#preview",{controls:["play-large","play","progress","current-time","mute","volume","settings","fullscreen"],settings:["speed"],speed:{selected:1,options:[.75,1,1.25,1.5,2]}});
+  $("preview").play().catch(()=>{});
+}
+function closePlayer(){if(plyr){plyr.stop();plyr.destroy();plyr=null}$("preview").removeAttribute("src");$("preview").load();$("playerBox").style.display="none"}
+$("closePlayer").onclick=closePlayer;
+async function delVideo(id){if(!confirm("¿Borrar este video?"))return;try{await api("/api/admin/video/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});await loadVideos();await loadSchedule()}catch(e){alert(e.message)}}
+$("upload").onclick=async()=>{
+  const f=$("file").files[0];if(!f){$("uploadMsg").textContent="Elegí un video.";return}
+  $("uploadMsg").textContent="Subiendo…";$("progress").classList.remove("hidden");$("progress").value=0;
+  try{
+    const fd=new FormData();fd.append("file",f);fd.append("title",$("title").value);fd.append("categoryId",$("category").value);fd.append("videoType",$("type").value);
+    const h={};if(ADMIN_TOKEN)h.Authorization="Bearer "+ADMIN_TOKEN;
+    const r=await fetch(API+"/api/admin/upload?_"+Date.now(),{method:"POST",body:fd,headers:h,cache:"no-store"});
+    let d={};try{d=await r.json()}catch(_){}
+    if(!r.ok)throw Error(d.error||"No se pudo subir");
+    $("progress").value=100;$("uploadMsg").textContent="Video subido correctamente.";$("file").value="";$("title").value="";await loadVideos();
+  }catch(e){$("uploadMsg").textContent=e.message}
+};
+document.querySelectorAll("[data-channel]").forEach(b=>b.onclick=async()=>{try{await api("/api/admin/channel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:b.dataset.channel})});await loadChannel()}catch(e){alert(e.message)}});
+$("addSchedule").onclick=()=>{const box=$("schedule"),row=document.createElement("div");row.className="row";row.style.margin="6px 0";row.innerHTML='<input class="stime" value="00:00" placeholder="HH:MM"><select class="svid">'+videos.map(v=>'<option value="'+v.id+'">'+esc(v.title)+'</option>').join("")+'</select>';box.appendChild(row)};
+$("saveSchedule").onclick=async()=>{const times=[...document.querySelectorAll(".stime")],sels=[...document.querySelectorAll(".svid")];const items=sels.map((s,i)=>({videoId:Number(s.value),startTime:times[i].value.trim()}));try{await api("/api/admin/schedule",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items})});$("scheduleMsg").textContent="Programación guardada.";await loadSchedule()}catch(e){$("scheduleMsg").textContent=e.message}};
+$("refresh").onclick=loadAll;$("search").oninput=()=>{videoPage=0;renderVideos()};$("prev").onclick=()=>{videoPage--;renderVideos()};$("next").onclick=()=>{videoPage++;renderVideos()};
+function fmt(s){s=Number(s||0);if(!s)return"Duración no registrada";const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=Math.floor(s%60);return(h?h+":":"")+(h?String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0")}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+boot();
+</script>
+</body>
+</html>
