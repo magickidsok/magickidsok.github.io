@@ -27,7 +27,7 @@ progress{width:100%;height:8px}
 </head>
 <body>
 <div class="wrap">
-<header class="top"><div><div class="logo">MAGIC KIDS</div><div>Panel simple de videos y programación</div></div><div class="row" style="justify-content:flex-end"><span class="pill">FOX KIDS / MP4 / RANGE 206</span><span id="server" class="pill">● comprobando…</span></div></header>
+<header class="top"><div><div class="logo">MAGIC KIDS</div><div>Panel privado de videos · MP4 / Range 206</div></div><div class="row" style="justify-content:flex-end"><span class="pill">FOX KIDS / MP4 / RANGE 206</span><span id="server" class="pill">● comprobando…</span></div></header>
 
 <section id="login" class="card login">
 <h2 style="margin-top:0">Panel Magic Kids</h2>
@@ -117,7 +117,7 @@ function showApp(){$("login").classList.add("hidden");$("app").classList.remove(
 $("enter").onclick=async()=>{
   const msg=$("loginMsg");msg.textContent="Conectando…";
   try{
-    await api("/api/admin/master-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:$("code").value.trim()})});
+    await api("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:$("code").value.trim()})});
     showApp();msg.textContent="";await loadAll();
   }catch(e){msg.textContent=e.message}
 };
