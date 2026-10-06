@@ -19,13 +19,11 @@ jobs:
         with:
           dotnet-version: "8.0.x"
       - name: Publish app
-        id: publish
         shell: powershell
         run: |
-          dotnet publish MagicKidsPanel.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o publish *> publish.log
+          cmd /c "dotnet publish MagicKidsPanel.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o publish > publish.log 2>&1"
+          if ($LASTEXITCODE -ne 0) { Get-Content publish.log; exit $LASTEXITCODE }
           Get-Content publish.log
-          "exit_code=$LASTEXITCODE" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          exit 0
       - name: Upload diagnostic log
         if: always()
         uses: actions/upload-artifact@v4
@@ -33,12 +31,7 @@ jobs:
           name: MagicKidsPanel-publish-log
           path: MagicKidsPanelWindows/publish.log
           retention-days: 7
-      - name: Fail if publish failed
-        if: steps.publish.outputs.exit_code != '0'
-        shell: powershell
-        run: exit 1
       - name: Install Inno Setup
-        if: steps.publish.outputs.exit_code == '0'
         shell: powershell
         run: choco install innosetup --yes --no-progress
       - name: Build installer
