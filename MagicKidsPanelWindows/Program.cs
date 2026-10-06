@@ -322,7 +322,7 @@ sealed class MainForm : Form
     readonly Dictionary<string, DataGridView> categoryGrids = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, int> categoryIds = new(StringComparer.OrdinalIgnoreCase);
     CancellationTokenSource? uploadCts;
-    Timer? refreshTimer;
+    System.Windows.Forms.Timer? refreshTimer;
 
     public MainForm()
     {
@@ -851,8 +851,8 @@ sealed class MainForm : Form
 
     void StartRefreshTimer()
     {
-        refreshTimer?.Dispose();
-        refreshTimer = new Timer { Interval = 5000 };
+        refreshTimer?.Stop();refreshTimer?.Dispose();
+        refreshTimer = new System.Windows.Forms.Timer { Interval = 5000 };
         refreshTimer.Tick += async (_, _) =>
         {
             try
