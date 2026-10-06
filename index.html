@@ -1,1 +1,132 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#03164b"><meta name="description" content="Magic Kids TV — entretenimiento infantil online."><meta name="robots" content="index,follow"><link rel="manifest" href="manifest.json"><link rel="icon" href="assets/magic-player-logo.webp"><link rel="preconnect" href="https://vjs.zencdn.net"><link rel="preconnect" href="https://uifchrnvigkzantaehgz.supabase.co"><link href="https://vjs.zencdn.net/8.24.0/video-js.css" rel="stylesheet"><link href="magic-public.css" rel="stylesheet"><title>Magic Kids TV</title></head><body><header class="top"><div class="container"><div class="brand"><img src="assets/magic-kids-logo.webp" alt="Magic Kids"></div><div class="sub">MAGIC KIDS TV · SIEMPRE CON VOS</div></div></header><main class="container"><div class="ticker" aria-label="Donadores"><div class="ticker-track"><span>MARTIN <b>DONÓ $4.000</b></span><span>FLORENCIA <b>DONÓ</b></span><span>LEO <b>DONÓ $2.500</b></span><span>CARLA <b>DONÓ $3.000</b></span><span>MARTIN <b>DONÓ $4.000</b></span><span>FLORENCIA <b>DONÓ</b></span><span>LEO <b>DONÓ $2.500</b></span><span>CARLA <b>DONÓ $3.000</b></span></div></div><section class="hero"><div class="hero-grid"><div class="player-card"><div class="player-wrap"><video id="mk-player" class="video-js vjs-default-skin" controls playsinline preload="metadata"><p class="vjs-no-js">Para ver Magic Kids necesitás JavaScript habilitado.</p></video><img class="player-logo" src="assets/magic-player-logo.webp" alt=""></div><div id="player-status" class="video-status">Preparando reproductor…</div><div class="below"><div class="show-card card"><h3>ESTAMOS VIENDO</h3><p id="now-title">Magic Kids TV</p></div><div class="show-card card"><h3>MÁS TARDE</h3><p id="later-title">Próximamente</p></div></div></div><aside class="side"><div class="card"><h2>Compartí Magic Kids</h2><p>Mandale la página a tus amigos desde cualquier teléfono.</p><div class="btn-row"><button id="shareBtn" class="btn primary share">COMPARTIR PÁGINA</button></div></div><div class="card"><h2>Apoyá a Magic Kids</h2><div class="donation-row"><span>ALIAS</span><strong class="alias">MAGICKIDS.OK</strong></div><div class="donation-row"><span>BANCO</span><strong>BRUBANK</strong></div><div class="donation-row"><span>A NOMBRE DE</span><strong>MARCELO GOMEZ</strong></div><div class="btn-row"><button id="copyAlias" class="btn primary">COPIAR ALIAS</button></div><p class="small">Tu aporte ayuda a mantener la señal y el sitio online.</p></div><div class="card"><h2>Redes</h2><div class="socials"><a href="https://instagram.com/elmagictvok" target="_blank" rel="noopener">INSTAGRAM · @ELMAGICTVOK</a><a href="https://www.tiktok.com/@elmagictvok" target="_blank" rel="noopener">TIKTOK · @ELMAGICTVOK</a></div></div></aside></div></section><section class="section"><div class="card chat-card"><h2>CHAT MAGIC KIDS</h2><p class="small">Sin registro. Texto solamente: no se permiten imágenes, emojis ni enlaces.</p><div id="chatWindow" class="chat-window"><div class="loading">Cargando chat…</div></div><form id="chatForm" class="chat-form"><input id="nick" class="chat-name" maxlength="24" required placeholder="Tu nombre"><input id="message" class="chat-input" maxlength="240" required placeholder="Escribí un mensaje…" autocomplete="off"><button class="btn primary" type="submit">ENVIAR</button></form><div id="chatStatus" class="small" style="margin-top:7px"></div></div></section></main><footer><div>MAGIC KIDS · MAGICKIDSOK.ONLINE</div><div class="footer-links"><a href="magic-admin.html">Panel privado</a></div></footer><script src="https://vjs.zencdn.net/8.24.0/video.min.js"></script><script src="magic-config.js"></script><script src="magic-public.js" defer></script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#03164b">
+<meta name="description" content="Magic Kids TV — entretenimiento infantil online.">
+<meta name="robots" content="index,follow">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/magic-player-logo.webp">
+<link rel="preconnect" href="https://vjs.zencdn.net">
+<link rel="preconnect" href="https://uifchrnvigkzantaehgz.supabase.co">
+<link href="https://vjs.zencdn.net/8.24.0/video-js.css" rel="stylesheet">
+<link href="magic-public.css" rel="stylesheet">
+<title>Magic Kids TV</title>
+<style>
+.hidden{display:none!important}
+.admin-shell{margin-top:14px}
+.admin-lock,.admin-panel{background:linear-gradient(180deg,rgba(7,29,84,.96),rgba(4,18,59,.94));border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px;padding:16px}
+.admin-lock h3,.admin-panel h3{margin:0 0 8px}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.admin-row{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08);display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start}
+.admin-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.btn.mini{padding:7px 9px;font-size:.74rem}
+.danger{background:#7f1830!important}
+.field{width:100%;padding:10px 11px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.2);color:#fff;outline:none;margin:5px 0 8px}
+.admin-gold,.admin-name strong{color:#ffd21a}
+.crown{font-size:.9rem;margin-right:4px}
+.admin-message-text{margin-top:3px;line-height:1.4}
+.pill{font-size:.72rem;color:var(--muted);margin-top:2px}
+.admin-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.admin-toolbar>*{flex:1}
+.admin-help{margin:0 0 8px;color:var(--muted);font-size:.82rem}
+@media(max-width:760px){.admin-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}.admin-actions{justify-content:flex-start}.admin-toolbar>*{flex-basis:100%}}
+</style>
+</head>
+<body>
+<header class="top">
+<div class="container">
+<div class="brand"><img src="assets/magic-kids-logo.webp" alt="Magic Kids"></div>
+<div class="sub">MAGIC KIDS TV · SIEMPRE CON VOS</div>
+</div>
+</header>
+
+<main class="container">
+<div class="ticker" aria-label="Donadores"><div class="ticker-track"><span>MARTIN <b>DONÓ $4.000</b></span><span>FLORENCIA <b>DONÓ</b></span><span>LEO <b>DONÓ $2.500</b></span><span>CARLA <b>DONÓ $3.000</b></span><span>MARTIN <b>DONÓ $4.000</b></span><span>FLORENCIA <b>DONÓ</b></span><span>LEO <b>DONÓ $2.500</b></span><span>CARLA <b>DONÓ $3.000</b></span></div></div>
+
+<section class="hero">
+<div class="hero-grid">
+<div class="player-card">
+<div class="player-wrap">
+<video id="mk-player" class="video-js vjs-default-skin" controls playsinline preload="metadata"><p class="vjs-no-js">Para ver Magic Kids necesitás JavaScript habilitado.</p></video>
+<img class="player-logo" src="assets/magic-player-logo.webp" alt="">
+</div>
+<div id="player-status" class="video-status">Preparando reproductor…</div>
+<div class="below">
+<div class="show-card card"><h3>ESTAMOS VIENDO</h3><p id="now-title">Magic Kids TV</p></div>
+<div class="show-card card"><h3>MÁS TARDE</h3><p id="later-title">Próximamente</p></div>
+</div>
+</div>
+
+<aside class="side">
+<div class="card"><h2>Compartí Magic Kids</h2><p>Mandale la página a tus amigos desde cualquier teléfono.</p><div class="btn-row"><button id="shareBtn" class="btn primary share">COMPARTIR PÁGINA</button></div></div>
+<div class="card"><h2>Apoyá a Magic Kids</h2><div class="donation-row"><span>ALIAS</span><strong class="alias">MAGICKIDS.OK</strong></div><div class="donation-row"><span>BANCO</span><strong>BRUBANK</strong></div><div class="donation-row"><span>A NOMBRE DE</span><strong>MARCELO GOMEZ</strong></div><div class="btn-row"><button id="copyAlias" class="btn primary">COPIAR ALIAS</button></div><p class="small">Tu aporte ayuda a mantener la señal y el sitio online.</p></div>
+<div class="card"><h2>Redes</h2><div class="socials"><a href="https://instagram.com/elmagictvok" target="_blank" rel="noopener">INSTAGRAM · @ELMAGICTVOK</a><a href="https://www.tiktok.com/@elmagictvok" target="_blank" rel="noopener">TIKTOK · @ELMAGICTVOK</a></div></div>
+</aside>
+</div>
+</section>
+
+<section class="section">
+<div class="card chat-card">
+<h2>CHAT MAGIC KIDS</h2>
+<p class="small">Sin registro. Texto solamente: no se permiten imágenes, emojis ni enlaces.</p>
+<div id="chatWindow" class="chat-window"><div class="loading">Conectando al chat…</div></div>
+<form id="chatForm" class="chat-form">
+<input id="nick" class="chat-name" maxlength="24" required placeholder="Tu nombre">
+<input id="message" class="chat-input" maxlength="240" required placeholder="Escribí un mensaje…" autocomplete="off">
+<button class="btn primary" type="submit">ENVIAR</button>
+</form>
+<div id="chatStatus" class="small" style="margin-top:7px">Conectando...</div>
+
+<div class="btn-row" style="margin-top:12px">
+<button id="adminBtn" class="btn" type="button"><span class="crown">👑</span> ADMINISTRADOR</button>
+</div>
+
+<div id="adminArea" class="admin-shell hidden">
+<div id="adminLock" class="admin-lock">
+<h3>Acceso de administrador</h3>
+<p class="admin-help">El administrador puede publicar con corona dorada, borrar mensajes y bloquear/desbloquear usuarios.</p>
+<input id="adminPassword" class="field" type="password" autocomplete="current-password" placeholder="Contraseña de administrador">
+<button id="adminLogin" class="btn primary" type="button">ENTRAR</button>
+<div id="adminLoginMsg" class="small" style="margin-top:8px"></div>
+</div>
+
+<div id="adminPanel" class="admin-panel hidden">
+<div class="admin-toolbar">
+<button id="adminLogout" class="btn" type="button">CERRAR SESIÓN</button>
+<button id="clearChat" class="btn danger" type="button">BORRAR TODO EL CHAT</button>
+</div>
+<div id="adminStatus" class="small" style="margin-top:8px"></div>
+
+<div class="admin-grid" style="margin-top:14px">
+<div class="card">
+<h3>Publicar como <span class="admin-gold">👑 MAGIC KIDS</span></h3>
+<input id="adminMessage" class="field" maxlength="240" placeholder="Mensaje del administrador">
+<button id="adminSend" class="btn primary" type="button">PUBLICAR</button>
+<div id="adminSendStatus" class="small" style="margin-top:8px"></div>
+</div>
+
+<div class="card">
+<h3>Usuarios y mensajes</h3>
+<div id="adminMessages" class="table" style="max-height:360px;overflow:auto"></div>
+</div>
+
+<div class="card">
+<h3>Usuarios bloqueados</h3>
+<div id="bans" class="table" style="max-height:260px;overflow:auto"></div>
+<div id="clearStatus" class="small" style="margin-top:8px"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+
+<footer><div>MAGIC KIDS · MAGICKIDSOK.ONLINE</div></footer>
+<script src="https://vjs.zencdn.net/8.24.0/video.min.js"></script>
+<script src="magic-config.js"></script>
+<script src="magic-public.js" defer></script>
+</body>
+</html>
