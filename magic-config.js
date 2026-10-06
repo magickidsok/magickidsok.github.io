@@ -1,0 +1,1 @@
+window.MK_CONFIG={chatApi:'https://uifchrnvigkzantaehgz.supabase.co/functions/v1/chat-api',demoVideo:'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'};
