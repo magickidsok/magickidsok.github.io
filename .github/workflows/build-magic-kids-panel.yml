@@ -20,10 +20,7 @@ jobs:
           dotnet-version: "8.0.x"
       - name: Publish app
         shell: powershell
-        run: |
-          cmd /c "dotnet publish MagicKidsPanel.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o publish > publish.log 2>&1"
-          if ($LASTEXITCODE -ne 0) { Get-Content publish.log; exit $LASTEXITCODE }
-          Get-Content publish.log
+        run: dotnet publish MagicKidsPanel.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o publish
       - name: Upload diagnostic log
         if: always()
         uses: actions/upload-artifact@v4
