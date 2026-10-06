@@ -89,7 +89,7 @@ progress{width:100%;height:8px}
 <script>
 const API="https://magickidsok-github-io.elmagickids.workers.dev";
 const $=id=>document.getElementById(id);
-let videos=[],categories=[],plyr=null,videoPage=0;const PAGE_SIZE=30;
+let videos=[],categories=[],plyr=null,videoPage=0;const PAGE_SIZE=30;let ADMIN_TOKEN=localStorage.getItem("mk_admin_token")||"";
 
 async function api(path,opt={}){
   const c=new AbortController(), t=setTimeout(()=>c.abort(),10000);
@@ -118,7 +118,7 @@ function showApp(){$("login").classList.add("hidden");$("app").classList.remove(
 $("enter").onclick=async()=>{
   const msg=$("loginMsg");msg.textContent="Conectando…";
   try{
-    const accessCode=$("code").value.trim();let logged=false;try{await api("/api/admin/master-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:accessCode}));logged=true}catch(masterErr){try{await api("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:accessCode})});logged=true}catch(pinErr){throw new Error(masterErr.message||pinErr.message||"Código incorrecto.")}}
+    const accessCode=$("code").value.trim();const auth=await api("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:accessCode})});if(!auth.token)throw new Error("El servidor no devolvió la sesión del administrador.");ADMIN_TOKEN=auth.token;localStorage.setItem("mk_admin_token",ADMIN_TOKEN);
     showApp();msg.textContent="";await loadAll();
   }catch(e){msg.textContent=e.message}
 };
