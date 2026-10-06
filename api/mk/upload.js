@@ -6,7 +6,8 @@ export default async function handler(request, response) {
   }
 
   try {
-    const body = request.body;
+    // Vercel's Blob client-upload handler expects the JSON HandleUploadBody.
+    const body = await request.json();
 
     const jsonResponse = await handleUpload({
       body,
