@@ -53,7 +53,7 @@ jobs:
       - name: Publish installer to site downloads
         shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path downloads | Out-Null
+          New-Item -ItemType Directory -Force -Path "..\downloads" | Out-Null
           Copy-Item "dist-installer\MagicKidsPanelSetup.exe" "..\downloads\MagicKidsPanelSetup.exe" -Force
       - name: Commit public installer
         shell: powershell
