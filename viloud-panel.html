@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Magic Video · Panel privado</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:14px Arial,Segoe UI,sans-serif;background:#f4f5f7;color:#25282d}
+button,input{font:inherit}.app{display:flex;min-height:100vh}.side{width:215px;background:#232427;color:#ddd;display:flex;flex-direction:column}.brand{height:60px;background:#1c1d20;padding:0 18px;display:flex;align-items:center;font-size:24px;font-weight:800}.brand span{color:#9299a2;font-size:19px;font-style:normal;margin-left:5px}.nav{padding:12px}.nav button{width:100%;border:0;background:none;color:#cfd3d8;text-align:left;padding:11px;border-radius:7px;margin:2px 0;cursor:pointer}.nav button.on,.nav button:hover{background:#34363a;color:#fff}.foot{margin-top:auto;padding:12px;color:#868d96;border-top:1px solid #32353a;font-size:11px}.main{flex:1;min-width:0}.top{height:60px;background:#fff;border-bottom:1px solid #e2e5e9;padding:0 18px;display:flex;align-items:center}.search{max-width:620px;width:55%}.search input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px}.content{padding:16px;display:flex;gap:16px;min-width:0}.left{width:360px;min-width:320px}.right{flex:1;min-width:0}.card{background:#fff;border:1px solid #e2e5e9;border-radius:8px;overflow:hidden;margin-bottom:14px}.head{padding:13px 14px;border-bottom:1px solid #e7e9ec;display:flex;align-items:center;justify-content:space-between;gap:8px}.head h3{margin:0;font-size:16px}.muted{color:#7c838c;font-size:11px}.btn{border:1px solid #d9dde1;background:#fff;border-radius:7px;padding:8px 11px;cursor:pointer}.btn.primary{background:#12abc0;border-color:#12abc0;color:#fff}.btn.danger{background:#fff;border-color:#d9534f;color:#b43a36}.btn.dark{background:#26282b;border-color:#26282b;color:#fff}.btn:disabled{opacity:.5;cursor:not-allowed}.channel{padding:12px 14px;display:flex;align-items:center;gap:9px;border-bottom:1px solid #eef0f2}.dot{width:30px;height:30px;border-radius:7px;background:#12abc0;color:#fff;display:grid;place-items:center;font-weight:800}.grow{flex:1;min-width:0}.grow b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.grow small{color:#90969e}.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.chip{padding:5px 8px;border:1px solid #e0e3e7;border-radius:999px;background:#fafbfc;font-size:10px}.bar{padding:12px 14px;border-top:1px solid #eef0f2;display:flex;gap:7px;flex-wrap:wrap}.library{padding:6px}.video{display:flex;align-items:center;gap:9px;padding:9px;border-bottom:1px solid #eef0f2;cursor:grab}.video:active{cursor:grabbing}.thumb{width:62px;height:38px;border-radius:4px;background:linear-gradient(135deg,#29364a,#17b8c7);color:#fff;display:grid;place-items:center;font-size:18px;flex:0 0 auto}.title{flex:1;min-width:0}.title b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title small{color:#8a9199;font-size:10px}.tools{display:flex;gap:3px}.tools button{border:0;background:none;color:#7d858e;padding:5px;cursor:pointer}.tools button:hover{color:#111}.order{padding:2px 7px;color:#8b9299;font-size:11px}.screen{background:#061017;padding:10px}.screen video{width:100%;aspect-ratio:16/9;background:#000;border-radius:6px;display:block}.screen .empty{aspect-ratio:16/9;border-radius:6px;display:grid;place-items:center;color:#89929d;background:#071016}.listempty{padding:22px;text-align:center;color:#8c949d}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px}.stat{background:#f7f8f9;border:1px solid #e5e7ea;border-radius:7px;padding:10px}.stat b{display:block;font-size:18px}.stat span{font-size:10px;color:#838a93}.upload{padding:14px}.upload input{width:100%;padding:9px;border:1px solid #dfe3e7;border-radius:7px;margin-bottom:9px}.drop{border:2px dashed #cfd5db;border-radius:8px;padding:18px;text-align:center;color:#747c85;margin-bottom:10px}.drop:hover{border-color:#12abc0}.progress{height:8px;background:#edf0f3;border-radius:99px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;width:0;background:#12abc0}.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px}.modal .box{background:#fff;border-radius:10px;width:min(560px,96vw);padding:16px}.modal.show{display:flex}.urlrow{display:flex;gap:8px}.urlrow input{flex:1}.notice{padding:10px 14px;border-bottom:1px solid #eef0f2;background:#fbfcfd;font-size:11px;color:#69717a}.ok{color:#168451}.bad{color:#b43a36}@media(max-width:1000px){.left{width:300px;min-width:280px}.search{width:70%}}@media(max-width:780px){.app{display:block}.side{width:100%;height:auto}.nav{display:flex;overflow:auto}.nav button{white-space:nowrap}.foot{display:none}.content{display:block}.left,.right{width:auto;min-width:0}.search{width:100%}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="modal" id="urlModal">
+  <div class="box">
+    <div class="head" style="padding:0 0 12px;border:0"><h3>Añadir video por URL</h3><button class="btn" id="closeUrl">Cerrar</button></div>
+    <input id="urlTitle" placeholder="Título del video" style="width:100%;padding:9px;border:1px solid #dfe3e7;border-radius:7px;margin-bottom:8px">
+    <input id="urlValue" placeholder="https://..." style="width:100%;padding:9px;border:1px solid #dfe3e7;border-radius:7px">
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px"><button class="btn primary" id="saveUrl">Agregar</button></div>
+  </div>
+</div>
+<script>
+const SUPA='https://uifchrnvigkzantaehgz.supabase.co';
+const PUB='sb_publishable_pN7752MhcIXDd7ZGLsp5Hw_DEPxDnSI';
+const KEY=new URLSearchParams(location.search).get('k')||'';
+const BUCKET='vp-videos';
+const MAX_FILE=50*1024*1024;
+const MAX_STORAGE=1024*1024*1024;
+if(KEY.length<24){document.body.innerHTML='<div style="max-width:700px;margin:15vh auto;padding:24px;text-align:center;font-family:Arial"><h2>Panel privado</h2><p>Usá el enlace privado correcto.</p></div>';throw new Error('missing key')}
+const H={'apikey':PUB,'Authorization':'Bearer '+PUB,'x-panel-key':KEY,'Content-Type':'application/json'};
+const qs=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const pathEnc=p=>p.split('/').map(encodeURIComponent).join('/');
+let channels=[],videos=[],items=[],channel=null,currentIndex=0;
+
+async function api(path,opt={}){const r=await fetch(SUPA+'/rest/v1/'+path,{...opt,headers:{...H,...(opt.headers||{})}});if(!r.ok)throw new Error((await r.text())||('HTTP '+r.status));return r.status===204?null:r.json()}
+async function del(path){return fetch(SUPA+'/rest/v1/'+path,{method:'DELETE',headers:H})}
+function pub(path){return SUPA+'/storage/v1/object/public/'+BUCKET+'/'+pathEnc(path)}
+function fmt(n){n=Number(n||0);if(!n)return '—';const u=['B','KB','MB','GB'];let i=0;while(n>=1024&&i<3){n/=1024;i++}return n.toFixed(i?1:0)+' '+u[i]}
+function tm(s){if(!Number.isFinite(Number(s)))return '—';s=Math.max(0,Math.round(Number(s)));return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s%3600/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+
+async function load(){
+  channels=await api('vp_channels?select=*&order=created_at.asc');
+  if(!channels.length) throw new Error('No se encontró el canal');
+  channel=channels[0];
+  videos=await api('vp_videos?select=*&order=sort_order.asc,created_at.asc');
+  items=await api('vp_channel_items?select=*&order=position.asc');
+  render();
+  testBackend();
+}
+async function testBackend(){const el=qs('#status');try{await api('vp_channels?select=id&limit=1');el.textContent='CONECTADO';el.className='chip ok'}catch(e){el.textContent='SIN CONEXIÓN';el.className='chip bad'}}
+function ordered(){const map=new Map(videos.map(v=>[v.id,v]));return items.filter(x=>x.channel_id===channel.id).sort((a,b)=>a.position-b.position).map(x=>map.get(x.video_id)).filter(Boolean)}
+function storageUsed(){return videos.reduce((a,v)=>a+Number(v.file_size||0),0)}
+function render(){
+  const list=ordered();
+  const pct=Math.min(100,storageUsed()/MAX_STORAGE*100);
+  app.innerHTML='<div class="app">'+
+  '<aside class="side"><div class="brand">Magic<span>Video</span></div><div class="nav">'+
+  '<button class="on">▤ &nbsp;Canales</button><button>▦ &nbsp;Videos</button><button>⇧ &nbsp;Subidas</button><button>◉ &nbsp;Emisiones en directo</button><button>▣ &nbsp;Webs</button><button>⌁ &nbsp;Estadísticas</button><button>⚙ &nbsp;Equipo</button></div><div class="foot">Panel privado · sin contraseña<br>Storage Supabase</div></aside>'+
+  '<main class="main"><div class="top"><div class="search"><input id="search" placeholder="Buscar contenido multimedia por título"></div></div>'+
+  '<div class="content"><section class="left">'+
+    '<div class="card"><div class="head"><h3>Canales</h3><span id="status" class="chip">COMPROBANDO</span></div>'+
+      channels.map(c=>'<div class="channel"><div class="dot">▶</div><div class="grow"><b>'+esc(c.name)+'</b><small>Canal lineal · bucle '+(c.loop_enabled?'activo':'inactivo')+'</small></div><span class="chip">'+list.length+' videos</span></div>').join('')+
+    '</div>'+
+    '<div class="card"><div class="head"><h3>Biblioteca</h3><button class="btn primary" id="uploadBtn">＋ Subir video</button></div><div class="notice">Máximo por archivo: 50 MB · Gratis: hasta 1 GB de Storage · También podés agregar URLs externas.</div>'+
+      '<div class="upload"><div class="drop" id="drop">Arrastrá MP4/WebM/MOV acá o elegí un archivo<input id="file" type="file" accept="video/mp4,video/webm,video/quicktime" style="display:none"></div><button class="btn" id="urlBtn" style="width:100%">＋ Añadir URL externa</button><div id="upmsg" class="muted" style="margin-top:8px"></div></div>'+
+    '</div>'+
+    '<div class="card"><div class="head"><h3>Almacenamiento</h3><span class="chip">'+fmt(storageUsed())+' / 1 GB</span></div><div style="padding:0 14px 14px"><div class="progress"><i style="width:'+pct+'%"></i></div><div class="muted" style="margin-top:7px">'+fmt(storageUsed())+' usados</div></div></div>'+
+  '</section>'+
+  '<section class="right">'+
+    '<div class="card"><div class="head"><div><h3>'+esc(channel.name)+'</h3><span class="muted">Coordinación de medios: orden manual</span></div><div style="display:flex;gap:6px"><button class="btn" id="clear">Vaciar</button><button class="btn primary" id="preview">▶ Vista previa</button></div></div>'+
+      '<div class="stats"><div class="stat"><b>'+list.length+'</b><span>contenidos</span></div><div class="stat"><b>'+tm(list.reduce((a,v)=>a+Number(v.duration_seconds||0),0))+'</b><span>duración total</span></div><div class="stat"><b>'+(channel.loop_enabled?'SÍ':'NO')+'</b><span>bucle</span></div></div>'+
+      '<div class="screen"><video id="pv" controls playsinline style="display:none"></video><div id="empty" class="empty">Agregá videos y arrastralos para ordenar el canal.</div></div>'+
+      '<div class="bar"><span class="chip">↕ Arrastrá para ordenar</span><button class="btn" id="loop">'+(channel.loop_enabled?'✓ Bucle activo':'Bucle apagado')+'</button><span class="grow"></span><button class="btn dark" id="saveOrder">Guardar orden</button></div>'+
+      '<div class="library" id="playlist">'+(list.length?list.map((v,i)=>'<div class="video" draggable="true" data-id="'+v.id+'"><div class="order">'+(i+1)+'.</div><div class="thumb">▶</div><div class="title"><b>'+esc(v.title)+'</b><small>'+tm(v.duration_seconds)+' · '+esc(v.source_type==='url'?'URL externa':fmt(v.file_size))+'</small></div><div class="tools"><button data-play="'+v.id+'" title="Ver">▶</button><button data-rem="'+v.id+'" title="Quitar">×</button></div></div>').join(''):'<div class="listempty">No hay videos todavía.</div>')+'</div>'+
+    '</div>'+
+    '<div class="card"><div class="head"><h3>Buscar videos</h3></div><div class="library" id="all">'+videos.map(v=>'<div class="video" draggable="false"><div class="thumb">▶</div><div class="title"><b>'+esc(v.title)+'</b><small>'+fmt(v.file_size)+' · '+esc(v.source_type==='url'?'URL externa':'subido')+'</small></div><div class="tools"><button data-add="'+v.id+'">＋</button></div></div>').join('')||'<div class="listempty">La biblioteca está vacía.</div>'+'</div></div>'+
+  '</section></div></main></div>';
+  wire(list);
+}
+function wire(list){
+  qs('#uploadBtn').onclick=()=>qs('#file').click();
+  qs('#drop').onclick=e=>{if(e.target.id==='drop')qs('#file').click()};
+  qs('#drop').ondragover=e=>{e.preventDefault();qs('#drop').style.borderColor='#12abc0'};
+  qs('#drop').ondragleave=()=>qs('#drop').style.borderColor='';
+  qs('#drop').ondrop=e=>{e.preventDefault();qs('#drop').style.borderColor='';if(e.dataTransfer.files[0]) upload(e.dataTransfer.files[0])};
+  qs('#file').onchange=e=>{if(e.target.files[0]) upload(e.target.files[0])};
+  qs('#urlBtn').onclick=()=>qs('#urlModal').classList.add('show');
+  qs('#closeUrl').onclick=()=>qs('#urlModal').classList.remove('show');
+  qs('#saveUrl').onclick=addUrl;
+  qs('#preview').onclick=()=>playChannel(list);
+  qs('#clear').onclick=clearChannel;
+  qs('#loop').onclick=toggleLoop;
+  qs('#saveOrder').onclick=saveOrder;
+  document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addToChannel(b.dataset.add));
+  document.querySelectorAll('[data-rem]').forEach(b=>b.onclick=()=>removeFromChannel(b.dataset.rem));
+  document.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>{const v=videos.find(x=>x.id===b.dataset.play);if(v)previewOne(v)});
+  let dragId=null;
+  document.querySelectorAll('#playlist [draggable]').forEach(el=>{
+    el.ondragstart=()=>dragId=el.dataset.id;
+    el.ondragover=e=>e.preventDefault();
+    el.ondrop=e=>{e.preventDefault();const target=el.dataset.id;if(!dragId||target===dragId)return;const ids=list.map(v=>v.id);const a=ids.indexOf(dragId),b=ids.indexOf(target);ids.splice(b,0,ids.splice(a,1)[0]);reorderLocal(ids)}
+  });
+  qs('#search').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#all .video').forEach(x=>x.style.display=x.textContent.toLowerCase().includes(q)?'flex':'none')};
+}
+async function reorderLocal(ids){items=ids.map((id,i)=>({channel_id:channel.id,video_id:id,position:i}));render()}
+async function saveOrder(){try{await del('vp_channel_items?channel_id=eq.'+encodeURIComponent(channel.id));for(const it of items.filter(x=>x.channel_id===channel.id))await api('vp_channel_items',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(it)});msg('Orden guardado');await load()}catch(e){alert(e.message)}}
+async function addToChannel(id){if(items.some(x=>x.channel_id===channel.id&&x.video_id===id))return;const next=items.filter(x=>x.channel_id===channel.id).length;await api('vp_channel_items',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({channel_id:channel.id,video_id:id,position:next)});await load()}
+async function removeFromChannel(id){await del('vp_channel_items?channel_id=eq.'+encodeURIComponent(channel.id)+'&video_id=eq.'+encodeURIComponent(id));await normalize();await load()}
+async function clearChannel(){if(!confirm('¿Vaciar el canal?'))return;await del('vp_channel_items?channel_id=eq.'+encodeURIComponent(channel.id));await load()}
+async function normalize(){const ids=items.filter(x=>x.channel_id===channel.id).sort((a,b)=>a.position-b.position).map(x=>x.video_id);await del('vp_channel_items?channel_id=eq.'+encodeURIComponent(channel.id));for(let i=0;i<ids.length;i++)await api('vp_channel_items',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({channel_id:channel.id,video_id:ids[i],position:i})})}
+async function toggleLoop(){channel.loop_enabled=!channel.loop_enabled;await api('vp_channels?id=eq.'+encodeURIComponent(channel.id),{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({loop_enabled:channel.loop_enabled})});await load()}
+async function upload(file){
+  if(file.size>MAX_FILE){alert('El archivo supera 50 MB. Usá una URL externa o comprimilo.');return}
+  qs('#upmsg').textContent='Subiendo '+file.name+'…';const safe=file.name.replace(/[^a-zA-Z0-9._-]+/g,'-'),p=KEY+'/'+crypto.randomUUID()+'-'+safe;
+  const r=await fetch(SUPA+'/storage/v1/object/'+BUCKET+'/'+pathEnc(p),{method:'POST',headers:{...H,'Content-Type':file.type||'video/mp4','x-upsert':'false'},body:file});
+  if(!r.ok){qs('#upmsg').textContent='Error al subir: '+await r.text();return}
+  const duration=await getDuration(file),title=file.name.replace(/.[^.]+$/,'');
+  const v=await api('vp_videos',{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({title,object_path:p,source_type:'upload',duration_seconds:duration||0,file_size:file.size,mime_type:file.type||'video/mp4',sort_order:videos.length})});
+  const id=v[0].id;await api('vp_channel_items',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({channel_id:channel.id,video_id:id,position:items.filter(x=>x.channel_id===channel.id).length})});
+  qs('#upmsg').innerHTML='<span class="ok">✓ Subido correctamente</span>';await load()
+}
+function getDuration(file){return new Promise(res=>{const v=document.createElement('video');v.preload='metadata';v.onloadedmetadata=()=>{res(Number.isFinite(v.duration)?v.duration:0);URL.revokeObjectURL(v.src)};v.onerror=()=>res(0);v.src=URL.createObjectURL(file)})}
+async function addUrl(){
+  const title=qs('#urlTitle').value.trim(),url=qs('#urlValue').value.trim();if(!title||!/^https?:\/\//i.test(url)){alert('Completá título y una URL http/https.');return}
+  const v=await api('vp_videos',{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({title,source_url:url,source_type:'url',duration_seconds:0,file_size:0,mime_type:'video/mp4',sort_order:videos.length})});
+  const id=v[0].id;await api('vp_channel_items',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({channel_id:channel.id,video_id:id,position:items.filter(x=>x.channel_id===channel.id).length})});
+  qs('#urlModal').classList.remove('show');qs('#urlTitle').value='';qs('#urlValue').value='';await load()
+}
+async function deleteVideo(id){
+  const v=videos.find(x=>x.id===id);if(!v||!confirm('¿Eliminar este video?'))return;
+  await del('vp_channel_items?video_id=eq.'+encodeURIComponent(id));
+  if(v.object_path) await fetch(SUPA+'/storage/v1/object/'+BUCKET+'/'+pathEnc(v.object_path),{method:'DELETE',headers:H});
+  await del('vp_videos?id=eq.'+encodeURIComponent(id));await load()
+}
+function previewOne(v){const pv=qs('#pv');pv.style.display='block';qs('#empty').style.display='none';pv.src=v.source_type==='url'?v.source_url:pub(v.object_path);pv.play().catch(()=>{})}
+function playChannel(list){if(!list.length){alert('No hay videos en el canal.');return}const pv=qs('#pv');pv.style.display='block';qs('#empty').style.display='none';let i=0;const next=()=>{const v=list[i];pv.src=v.source_type==='url'?v.source_url:pub(v.object_path);pv.play().catch(()=>{});};pv.onended=()=>{i++;if(i>=list.length){if(channel.loop_enabled)i=0;else return}next()};next()}
+function msg(t){const el=document.createElement('div');el.textContent=t;el.style='position:fixed;right:15px;bottom:15px;background:#232427;color:#fff;padding:10px 13px;border-radius:8px;z-index:20';document.body.appendChild(el);setTimeout(()=>el.remove(),2200)}
+async function removeFromStorage(id){return deleteVideo(id)}
+window.removeFromChannel=removeFromChannel;
+window.addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(b)removeFromStorage(b.dataset.del)});
+load().catch(e=>{document.body.innerHTML='<div style="max-width:700px;margin:15vh auto;padding:24px;text-align:center;font-family:Arial"><h2>No se pudo iniciar el panel</h2><p>'+esc(e.message)+'</p></div>'});
+</script>
+</body>
+</html>
