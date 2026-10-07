@@ -8,11 +8,63 @@
 <div class="layout"><section class="card"><h2>Subir videos MP4</h2><div class="drop" id="drop"><strong>Arrastrá uno o varios MP4 acá</strong><span>La subida va directo a Vercel Blob. Podés seleccionar varios archivos y ver el progreso.</span><input id="files" type="file" accept="video/mp4,.mp4" multiple></div><div id="queue" class="queue"></div><div class="status" id="status"></div></section>
 <section class="card"><h2>Programación / canal</h2><div class="actions"><button class="btn primary" data-channel="live">EN VIVO</button><button class="btn" data-channel="paused">PAUSAR</button><button class="btn danger" data-channel="offair">DETENER</button></div><p class="help">El reproductor público conserva Video.js y su sincronización. Este panel administra biblioteca, orden y estado del canal.</p><h2 style="margin-top:14px">Logo / marca</h2><div class="water"><img src="https://raw.githubusercontent.com/magickidsok/magickidsok.github.io/main/assets/magic-player-logo.svg" alt="Magic Kids"><div><strong style="font-size:11px">MAGIC KIDS</strong><div class="help">Logo actual del reproductor público.</div></div></div></section></div>
 <section class="card" style="margin-top:12px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Biblioteca y programación</h2><button class="btn primary" id="saveSchedule">GUARDAR PROGRAMACIÓN</button></div><p class="help">Cambiar título, horario, orden, activar/desactivar y marcar comerciales. Los cambios se publican en el reproductor.</p><div id="schedule" class="schedule"></div></section>
+<section class="card" style="margin-top:12px;border-color:rgba(85,233,138,.28)">
+<h2>📡 MUXSHED · TV 24/7</h2>
+<p class="help">Conectá tu instancia Muxshed y desde este mismo panel podés subir videos, obtener el HLS/M3U8 y abrir la consola de Muxshed. El reproductor público de Magic Kids no se modifica.</p>
+<div class="row" style="grid-template-columns:1fr 1fr auto auto">
+<input id="muxHost" class="field" placeholder="https://tu-muxshed.example.com">
+<input id="muxKey" class="field" type="password" placeholder="API Key de Muxshed">
+<button class="btn primary" id="muxConnect">CONECTAR</button>
+<button class="btn" id="muxOpen">ABRIR</button>
+</div>
+<div class="status" id="muxStatus"></div>
+<div id="muxTools" style="display:none;margin-top:9px">
+<div class="drop" id="muxDrop"><strong>Subir videos a Muxshed</strong><span>MP4 / WebM / MOV / MKV · límite actual de Muxshed: 500 MB por archivo.</span><input id="muxFiles" type="file" accept="video/mp4,video/webm,video/quicktime,video/x-matroska" multiple></div>
+<div id="muxQueue" class="queue"></div>
+<div class="linkbox" style="margin-top:9px"><input id="muxM3u8" class="field" readonly><button class="btn" id="muxCopy">COPIAR M3U8</button></div>
+</div>
+</section>
+
 <section class="card" style="margin-top:12px"><h2>Integración pública</h2><div class="linkbox"><input id="publicUrl" class="field" readonly value="https://magickidsok.online"><button class="btn" id="copyUrl">COPIAR</button></div><p class="help">Los MP4 quedan en Vercel Blob y Video.js los reproduce por HTTPS. La videoteca nueva no usa Cloudflare.</p></section>
 <div class="footer">Magic Kids · panel liviano · sin Java · sin contraseñas</div></div>
 <script type="module">
 import { upload } from 'https://esm.sh/@vercel/blob/client';
-const TEN_GB=10000000000;let catalog={videos:[],channel:{}};const $=id=>document.getElementById(id);
+const TEN_GB=10000000000;
+let muxChannel=null;
+function muxHeaders(){return {"X-API-Key":sessionStorage.getItem("mk_mux_key")||""}}
+async function muxConnect(){
+  const host=$("muxHost").value.trim().replace(/\\/$/,""),key=$("muxKey").value.trim();
+  if(!host||!key){$("muxStatus").textContent="Completá la URL y la API Key de Muxshed.";return}
+  sessionStorage.setItem("mk_mux_host",host);sessionStorage.setItem("mk_mux_key",key);
+  $("muxStatus").textContent="Conectando con Muxshed…";
+  try{
+    const r=await fetch(host+"/api/v1/channel",{headers:{"X-API-Key":key},cache:"no-store"});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    muxChannel=await r.json();
+    const m3u8=host+"/api/v1/public/channel/"+encodeURIComponent(muxChannel.token)+"/index.m3u8";
+    $("muxM3u8").value=m3u8;$("muxTools").style.display="block";
+    $("muxStatus").textContent="✓ MUXSHED CONECTADO · "+(muxChannel.title||"MAGIC KIDS");
+  }catch(e){$("muxStatus").textContent="Error Muxshed: "+e.message}
+}
+async function muxUpload(file){
+  const host=$("muxHost").value.trim().replace(/\\/$/,""),key=sessionStorage.getItem("mk_mux_key")||"";
+  const q=document.createElement("div");q.className="q";q.innerHTML="<div><small>"+esc(file.name)+"</small><div class='prog'><i></i></div></div><em>SUBIENDO</em>";$("muxQueue").appendChild(q);
+  const bar=q.querySelector("i"),pct=q.querySelector("em");
+  const form=new FormData();form.append("name",file.name);form.append("file",file,file.name);
+  const r=await fetch(host+"/api/v1/assets/upload",{method:"POST",headers:{"X-API-Key":key},body:form});
+  if(!r.ok){const t=await r.text().catch(()=>"" );throw new Error("HTTP "+r.status+(t?": "+t.slice(0,120):""))}
+  bar.style.width="100%";pct.textContent="OK";
+}
+$("muxConnect").onclick=muxConnect;
+$("muxOpen").onclick=()=>{const h=$("muxHost").value.trim();if(h)window.open(h,"_blank","noopener")};
+$("muxCopy").onclick=async()=>{const v=$("muxM3u8").value;if(v){await navigator.clipboard.writeText(v);$("muxStatus").textContent="M3U8 copiada."}};
+$("muxDrop").onclick=()=>$("muxFiles").click();
+$("muxDrop").ondragover=e=>{e.preventDefault();$("muxDrop").classList.add("drag")};
+$("muxDrop").ondragleave=()=>$("muxDrop").classList.remove("drag");
+$("muxDrop").ondrop=e=>{e.preventDefault();$("muxDrop").classList.remove("drag");[...e.dataTransfer.files].forEach(muxUpload)};
+$("muxFiles").onchange=()=>[...$("muxFiles").files].forEach(muxUpload);
+(function restoreMux(){const h=sessionStorage.getItem("mk_mux_host"),k=sessionStorage.getItem("mk_mux_key");if(h)$("muxHost").value=h;if(k)$("muxKey").value=k})();
+let catalog={videos:[],channel:{}};const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const bytes=n=>{n=Number(n)||0;if(n<1048576)return (n/1024).toFixed(0)+' KB';if(n<1073741824)return (n/1048576).toFixed(1)+' MB';return (n/1073741824).toFixed(2)+' GB'};
 const duration=s=>{s=Math.max(0,Number(s)||0);return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')};
