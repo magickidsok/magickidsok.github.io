@@ -1,0 +1,1 @@
+{"name":"magic-kids-panel","private":true,"version":"1.0.0","type":"module","scripts":{"build":"vite build","dev":"vite","preview":"vite preview"},"dependencies":{"@supabase/supabase-js":"^2.58.0","@vercel/blob":"^2.0.0","react":"^19.1.0","react-dom":"^19.1.0"},"devDependencies":{"@vitejs/plugin-react":"^5.0.4","typescript":"^5.9.2","vite":"^7.1.7"}}
