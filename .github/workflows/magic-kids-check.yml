@@ -13,5 +13,7 @@ jobs:
       - run: node --check magic-public.js
       - run: node --check magic-panel/app.js
       - run: node --check magic-config.js
-      - run: "! grep -q "settings();" magic-public.js"
-      - run: "grep -q "magic-player-logo.webp" index.html"
+      - shell: bash
+        run: "! grep -q 'settings();' magic-public.js"
+      - shell: bash
+        run: "grep -q 'magic-player-logo.webp' index.html"
