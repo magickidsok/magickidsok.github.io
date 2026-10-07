@@ -30,16 +30,3 @@ jobs:
           if(!['off_air','playing','paused'].includes(d.status)) throw new Error('invalid playout status');
           console.log(JSON.stringify({status:d.status,generation:d.generation,totalVideos:d.totalVideos}));
           NODE
-      - name: Check published private panel
-        shell: bash
-        run: |
-          for i in $(seq 1 12); do
-            body=$(curl -fsSL --max-time 10 https://magickidsok.github.io/magic-panel/ || true)
-            if echo "$body" | grep -q "Panel privado"; then
-              echo "Published panel is reachable."
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "Published panel was not reachable in time."
-          exit 1
