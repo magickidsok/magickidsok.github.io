@@ -20,127 +20,198 @@ button,input{font:inherit}.app{display:flex;min-height:100vh}.side{width:215px;b
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px"><button class="btn primary" id="saveUrl">Agregar</button></div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js"></script>
 <script>
 const SUPA='https://uifchrnvigkzantaehgz.supabase.co';
+const API=SUPA+'/functions/v1/viloud-panel-api';
 const PUB='sb_publishable_pN7752MhcIXDd7ZGLsp5Hw_DEPxDnSI';
 const KEY=new URLSearchParams(location.search).get('k')||'';
 const BUCKET='vp-videos';
 const MAX_FILE=50*1024*1024;
 const MAX_STORAGE=1024*1024*1024;
-if(KEY.length<24){document.body.innerHTML='<div style="max-width:700px;margin:15vh auto;padding:24px;text-align:center;font-family:Arial"><h2>Panel privado</h2><p>Usá el enlace privado correcto.</p></div>';throw new Error('missing key')}
-const H={'apikey':PUB,'Authorization':'Bearer '+PUB,'x-panel-key':KEY,'Content-Type':'application/json'};
-const qs=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-const pathEnc=p=>p.split('/').map(encodeURIComponent).join('/');
-let channels=[],videos=[],items=[],channel=null,currentIndex=0;
+const TUS='https://uifchrnvigkzantaehgz.storage.supabase.co/storage/v1/upload/resumable';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const enc=s=>encodeURIComponent(s);
+const fmt=n=>{n=Number(n||0);if(!n)return '—';const u=['B','KB','MB','GB'];let i=0;while(n>=1024&&i<3){n/=1024;i++}return n.toFixed(i?1:0)+' '+u[i]};
+const tm=s=>{if(!Number.isFinite(Number(s)))return '00:00:00';s=Math.max(0,Math.round(Number(s)));return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s%3600/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+let channels=[],videos=[],items=[],channel=null;
 
-async function api(path,opt={}){const r=await fetch(SUPA+'/rest/v1/'+path,{...opt,headers:{...H,...(opt.headers||{})}});if(!r.ok)throw new Error((await r.text())||('HTTP '+r.status));return r.status===204?null:r.json()}
-async function del(path){return fetch(SUPA+'/rest/v1/'+path,{method:'DELETE',headers:H})}
-function pub(path){return SUPA+'/storage/v1/object/public/'+BUCKET+'/'+pathEnc(path)}
-function fmt(n){n=Number(n||0);if(!n)return '—';const u=['B','KB','MB','GB'];let i=0;while(n>=1024&&i<3){n/=1024;i++}return n.toFixed(i?1:0)+' '+u[i]}
-function tm(s){if(!Number.isFinite(Number(s)))return '—';s=Math.max(0,Math.round(Number(s)));return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s%3600/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
-
-async function load(){
-  channels=await api('vp_channels?select=*&order=created_at.asc');
-  if(!channels.length) throw new Error('No se encontró el canal');
-  channel=channels[0];
-  videos=await api('vp_videos?select=*&order=sort_order.asc,created_at.asc');
-  items=await api('vp_channel_items?select=*&order=position.asc');
-  render();
-  testBackend();
+if(KEY.length<24){document.body.innerHTML='<div style="font:14px Arial;padding:40px;max-width:620px;margin:10vh auto;text-align:center"><h2>Panel privado</h2><p>El enlace privado no es válido o está incompleto.</p></div>';throw new Error('missing key')}
+const headers=()=>({'apikey':PUB,'Authorization':'Bearer '+PUB,'x-panel-key':KEY,'Content-Type':'application/json'});
+async function api(path,opt={}){
+  const sep=path.includes('?')?'&':'?';
+  const r=await fetch(API+'/'+path+sep+'k='+enc(KEY),{...opt,headers:{...headers(),...(opt.headers||{})},cache:'no-store'});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
+  return d;
 }
-async function testBackend(){const el=qs('#status');try{await api('vp_channels?select=id&limit=1');el.textContent='CONECTADO';el.className='chip ok'}catch(e){el.textContent='SIN CONEXIÓN';el.className='chip bad'}}
-function ordered(){const map=new Map(videos.map(v=>[v.id,v]));return items.filter(x=>x.channel_id===channel.id).sort((a,b)=>a.position-b.position).map(x=>map.get(x.video_id)).filter(Boolean)}
+function pub(path){return SUPA+'/storage/v1/object/public/'+BUCKET+'/'+path.split('/').map(enc).join('/')}
+
+function toast(text,bad=false){
+  const t=document.createElement('div');t.textContent=text;t.style='position:fixed;right:16px;bottom:16px;background:'+(bad?'#b43a36':'#232427')+';color:#fff;padding:11px 14px;border-radius:8px;z-index:1000;box-shadow:0 5px 20px #0003';document.body.appendChild(t);setTimeout(()=>t.remove(),2600)
+}
+function showBootError(e){
+  const b=document.getElementById('boot');
+  b.style.display='block';b.innerHTML='<b>MAGIC VIDEO</b> · <span style="color:#b43a36">No se pudo conectar con el panel.</span><div style="margin-top:8px;color:#69717a;font-size:12px">'+esc(e.message||e)+'</div><button class="btn primary" style="margin-top:12px" onclick="location.reload()">Reintentar</button>';
+}
+async function load(){
+  try{
+    const s=await api('state');
+    channels=s.channels||[];videos=s.videos||[];items=s.items||[];
+    channel=channels[0]||null;
+    if(!channel)throw new Error('No se encontró el canal MAGIC KIDS.');
+    render();
+    const status=$('#status');if(status){status.textContent='CONECTADO';status.className='chip ok'}
+  }catch(e){showBootError(e);throw e}
+}
+function ordered(){
+  const map=new Map(videos.map(v=>[v.id,v]));
+  return items.filter(x=>x.channel_id===channel.id).sort((a,b)=>a.position-b.position).map(x=>map.get(x.video_id)).filter(Boolean);
+}
 function storageUsed(){return videos.reduce((a,v)=>a+Number(v.file_size||0),0)}
 function render(){
   const boot=document.getElementById('boot');if(boot)boot.style.display='none';
-  const list=ordered();
-  const pct=Math.min(100,storageUsed()/MAX_STORAGE*100);
-  app.innerHTML='<div class="app">'+
+  const list=ordered(),used=storageUsed(),pct=Math.min(100,used/MAX_STORAGE*100);
+  const totalDuration=list.reduce((a,v)=>a+Number(v.duration_seconds||0),0);
+  document.getElementById('app').innerHTML=
+  '<div class="app">'+
   '<aside class="side"><div class="brand">Magic<span>Video</span></div><div class="nav">'+
-  '<button class="on">▤ &nbsp;Canales</button><button>▦ &nbsp;Videos</button><button>⇧ &nbsp;Subidas</button><button>◉ &nbsp;Emisiones en directo</button><button>▣ &nbsp;Webs</button><button>⌁ &nbsp;Estadísticas</button><button>⚙ &nbsp;Equipo</button></div><div class="foot">Panel privado · sin contraseña<br>Storage Supabase</div></aside>'+
-  '<main class="main"><div class="top"><div class="search"><input id="search" placeholder="Buscar contenido multimedia por título"></div></div>'+
+  '<button class="on">▤ &nbsp;Canales</button><button onclick="document.getElementById(\'libraryCard\').scrollIntoView()">▦ &nbsp;Videos</button><button onclick="document.getElementById(\'uploadCard\').scrollIntoView()">⇧ &nbsp;Subidas</button><button>◉ &nbsp;Emisiones en directo</button><button>▣ &nbsp;Webs</button><button>⌁ &nbsp;Estadísticas</button><button>⚙ &nbsp;Equipo</button></div><div class="foot">Panel privado · sin contraseña<br>Supabase Storage · 1 GB</div></aside>'+
+  '<main class="main"><div class="top"><div class="search"><input id="search" placeholder="Buscar contenido multimedia por título"></div><span class="chip" style="margin-left:10px">● '+esc(channel.name)+'</span></div>'+
   '<div class="content"><section class="left">'+
-    '<div class="card"><div class="head"><h3>Canales</h3><span id="status" class="chip">COMPROBANDO</span></div>'+
-      channels.map(c=>'<div class="channel"><div class="dot">▶</div><div class="grow"><b>'+esc(c.name)+'</b><small>Canal lineal · bucle '+(c.loop_enabled?'activo':'inactivo')+'</small></div><span class="chip">'+list.length+' videos</span></div>').join('')+
+    '<div class="card"><div class="head"><h3>Canales</h3><span id="status" class="chip">CONECTADO</span></div>'+
+      '<div class="channel"><div class="dot">▶</div><div class="grow"><b>'+esc(channel.name)+'</b><small>Canal lineal · '+(channel.loop_enabled?'bucle activo':'bucle apagado')+'</small></div><span class="chip">'+list.length+' videos</span></div>'+
+      '<div class="bar"><button class="btn primary" id="preview">▶ Vista previa</button><button class="btn" id="loop">'+(channel.loop_enabled?'✓ Bucle activo':'Bucle apagado')+'</button></div>'+
     '</div>'+
-    '<div class="card"><div class="head"><h3>Biblioteca</h3><button class="btn primary" id="uploadBtn">＋ Subir video</button></div><div class="notice">Máximo por archivo: 50 MB · Gratis: hasta 1 GB de Storage · También podés agregar URLs externas.</div>'+
-      '<div class="upload"><div class="drop" id="drop">Arrastrá MP4/WebM/MOV acá o elegí un archivo<input id="file" type="file" accept="video/mp4,video/webm,video/quicktime" style="display:none"></div><button class="btn" id="urlBtn" style="width:100%">＋ Añadir URL externa</button><div id="upmsg" class="muted" style="margin-top:8px"></div></div>'+
-    '</div>'+
-    '<div class="card"><div class="head"><h3>Almacenamiento</h3><span class="chip">'+fmt(storageUsed())+' / 1 GB</span></div><div style="padding:0 14px 14px"><div class="progress"><i style="width:'+pct+'%"></i></div><div class="muted" style="margin-top:7px">'+fmt(storageUsed())+' usados</div></div></div>'+
+    '<div class="card" id="uploadCard"><div class="head"><h3>Biblioteca</h3><button class="btn primary" id="uploadBtn">＋ Subir video</button></div><div class="notice">MP4/WebM/MOV · máximo 50 MB por archivo · también podés agregar URL externa.</div><div class="upload"><div class="drop" id="drop">Arrastrá un video acá o hacé clic para elegir<input id="file" type="file" accept="video/mp4,video/webm,video/quicktime" multiple style="display:none"></div><button class="btn" id="urlBtn" style="width:100%">＋ Añadir URL externa</button><div id="upmsg" class="muted" style="margin-top:9px">Listo para subir.</div><div id="uploadList"></div></div></div>'+
+    '<div class="card"><div class="head"><h3>Almacenamiento</h3><span class="chip">'+fmt(used)+' / 1 GB</span></div><div style="padding:0 14px 14px"><div class="progress"><i style="width:'+pct+'%"></i></div><div class="muted" style="margin-top:7px">'+fmt(used)+' usados</div></div></div>'+
   '</section>'+
   '<section class="right">'+
-    '<div class="card"><div class="head"><div><h3>'+esc(channel.name)+'</h3><span class="muted">Coordinación de medios: orden manual</span></div><div style="display:flex;gap:6px"><button class="btn" id="clear">Vaciar</button><button class="btn primary" id="preview">▶ Vista previa</button></div></div>'+
-      '<div class="stats"><div class="stat"><b>'+list.length+'</b><span>contenidos</span></div><div class="stat"><b>'+tm(list.reduce((a,v)=>a+Number(v.duration_seconds||0),0))+'</b><span>duración total</span></div><div class="stat"><b>'+(channel.loop_enabled?'SÍ':'NO')+'</b><span>bucle</span></div></div>'+
-      '<div class="screen"><video id="pv" controls playsinline style="display:none"></video><div id="empty" class="empty">Agregá videos y arrastralos para ordenar el canal.</div></div>'+
-      '<div class="bar"><span class="chip">↕ Arrastrá para ordenar</span><button class="btn" id="loop">'+(channel.loop_enabled?'✓ Bucle activo':'Bucle apagado')+'</button><span class="grow"></span><button class="btn dark" id="saveOrder">Guardar orden</button></div>'+
-      '<div class="library" id="playlist">'+(list.length?list.map((v,i)=>'<div class="video" draggable="true" data-id="'+v.id+'"><div class="order">'+(i+1)+'.</div><div class="thumb">▶</div><div class="title"><b>'+esc(v.title)+'</b><small>'+tm(v.duration_seconds)+' · '+esc(v.source_type==='url'?'URL externa':fmt(v.file_size))+'</small></div><div class="tools"><button data-play="'+v.id+'" title="Ver">▶</button><button data-rem="'+v.id+'" title="Quitar">×</button></div></div>').join(''):'<div class="listempty">No hay videos todavía.</div>')+'</div>'+
+    '<div class="card"><div class="head"><div><h3>'+esc(channel.name)+'</h3><span class="muted">Playlist / coordinación de medios</span></div><div style="display:flex;gap:6px"><button class="btn" id="clear">Vaciar</button><button class="btn dark" id="saveOrder">Guardar orden</button></div></div>'+
+      '<div class="stats"><div class="stat"><b>'+list.length+'</b><span>contenidos</span></div><div class="stat"><b>'+tm(totalDuration)+'</b><span>duración total</span></div><div class="stat"><b>'+(channel.loop_enabled?'SÍ':'NO')+'</b><span>bucle</span></div></div>'+
+      '<div class="screen"><video id="pv" controls playsinline style="display:none"></video><div id="empty" class="empty">Elegí “Vista previa” para reproducir la programación.</div></div>'+
+      '<div class="bar"><span class="chip">↕ Arrastrá para ordenar</span><span class="chip">'+list.length+' elementos</span><span class="grow"></span></div>'+
+      '<div class="library" id="playlist">'+(list.length?list.map((v,i)=>'<div class="video" draggable="true" data-id="'+v.id+'"><div class="order">'+(i+1)+'.</div><div class="thumb">▶</div><div class="title"><b>'+esc(v.title)+'</b><small>'+tm(v.duration_seconds)+' · '+esc(v.source_type==='url'?'URL externa':fmt(v.file_size))+'</small></div><div class="tools"><button data-play="'+v.id+'" title="Ver">▶</button><button data-remove="'+v.id+'" title="Quitar">×</button></div></div>').join(''):'<div class="listempty">No hay videos en el canal todavía.<br>Subí uno desde la columna izquierda.</div>')+'</div>'+
     '</div>'+
-    '<div class="card"><div class="head"><h3>Buscar videos</h3></div><div class="library" id="all">'+videos.map(v=>'<div class="video" draggable="false"><div class="thumb">▶</div><div class="title"><b>'+esc(v.title)+'</b><small>'+fmt(v.file_size)+' · '+esc(v.source_type==='url'?'URL externa':'subido')+'</small></div><div class="tools"><button data-add="'+v.id+'">＋</button></div></div>').join('')||'<div class="listempty">La biblioteca está vacía.</div>'+'</div></div>'+
+    '<div class="card" id="libraryCard"><div class="head"><h3>Todos los videos</h3><span class="muted">'+videos.length+' en la biblioteca</span></div><div class="library" id="all">'+(videos.length?videos.map(v=>'<div class="video" draggable="false"><div class="thumb">▶</div><div class="title"><b>'+esc(v.title)+'</b><small>'+fmt(v.file_size)+' · '+esc(v.source_type==='url'?'URL externa':'subido')+'</small></div><div class="tools"><button data-add="'+v.id+'">＋</button><button data-delete="'+v.id+'">🗑</button></div></div>').join(''):'<div class="listempty">La biblioteca está vacía.</div>')+'</div></div>'+
   '</section></div></main></div>';
   wire(list);
 }
 function wire(list){
-  qs('#uploadBtn').onclick=()=>qs('#file').click();
-  qs('#drop').onclick=e=>{if(e.target.id==='drop')qs('#file').click()};
-  qs('#drop').ondragover=e=>{e.preventDefault();qs('#drop').style.borderColor='#12abc0'};
-  qs('#drop').ondragleave=()=>qs('#drop').style.borderColor='';
-  qs('#drop').ondrop=e=>{e.preventDefault();qs('#drop').style.borderColor='';if(e.dataTransfer.files[0]) upload(e.dataTransfer.files[0])};
-  qs('#file').onchange=e=>{if(e.target.files[0]) upload(e.target.files[0])};
-  qs('#urlBtn').onclick=()=>qs('#urlModal').classList.add('show');
-  qs('#closeUrl').onclick=()=>qs('#urlModal').classList.remove('show');
-  qs('#saveUrl').onclick=addUrl;
-  qs('#preview').onclick=()=>playChannel(list);
-  qs('#clear').onclick=clearChannel;
-  qs('#loop').onclick=toggleLoop;
-  qs('#saveOrder').onclick=saveOrder;
+  $('#uploadBtn').onclick=()=>$('#file').click();
+  $('#drop').onclick=e=>{if(e.target.id==='drop')$('#file').click()};
+  $('#drop').ondragover=e=>{e.preventDefault();$('#drop').style.borderColor='#12abc0'};
+  $('#drop').ondragleave=()=>$('#drop').style.borderColor='';
+  $('#drop').ondrop=e=>{e.preventDefault();$('#drop').style.borderColor='';if(e.dataTransfer.files?.length)uploadFiles([...e.dataTransfer.files])};
+  $('#file').onchange=e=>{if(e.target.files?.length)uploadFiles([...e.target.files])};
+  $('#urlBtn').onclick=()=>$('#urlModal').classList.add('show');
+  $('#closeUrl').onclick=()=>$('#urlModal').classList.remove('show');
+  $('#saveUrl').onclick=addUrl;
+  $('#preview').onclick=()=>playChannel(list);
+  $('#clear').onclick=clearChannel;
+  $('#loop').onclick=toggleLoop;
+  $('#saveOrder').onclick=saveOrder;
   document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addToChannel(b.dataset.add));
-  document.querySelectorAll('[data-rem]').forEach(b=>b.onclick=()=>removeFromChannel(b.dataset.rem));
+  document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>removeFromChannel(b.dataset.remove));
+  document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteVideo(b.dataset.delete));
   document.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>{const v=videos.find(x=>x.id===b.dataset.play);if(v)previewOne(v)});
+  const s=$('#search');s.oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#all .video').forEach(x=>x.style.display=x.textContent.toLowerCase().includes(q)?'flex':'none')};
   let dragId=null;
   document.querySelectorAll('#playlist [draggable]').forEach(el=>{
     el.ondragstart=()=>dragId=el.dataset.id;
     el.ondragover=e=>e.preventDefault();
-    el.ondrop=e=>{e.preventDefault();const target=el.dataset.id;if(!dragId||target===dragId)return;const ids=list.map(v=>v.id);const a=ids.indexOf(dragId),b=ids.indexOf(target);ids.splice(b,0,ids.splice(a,1)[0]);reorderLocal(ids)}
+    el.ondrop=e=>{e.preventDefault();const target=el.dataset.id;if(!dragId||target===dragId)return;const ids=list.map(v=>v.id),a=ids.indexOf(dragId),b=ids.indexOf(target);ids.splice(b,0,ids.splice(a,1)[0]);reorderLocal(ids)}
   });
-  qs('#search').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#all .video').forEach(x=>x.style.display=x.textContent.toLowerCase().includes(q)?'flex':'none')};
 }
-async function reorderLocal(ids){items=ids.map((id,i)=>({channel_id:channel.id,video_id:id,position:i}));render()}
-async function saveOrder(){try{await del('vp_channel_items?channel_id=eq.'+encodeURIComponent(channel.id));for(const it of items.filter(x=>x.channel_id===channel.id))await api('vp_channel_items',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(it)});msg('Orden guardado');await load()}catch(e){alert(e.message)}}
-async function addToChannel(id){if(items.some(x=>x.channel_id===channel.id&&x.video_id===id))return;const next=items.filter(x=>x.channel_id===channel.id).length;await api('vp_channel_items',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({channel_id:channel.id,video_id:id,position:next)});await load()}
-async function removeFromChannel(id){await del('vp_channel_items?channel_id=eq.'+encodeURIComponent(channel.id)+'&video_id=eq.'+encodeURIComponent(id));await normalize();await load()}
-async function clearChannel(){if(!confirm('¿Vaciar el canal?'))return;await del('vp_channel_items?channel_id=eq.'+encodeURIComponent(channel.id));await load()}
-async function normalize(){const ids=items.filter(x=>x.channel_id===channel.id).sort((a,b)=>a.position-b.position).map(x=>x.video_id);await del('vp_channel_items?channel_id=eq.'+encodeURIComponent(channel.id));for(let i=0;i<ids.length;i++)await api('vp_channel_items',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({channel_id:channel.id,video_id:ids[i],position:i})})}
-async function toggleLoop(){channel.loop_enabled=!channel.loop_enabled;await api('vp_channels?id=eq.'+encodeURIComponent(channel.id),{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({loop_enabled:channel.loop_enabled})});await load()}
-async function upload(file){
-  if(file.size>MAX_FILE){alert('El archivo supera 50 MB. Usá una URL externa o comprimilo.');return}
-  qs('#upmsg').textContent='Subiendo '+file.name+'…';const safe=file.name.replace(/[^a-zA-Z0-9._-]+/g,'-'),p=KEY+'/'+crypto.randomUUID()+'-'+safe;
-  const r=await fetch(SUPA+'/storage/v1/object/'+BUCKET+'/'+pathEnc(p),{method:'POST',headers:{...H,'Content-Type':file.type||'video/mp4','x-upsert':'false'},body:file});
-  if(!r.ok){qs('#upmsg').textContent='Error al subir: '+await r.text();return}
-  const duration=await getDuration(file),title=file.name.replace(/.[^.]+$/,'');
-  const v=await api('vp_videos',{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({title,object_path:p,source_type:'upload',duration_seconds:duration||0,file_size:file.size,mime_type:file.type||'video/mp4',sort_order:videos.length})});
-  const id=v[0].id;await api('vp_channel_items',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({channel_id:channel.id,video_id:id,position:items.filter(x=>x.channel_id===channel.id).length})});
-  qs('#upmsg').innerHTML='<span class="ok">✓ Subido correctamente</span>';await load()
+async function addToChannel(id){
+  if(items.some(x=>x.channel_id===channel.id&&x.video_id===id)){toast('Ese video ya está en el canal.');return}
+  const next=items.filter(x=>x.channel_id===channel.id).length;
+  await api('item',{method:'POST',body:JSON.stringify({channel_id:channel.id,video_id:id,position:next})});await load()
 }
-function getDuration(file){return new Promise(res=>{const v=document.createElement('video');v.preload='metadata';v.onloadedmetadata=()=>{res(Number.isFinite(v.duration)?v.duration:0);URL.revokeObjectURL(v.src)};v.onerror=()=>res(0);v.src=URL.createObjectURL(file)})}
-async function addUrl(){
-  const title=qs('#urlTitle').value.trim(),url=qs('#urlValue').value.trim();if(!title||!/^https?:\/\//i.test(url)){alert('Completá título y una URL http/https.');return}
-  const v=await api('vp_videos',{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({title,source_url:url,source_type:'url',duration_seconds:0,file_size:0,mime_type:'video/mp4',sort_order:videos.length})});
-  const id=v[0].id;await api('vp_channel_items',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({channel_id:channel.id,video_id:id,position:items.filter(x=>x.channel_id===channel.id).length})});
-  qs('#urlModal').classList.remove('show');qs('#urlTitle').value='';qs('#urlValue').value='';await load()
+async function removeFromChannel(id){
+  await api('item?channel_id='+enc(channel.id)+'&video_id='+enc(id),{method:'DELETE'});await normalize();await load()
+}
+async function clearChannel(){
+  if(!confirm('¿Vaciar el canal? Los videos NO se borran de la biblioteca.'))return;
+  const ids=items.filter(x=>x.channel_id===channel.id).map(x=>x.video_id);
+  for(const id of ids)await api('item?channel_id='+enc(channel.id)+'&video_id='+enc(id),{method:'DELETE'});
+  await load()
+}
+async function normalize(){
+  const ids=items.filter(x=>x.channel_id===channel.id).sort((a,b)=>a.position-b.position).map(x=>x.video_id);
+  await api('items',{method:'POST',body:JSON.stringify({channel_id:channel.id,items:ids.map(video_id=>({video_id}))})})
+}
+async function saveOrder(){
+  const ids=[...document.querySelectorAll('#playlist [data-id]')].map(x=>x.dataset.id);
+  await api('items',{method:'POST',body:JSON.stringify({channel_id:channel.id,items:ids.map(video_id=>({video_id}))})});
+  toast('Orden guardado');await load()
+}
+function reorderLocal(ids){
+  items=ids.map((video_id,position)=>({channel_id:channel.id,video_id,position}));
+  render()
+}
+async function toggleLoop(){
+  await api('channel?id='+enc(channel.id),{method:'PATCH',body:JSON.stringify({loop_enabled:!channel.loop_enabled})});await load()
 }
 async function deleteVideo(id){
-  const v=videos.find(x=>x.id===id);if(!v||!confirm('¿Eliminar este video?'))return;
-  await del('vp_channel_items?video_id=eq.'+encodeURIComponent(id));
-  if(v.object_path) await fetch(SUPA+'/storage/v1/object/'+BUCKET+'/'+pathEnc(v.object_path),{method:'DELETE',headers:H});
-  await del('vp_videos?id=eq.'+encodeURIComponent(id));await load()
+  const v=videos.find(x=>x.id===id);if(!v)return;
+  if(!confirm('¿Eliminar "'+v.title+'" del panel y del almacenamiento?'))return;
+  try{await api('video?id='+enc(id),{method:'DELETE'});toast('Video eliminado');await load()}catch(e){toast(e.message,true)}
 }
-function previewOne(v){const pv=qs('#pv');pv.style.display='block';qs('#empty').style.display='none';pv.src=v.source_type==='url'?v.source_url:pub(v.object_path);pv.play().catch(()=>{})}
-function playChannel(list){if(!list.length){alert('No hay videos en el canal.');return}const pv=qs('#pv');pv.style.display='block';qs('#empty').style.display='none';let i=0;const next=()=>{const v=list[i];pv.src=v.source_type==='url'?v.source_url:pub(v.object_path);pv.play().catch(()=>{});};pv.onended=()=>{i++;if(i>=list.length){if(channel.loop_enabled)i=0;else return}next()};next()}
-function msg(t){const el=document.createElement('div');el.textContent=t;el.style='position:fixed;right:15px;bottom:15px;background:#232427;color:#fff;padding:10px 13px;border-radius:8px;z-index:20';document.body.appendChild(el);setTimeout(()=>el.remove(),2200)}
-async function removeFromStorage(id){return deleteVideo(id)}
-window.removeFromChannel=removeFromChannel;
-window.addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(b)removeFromStorage(b.dataset.del)});
-load().catch(e=>{document.body.innerHTML='<div style="max-width:700px;margin:15vh auto;padding:24px;text-align:center;font-family:Arial"><h2>No se pudo iniciar el panel</h2><p>'+esc(e.message)+'</p></div>'});
+function previewOne(v){
+  const pv=$('#pv');$('#empty').style.display='none';pv.style.display='block';pv.src=v.source_type==='url'?v.source_url:pub(v.object_path);pv.play().catch(()=>{})
+}
+function playChannel(list){
+  if(!list.length){toast('No hay videos en el canal.',true);return}
+  const pv=$('#pv');$('#empty').style.display='none';pv.style.display='block';let i=0;
+  const next=()=>{const v=list[i];pv.src=v.source_type==='url'?v.source_url:pub(v.object_path);pv.play().catch(()=>{});};
+  pv.onended=()=>{i++;if(i>=list.length){if(channel.loop_enabled)i=0;else return}next()};next()
+}
+function getDuration(file){
+  return new Promise(res=>{const v=document.createElement('video');v.preload='metadata';v.onloadedmetadata=()=>{const d=Number.isFinite(v.duration)?v.duration:0;URL.revokeObjectURL(v.src);res(d)};v.onerror=()=>res(0);v.src=URL.createObjectURL(file)})
+}
+async function uploadOne(file,index,total){
+  if(file.size>MAX_FILE)throw new Error(file.name+' supera los 50 MB.');
+  const safe=file.name.replace(/[^a-zA-Z0-9._-]+/g,'-'),path=KEY+'/'+crypto.randomUUID()+'-'+safe;
+  const row=document.createElement('div');row.className='uploadItem';row.innerHTML='<div class="uploadTop"><b>'+esc(file.name)+'</b><span>0%</span></div><div class="progress"><div class="bar"></div></div><div class="uploadState">Preparando…</div>';$('#uploadList').prepend(row);
+  const pct=row.querySelector('.uploadTop span'),bar=row.querySelector('.bar'),state=row.querySelector('.uploadState');
+  const signed=await api('upload-url',{method:'POST',body:JSON.stringify({path})});
+  if(!signed.token)throw new Error('No se pudo preparar la carga.');
+  await new Promise((resolve,reject)=>{
+    const up=new tus.Upload(file,{
+      endpoint:TUS,chunkSize:6*1024*1024,retryDelays:[0,3000,5000,10000,20000],
+      uploadDataDuringCreation:true,removeFingerprintOnSuccess:true,
+      headers:{'x-signature':signed.token},
+      metadata:{bucketName:BUCKET,objectName:path,contentType:file.type||'video/mp4',cacheControl:'3600'},
+      onProgress:(a,b)=>{const p=Math.round(a/b*100);pct.textContent=p+'%';bar.style.width=p+'%';state.textContent='Subiendo… '+p+'%'},
+      onError:e=>{state.textContent='Error: '+(e.message||e);state.className='uploadState bad';reject(e)},
+      onSuccess:resolve
+    });
+    up.findPreviousUploads().then(prev=>{if(prev.length)up.resumeFromPreviousUpload(prev[0]);up.start()}).catch(reject)
+  });
+  state.textContent='Guardando información…';
+  const duration=await getDuration(file),title=file.name.replace(/\.[^.]+$/,'');
+  const saved=await api('video',{method:'POST',body:JSON.stringify({title,object_path:path,source_type:'upload',duration_seconds:duration,file_size:file.size,mime_type:file.type||'video/mp4',sort_order:videos.length})});
+  const id=saved.id;
+  await api('item',{method:'POST',body:JSON.stringify({channel_id:channel.id,video_id:id,position:items.filter(x=>x.channel_id===channel.id).length})});
+  state.textContent='✓ LISTO';state.className='uploadState ok'
+}
+async function uploadFiles(files){
+  $('#upmsg').textContent='Subiendo '+files.length+' archivo'+(files.length>1?'s':'')+'…';
+  const btn=$('#uploadBtn');btn.disabled=true;btn.textContent='SUBIENDO…';
+  try{for(let i=0;i<files.length;i++)await uploadOne(files[i],i,files.length);$('#file').value='';$('#upmsg').textContent='Carga completada.';await load()}catch(e){toast(e.message,true);$('#upmsg').textContent='Se detuvo la carga: '+e.message}finally{btn.disabled=false;btn.textContent='＋ Subir video'}
+}
+async function addUrl(){
+  const title=$('#urlTitle').value.trim(),url=$('#urlValue').value.trim();
+  if(!title||!/^https?:\/\//i.test(url)){toast('Completá el título y una URL http/https.',true);return}
+  try{
+    const saved=await api('video',{method:'POST',body:JSON.stringify({title,source_url:url,source_type:'url',duration_seconds:0,file_size:0,mime_type:'video/mp4',sort_order:videos.length})});
+    await api('item',{method:'POST',body:JSON.stringify({channel_id:channel.id,video_id:saved.id,position:items.filter(x=>x.channel_id===channel.id).length})});
+    $('#urlModal').classList.remove('show');$('#urlTitle').value='';$('#urlValue').value='';toast('URL agregada');await load()
+  }catch(e){toast(e.message,true)}
+}
+load().catch(()=>{});
 </script>
 </body>
 </html>
