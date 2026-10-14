@@ -1,120 +1,32 @@
 <!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#071b55">
-<meta name="description" content="Magic Kids TV, programación, señal en vivo y comunidad Premium.">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="assets/magic-kids-tab.svg">
-<link rel="preconnect" href="https://vjs.zencdn.net">
-<link href="https://vjs.zencdn.net/8.24.0/video-js.css" rel="stylesheet">
-<link href="magic-public.css" rel="stylesheet">
-<title>Magic Kids TV</title>
-</head>
-<body>
-<header class="top">
-  <div class="container">
-    <div class="brand"><img src="assets/magic-kids-logo.webp" data-mk-logo alt="Magic Kids"></div>
-    <div class="sub">MAGIC KIDS TV · SIEMPRE CON VOS</div>
-  </div>
-</header>
+<html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#061746"><meta name="description" content="Magic Kids TV, programación y comunidad Premium.">
+<link rel="manifest" href="manifest.json"><link rel="icon" href="assets/magic-kids-tab.svg">
+<link rel="preconnect" href="https://vjs.zencdn.net"><link href="https://vjs.zencdn.net/8.24.0/video-js.css" rel="stylesheet">
+<link href="magic-public.css" rel="stylesheet"><title>Magic Kids TV</title></head><body>
+<header class="top"><div class="container"><div class="brand"><img data-mk-logo src="assets/magic-player-logo.webp" alt="Magic Kids"></div><div class="sub">MAGIC KIDS TV · SIEMPRE CON VOS</div></div></header>
 <main class="container">
-  <div class="ticker" aria-label="Magic Kids"><div class="ticker-track"><span>MAGIC KIDS TV</span><span>ANIMACIÓN · AVENTURA · RECUERDOS</span><span>UNA SEÑAL PARA VOLVER A DISFRUTAR</span><span>MAGIC KIDS TV</span></div></div>
-  <section class="promo-banner" aria-label="Accesos rápidos">
-    <button id="premiumCta" class="promo-action" type="button">QUIERO SER USUARIO PREMIUM</button>
-    <a class="promo-action" href="https://www.mediafire.com/file/g0dsndishwvx9lf/ELMAGICTVOK.apk/file" target="_blank" rel="noopener">DESCARGAR APLICACIÓN ANDROID</a>
-  </section>
-
-  <section class="hero">
-    <div class="hero-grid">
-      <div class="player-card">
-        <div class="player-wrap">
-          <video id="mk-player" class="video-js vjs-default-skin" playsinline preload="metadata">
-            <p class="vjs-no-js">Para ver Magic Kids necesitás JavaScript habilitado.</p>
-          </video>
-          <img class="player-logo" data-mk-logo src="assets/magic-player-logo.webp" alt="Magic Kids">
-        </div>
-        <div id="player-status" class="video-status" role="status">Preparando la señal…</div>
-        <div class="below">
-          <div class="show-card card"><h2>ESTAMOS VIENDO</h2><p id="now-title">Magic Kids TV</p></div>
-          <div class="show-card card"><h2>MÁS TARDE</h2><p id="later-title">Próximamente</p></div>
-        </div>
-      </div>
-
-      <aside class="side">
-        <div class="card">
-          <h2>Compartí Magic Kids</h2><p>Invitá a tus amigos a ver la señal.</p>
-          <button id="shareBtn" class="btn primary wide" type="button">COMPARTIR PÁGINA</button>
-        </div>
-        <div class="card">
-          <h2>Apoyá a Magic Kids</h2>
-          <div class="donation-row"><span>ALIAS</span><strong class="alias">MAGICKIDS.OK</strong></div>
-          <div class="donation-row"><span>BANCO</span><strong>BRUBANK</strong></div>
-          <div class="donation-row"><span>A NOMBRE DE</span><strong>MARCELO GOMEZ</strong></div>
-          <button id="copyAlias" class="btn primary" type="button">COPIAR ALIAS</button>
-          <p class="small">Tu aporte ayuda a mantener la señal y el sitio online.</p>
-        </div>
-        <div class="card">
-          <h2>Redes</h2>
-          <div class="socials">
-            <a href="https://instagram.com/elmagictvok" target="_blank" rel="noopener">INSTAGRAM<br>@ELMAGICTVOK</a>
-            <a href="https://www.tiktok.com/@elmagictvok" target="_blank" rel="noopener">TIKTOK<br>@ELMAGICTVOK</a>
-          </div>
-        </div>
-      </aside>
-    </div>
-  </section>
-
-  <section id="premiumBox" class="section card premium-card">
-    <div class="premium-intro">
-      <p class="eyebrow">COMUNIDAD MAGIC KIDS</p>
-      <h2>Convertite en usuario Premium</h2>
-      <p>Transferí al alias <strong>MAGICKIDS.OK</strong>. Después registrá tu nombre de usuario para solicitar la aprobación manual. El acceso se habilita cuando el administrador verifica la transferencia.</p>
-    </div>
-    <div class="premium-grid">
-      <div class="transfer-box">
-        <span class="transfer-label">ALIAS PARA TRANSFERENCIA</span>
-        <strong class="transfer-alias">MAGICKIDS.OK</strong>
-        <button id="copyPremiumAlias" class="btn primary" type="button">COPIAR ALIAS</button>
-      </div>
-      <form id="premiumForm" class="premium-form">
-        <label for="premiumUsername">Tu nombre de usuario</label>
-        <input id="premiumUsername" class="field" maxlength="24" autocomplete="nickname" placeholder="Elegí tu nombre para el chat" required>
-        <button class="btn purple wide" type="submit">YA TRANSFERÍ · SOLICITAR APROBACIÓN</button>
-        <p id="premiumStatus" class="status-note" role="status">Todavía no hay una solicitud en este navegador.</p>
-      </form>
-    </div>
-  </section>
-
-  <section class="section card chat-card">
-    <div class="chat-head">
-      <div><p class="eyebrow">SOLO USUARIOS PREMIUM APROBADOS</p><h2>CHAT MAGIC KIDS</h2></div>
-      <button id="enableAlerts" class="btn small-btn" type="button">ACTIVAR AVISOS Y SONIDO</button>
-    </div>
-    <p class="small">Los mensajes quedan visibles para todos. Para escribir necesitás una solicitud Premium aprobada. No se permiten enlaces, emojis ni números de teléfono.</p>
-    <div id="chatWindow" class="chat-window" aria-live="polite" aria-relevant="additions text"><div class="loading">Cargando historial del chat…</div></div>
-    <form id="chatForm" class="chat-form hidden">
-      <label class="sr-only" for="nick">Usuario Premium</label>
-      <input id="nick" class="chat-name" maxlength="24" readonly placeholder="Usuario Premium">
-      <label class="sr-only" for="message">Mensaje</label>
-      <input id="message" class="chat-input" maxlength="240" required placeholder="Escribí un mensaje…" autocomplete="off">
-      <button class="btn primary" type="submit">ENVIAR</button>
-    </form>
-    <div id="chatStatus" class="status-note" role="status">Conectando…</div>
-    <div id="chatGate" class="chat-gate">
-      <strong>El chat es exclusivo para Premium.</strong>
-      <p>Registrate arriba y esperá a que se confirme el pago.</p>
-      <button id="chatPremiumCta" class="btn purple" type="button">QUIERO SER PREMIUM</button>
-    </div>
-  </section>
-</main>
-<footer><div>MAGIC KIDS · MAGICKIDSOK.ONLINE</div><a href="panel.html" rel="nofollow">Acceso privado</a></footer>
-<script src="https://vjs.zencdn.net/8.24.0/video.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="magic-config.js"></script>
-<script src="magic-assets.js" defer></script>
-<script src="magic-public.js" defer></script>
-<script src="magic-program-schedule.js" defer></script>
-</body>
-</html>
+<div class="ticker"><div class="ticker-track"><span>MAGIC KIDS TV</span><span>ANIMACIÓN · AVENTURA · RECUERDOS</span><span>UNA SEÑAL PARA VOLVER A DISFRUTAR</span><span>MAGIC KIDS TV</span></div></div>
+<section class="promo-banner" aria-label="Accesos rápidos"><button id="premiumCta" class="promo-action" type="button">QUIERO SER USUARIO PREMIUM</button><a class="promo-action" href="https://www.mediafire.com/file/g0dsndishwvx9lf/ELMAGICTVOK.apk/file" target="_blank" rel="noopener">DESCARGAR APLICACIÓN ANDROID</a></section>
+<section class="hero"><div class="hero-grid"><div class="player-card">
+<div class="player-wrap"><video id="mk-player" class="video-js vjs-default-skin" playsinline preload="metadata"><p class="vjs-no-js">Para ver Magic Kids necesitás JavaScript habilitado.</p></video><img class="player-logo" data-mk-logo src="assets/magic-player-logo.webp" alt="Magic Kids"></div>
+<div id="player-status" class="video-status" role="status">Preparando la señal…</div>
+<div class="below"><div class="show-card card"><h2>ESTAMOS VIENDO</h2><p id="now-title">Magic Kids TV</p></div><div class="show-card card"><h2>MÁS TARDE</h2><p id="later-title">Próximamente</p></div></div>
+</div><aside class="side">
+<div class="card"><h2>Compartí Magic Kids</h2><p>Invitá a tus amigos a ver la señal.</p><button id="shareBtn" class="btn primary wide" type="button">COMPARTIR PÁGINA</button></div>
+<div class="card"><h2>Apoyá a Magic Kids</h2><div class="donation-row"><span>ALIAS</span><strong class="alias">MAGICKIDS.OK</strong></div><div class="donation-row"><span>BANCO</span><strong>BRUBANK</strong></div><div class="donation-row"><span>A NOMBRE DE</span><strong>MARCELO GOMEZ</strong></div><button id="copyAlias" class="btn primary" type="button">COPIAR ALIAS</button><p class="small">Tu aporte ayuda a mantener la señal y el sitio online.</p></div>
+<div class="card"><h2>Redes</h2><div class="socials"><a href="https://instagram.com/elmagictvok" target="_blank" rel="noopener">INSTAGRAM<br>@ELMAGICTVOK</a><a href="https://www.tiktok.com/@elmagictvok" target="_blank" rel="noopener">TIKTOK<br>@ELMAGICTVOK</a></div></div>
+</aside></div></section>
+<section id="premiumBox" class="section card premium-card"><div class="premium-intro"><p class="eyebrow">COMUNIDAD MAGIC KIDS</p><h2>Convertite en usuario Premium</h2><p>Transferí al alias <strong>MAGICKIDS.OK</strong>. Registrá tu nombre de usuario para solicitar la aprobación manual. El acceso se habilita cuando el administrador verifica la transferencia.</p></div>
+<div class="premium-grid"><div class="transfer-box"><span class="transfer-label">ALIAS PARA TRANSFERENCIA</span><strong class="transfer-alias">MAGICKIDS.OK</strong><button id="copyPremiumAlias" class="btn primary" type="button">COPIAR ALIAS</button></div>
+<form id="premiumForm" class="premium-form"><label for="premiumUsername">Tu nombre de usuario</label><input id="premiumUsername" class="field" maxlength="24" autocomplete="nickname" placeholder="Elegí tu nombre para el chat" required><button class="btn purple wide" type="submit">YA TRANSFERÍ · SOLICITAR APROBACIÓN</button><p id="premiumStatus" class="status-note" role="status">Todavía no hay una solicitud en este navegador.</p></form></div></section>
+<section class="section card chat-card"><div class="chat-head"><div><p class="eyebrow">SOLO USUARIOS PREMIUM APROBADOS</p><h2>CHAT MAGIC KIDS</h2></div><button id="enableAlerts" class="btn small-btn" type="button">ACTIVAR AVISOS Y SONIDO</button></div>
+<p class="small">Los mensajes quedan visibles para todos. Para escribir necesitás una solicitud Premium aprobada. No se permiten enlaces, emojis ni números de teléfono.</p>
+<div id="chatWindow" class="chat-window" aria-live="polite" aria-relevant="additions text"><div class="loading">Cargando historial del chat…</div></div>
+<form id="chatForm" class="chat-form hidden"><label class="sr-only" for="nick">Usuario Premium</label><input id="nick" class="chat-name" maxlength="24" readonly placeholder="Usuario Premium"><label class="sr-only" for="message">Mensaje</label><input id="message" class="chat-input" maxlength="240" required placeholder="Escribí un mensaje…" autocomplete="off"><button class="btn primary" type="submit">ENVIAR</button></form>
+<div id="chatStatus" class="status-note" role="status">Conectando…</div><div id="chatGate" class="chat-gate"><strong>El chat es exclusivo para Premium.</strong><p>Registrate arriba y esperá a que se confirme el pago.</p><button id="chatPremiumCta" class="btn purple" type="button">QUIERO SER PREMIUM</button></div>
+</section></main><footer><div>MAGIC KIDS · MAGICKIDSOK.ONLINE</div><a href="panel.html" rel="nofollow">Acceso privado</a></footer>
+<script src="https://vjs.zencdn.net/8.24.0/video.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="magic-config.js"></script><script src="magic-assets.js" defer></script><script src="magic-public.js" defer></script><script src="magic-program-schedule.js" defer></script>
+</body></html>
