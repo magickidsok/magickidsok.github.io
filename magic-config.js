@@ -1,5 +1,6 @@
 window.MK_CONFIG={
  chatApi:'https://uifchrnvigkzantaehgz.supabase.co/functions/v1/chat-api',
+ publicChatApi:'https://uifchrnvigkzantaehgz.supabase.co/functions/v1/mk-public-chat',
  adminHubApi:'https://uifchrnvigkzantaehgz.supabase.co/functions/v1/mk-admin-hub',
  supabaseUrl:'https://uifchrnvigkzantaehgz.supabase.co',
  supabasePublishableKey:'sb_publishable_pN7752MhcIXDd7ZGLsp5Hw_DEPxDnSI',
