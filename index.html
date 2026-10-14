@@ -3,131 +3,56 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#03164b">
-<meta name="description" content="Magic Kids TV — entretenimiento infantil online.">
+<meta name="theme-color" content="#061747">
+<meta name="description" content="MAGIC KIDS en vivo las 24 horas. Series clásicas, comunidad Premium, juegos y sorteos.">
 <meta name="robots" content="index,follow">
-<link rel="manifest" href="manifest.json">
 <link rel="icon" href="assets/magic-player-logo.webp">
-<link rel="preconnect" href="https://vjs.zencdn.net">
-<link rel="preconnect" href="https://uifchrnvigkzantaehgz.supabase.co">
-<link href="https://vjs.zencdn.net/8.24.0/video-js.css" rel="stylesheet">
-<link href="magic-public.css" rel="stylesheet">
-<title>Magic Kids TV</title>
-<style>
-.hidden{display:none!important}
-.admin-shell{margin-top:14px}
-.admin-lock,.admin-panel{background:linear-gradient(180deg,rgba(7,29,84,.96),rgba(4,18,59,.94));border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px;padding:16px}
-.admin-lock h3,.admin-panel h3{margin:0 0 8px}
-.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.admin-row{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08);display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start}
-.admin-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.btn.mini{padding:7px 9px;font-size:.74rem}
-.danger{background:#7f1830!important}
-.field{width:100%;padding:10px 11px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.2);color:#fff;outline:none;margin:5px 0 8px}
-.admin-gold,.admin-name strong{color:#ffd21a}
-.crown{font-size:.9rem;margin-right:4px}
-.admin-message-text{margin-top:3px;line-height:1.4}
-.pill{font-size:.72rem;color:var(--muted);margin-top:2px}
-.admin-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.admin-toolbar>*{flex:1}
-.admin-help{margin:0 0 8px;color:var(--muted);font-size:.82rem}
-@media(max-width:760px){.admin-grid{grid-template-columns:1fr}.admin-row{grid-template-columns:1fr}.admin-actions{justify-content:flex-start}.admin-toolbar>*{flex-basis:100%}}
-</style>
+<link rel="preconnect" href="https://vjs.zencdn.net"><link rel="preconnect" href="https://kali.vdopanel.com"><link rel="preconnect" href="https://uifchrnvigkzantaehgz.supabase.co">
+<link rel="stylesheet" href="https://vjs.zencdn.net/8.24.0/video-js.css"><link rel="stylesheet" href="magic-kids-rebuild.css">
+<title>MAGIC KIDS · En vivo 24 horas</title>
 </head>
 <body>
-<header class="top">
-<div class="container">
-<div class="brand"><img src="assets/magic-kids-logo.webp" alt="Magic Kids"></div>
-<div class="sub">MAGIC KIDS TV · SIEMPRE CON VOS</div>
-</div>
-</header>
+<header class="site-header"><div class="wrap">
+<a class="brand" href="./" aria-label="Magic Kids inicio"><img src="assets/magic-kids-logo.webp" alt="MAGIC KIDS"></a>
+<p class="tagline">ALGO GRANDE PARA LOS CHICOS</p><div class="signal"><span class="signal-dot"></span> SEÑAL MAGIC KIDS 24 HS</div>
+<nav class="main-nav"><a href="#en-vivo">EN VIVO</a><a href="#chat">CHAT PREMIUM</a><a href="premium.html">QUIERO SER PREMIUM</a><a href="premium-beneficios.html">BENEFICIOS</a><a href="sorteo-remera-info.html">SORTEO REMERA</a><a href="juegos.html">JUEGOS</a></nav>
+</div></header>
+<div class="ticker"><div class="ticker-track">
+<span>TU DONACIÓN NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24 HS · ALIAS: <b>MAGICKIDS.OK</b></span><span>MARÍA LUZ DUNNE ZAIN DONÓ <b>$3.000</b></span><span>LEONARDO MIGLIARO DONÓ <b>$15.000</b> Y SE HIZO USUARIO PREMIUM</span><span>MAURO EZE CARNOVALE DONÓ <b>$2.000</b></span>
+<span>TU DONACIÓN NOS AYUDA A CONTINUAR CON EL CANAL MAGIC KIDS LAS 24 HS · ALIAS: <b>MAGICKIDS.OK</b></span><span>MARÍA LUZ DUNNE ZAIN DONÓ <b>$3.000</b></span><span>LEONARDO MIGLIARO DONÓ <b>$15.000</b> Y SE HIZO USUARIO PREMIUM</span><span>MAURO EZE CARNOVALE DONÓ <b>$2.000</b></span>
+</div></div>
+<main class="wrap page-content">
+<section id="en-vivo" class="hero-grid"><div class="player-column">
+<div class="panel player-panel"><div class="section-kicker">MAGIC KIDS · TRANSMISIÓN EN DIRECTO</div>
+<div class="player-shell"><video id="mk-player" class="video-js vjs-default-skin vjs-big-play-centered" controls playsinline preload="none" poster="assets/magic-player-logo.webp" aria-label="Reproductor en vivo de Magic Kids"><p>Tu navegador necesita JavaScript para reproducir MAGIC KIDS.</p></video></div>
+<div class="live-status"><span class="signal-dot"></span><span id="player-status">Señal preparada. Tocá reproducir para comenzar.</span></div>
+<div class="now-next"><div><span>ESTAMOS VIENDO</span><strong id="now-title">MAGIC KIDS</strong></div><div><span>MÁS TARDE</span><strong id="later-title">PRÓXIMAMENTE</strong></div></div></div>
+<section class="panel poll-panel" id="encuesta"><div class="section-kicker">VOTACIÓN PÚBLICA</div><h2>¿CUÁL ES TU SERIE FAVORITA?</h2><p class="muted">Tu voto cuenta y los resultados se actualizan para todos.</p>
+<div class="series-votes">
+<article class="vote-card"><div class="series-art kito-art"><span>KITO</span><small>PIZZAS</small></div><h3>KITO PIZZAS</h3><div class="vote-meta"><span id="kito-votes">Cargando votos…</span><span id="kito-pct">0%</span></div><div class="vote-bar"><span id="kito-bar"></span></div><button class="btn btn-yellow vote-btn" data-vote="kito_pizzas">VOTAR KITO PIZZAS</button></article>
+<article class="vote-card"><div class="series-art hugo-art"><span>HUGO</span><small>A JUGAR CON HUGO</small></div><h3>A JUGAR CON HUGO</h3><div class="vote-meta"><span id="hugo-votes">Cargando votos…</span><span id="hugo-pct">0%</span></div><div class="vote-bar"><span id="hugo-bar"></span></div><button class="btn btn-yellow vote-btn" data-vote="a_jugar_con_hugo">VOTAR A JUGAR CON HUGO</button></article>
+</div><p class="poll-note" id="poll-status">La votación es pública y gratuita.</p></section>
+</div><aside class="side-column">
+<section class="panel side-card"><h2>APOYÁ A MAGIC KIDS</h2><p>Tu aporte ayuda a mantener la señal y el sitio online.</p><div class="alias-box"><span>ALIAS BANCARIO</span><strong>MAGICKIDS.OK</strong><small>BRUBANK · A nombre de Marcelo Gomez</small></div><button id="copy-alias" class="btn btn-blue">COPIAR ALIAS</button><a class="text-link" href="donar.html">Ver información para donar ↗</a></section>
+<section class="panel side-card"><h2>SEGUINOS</h2><a class="social-link" href="https://instagram.com/elmagictvok" target="_blank" rel="noopener">◎ INSTAGRAM · @ELMAGICTVOK</a><a class="social-link" href="https://www.tiktok.com/@elmagictvok" target="_blank" rel="noopener">♪ TIKTOK · @ELMAGICTVOK</a><button id="share-site" class="btn btn-blue">COMPARTIR MAGIC KIDS</button></section>
+<section class="panel side-card schedule-mini"><h2>PROGRAMACIÓN</h2><p class="muted">Horarios guardados desde el panel de programación.</p><div id="schedule-preview"><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div><a class="text-link" href="programacion.html">Ver programación completa ↗</a></section>
+</aside></section>
 
-<main class="container">
-<div class="ticker" aria-label="Donadores"><div class="ticker-track"><span>MARTIN <b>DONÓ $4.000</b></span><span>FLORENCIA <b>DONÓ</b></span><span>LEO <b>DONÓ $2.500</b></span><span>CARLA <b>DONÓ $3.000</b></span><span>MARTIN <b>DONÓ $4.000</b></span><span>FLORENCIA <b>DONÓ</b></span><span>LEO <b>DONÓ $2.500</b></span><span>CARLA <b>DONÓ $3.000</b></span></div></div>
+<section class="panel chat-panel" id="chat"><div class="chat-heading"><div><div class="section-kicker">COMUNIDAD MAGIC KIDS</div><h2>CHAT PRIVADO · SOLO USUARIOS PREMIUM</h2><p class="muted">El historial es visible para todos. Para enviar mensajes necesitás tener tu usuario Premium aprobado.</p></div><div class="online-pill" id="chat-state">CHAT EN LÍNEA</div></div>
+<div id="chat-messages" class="chat-messages" aria-live="polite"><p class="muted">Cargando el historial del chat…</p></div>
+<form id="chat-form" class="chat-form"><input id="chat-username" maxlength="24" autocomplete="username" placeholder="Tu nombre de usuario Premium" aria-label="Nombre Premium" required><input id="chat-message" maxlength="240" placeholder="Escribí un mensaje…" aria-label="Mensaje" required><button class="btn btn-yellow" type="submit">ENVIAR</button></form>
+<p id="chat-status" class="small-note">Usá exactamente el mismo nombre con el que te registraste en Premium.</p><div class="chat-actions"><a class="btn btn-outline" href="premium.html">QUIERO SER USUARIO PREMIUM</a><a class="btn btn-outline" href="panel-premium.html">ADMINISTRADOR</a></div></section>
 
-<section class="hero">
-<div class="hero-grid">
-<div class="player-card">
-<div class="player-wrap">
-<video id="mk-player" class="video-js vjs-default-skin" controls playsinline preload="metadata"><p class="vjs-no-js">Para ver Magic Kids necesitás JavaScript habilitado.</p></video>
-<img class="player-logo" src="assets/magic-player-logo.webp" alt="">
-</div>
-<div id="player-status" class="video-status">Preparando reproductor…</div>
-<div class="below">
-<div class="show-card card"><h3>ESTAMOS VIENDO</h3><p id="now-title">Magic Kids TV</p></div>
-<div class="show-card card"><h3>MÁS TARDE</h3><p id="later-title">Próximamente</p></div>
-</div>
-</div>
-
-<aside class="side">
-<div class="card"><h2>Compartí Magic Kids</h2><p>Mandale la página a tus amigos desde cualquier teléfono.</p><div class="btn-row"><button id="shareBtn" class="btn primary share">COMPARTIR PÁGINA</button></div></div>
-<div class="card"><h2>Apoyá a Magic Kids</h2><div class="donation-row"><span>ALIAS</span><strong class="alias">MAGICKIDS.OK</strong></div><div class="donation-row"><span>BANCO</span><strong>BRUBANK</strong></div><div class="donation-row"><span>A NOMBRE DE</span><strong>MARCELO GOMEZ</strong></div><div class="btn-row"><button id="copyAlias" class="btn primary">COPIAR ALIAS</button></div><p class="small">Tu aporte ayuda a mantener la señal y el sitio online.</p></div>
-<div class="card"><h2>Redes</h2><div class="socials"><a href="https://instagram.com/elmagictvok" target="_blank" rel="noopener">INSTAGRAM · @ELMAGICTVOK</a><a href="https://www.tiktok.com/@elmagictvok" target="_blank" rel="noopener">TIKTOK · @ELMAGICTVOK</a></div></div>
-</aside>
-</div>
+<a class="shirt-banner" href="sorteo-remera-info.html" aria-label="Anotate al sorteo de la remera de Magic Kids"><span class="banner-spark spark-one">✦</span><img class="banner-logo" src="assets/magic-kids-logo.webp" alt="Magic Kids"><span class="banner-copy"><strong>HACETE USUARIO PREMIUM Y PARTICIPÁ POR LA REMERA DEL MAGIC</strong><small>Sumate a la comunidad Premium de MAGIC KIDS</small></span><img class="banner-shirt" src="https://static.wixstatic.com/media/f12d15_dcc15053246a410b8718cc894e56e968~mv2.png" alt="Remera de Magic Kids"><span class="banner-spark spark-two">✦</span></a>
+<section class="bottom-actions"><a href="premium.html" class="btn btn-gold large-cta">QUIERO SER USUARIO PREMIUM <small>Accedé a la solicitud Premium</small></a><a href="descargar-aplicacion.html" class="btn btn-yellow large-cta">DESCARGAR APLICACIÓN ANDROID <small>Llevá MAGIC KIDS en tu celular</small></a></section>
+<section class="feature-grid">
+<a class="feature-card" href="premium-beneficios.html"><span class="feature-icon">♛</span><h3>BENEFICIOS PREMIUM</h3><p>Chat, comunidad, series y sorpresas.</p></a>
+<a class="feature-card" href="premium-ayuda.html"><span class="feature-icon">?</span><h3>AYUDA</h3><p>Respuestas a preguntas frecuentes.</p></a>
+<a class="feature-card" href="sorteo-remera-info.html"><span class="feature-icon">✦</span><h3>SORTEO DE LA REMERA</h3><p>Consultá condiciones y anotate.</p></a>
+<a class="feature-card" href="trucos-nivel-x.html"><span class="feature-icon">X</span><h3>TRUCOS VIDEOS JUEGOS NIVEL X</h3><p>Trucos y clásicos de videojuegos.</p></a>
+<a class="feature-card" href="juegos.html"><span class="feature-icon">🎮</span><h3>JUEGOS Y DESAFÍOS</h3><p>Jugá y descubrí más en MAGIC KIDS.</p></a>
+<a class="feature-card" href="que-vuelva-magic.html"><span class="feature-icon">★</span><h3>QUE VUELVA MAGIC</h3><p>Los recuerdos de toda una generación.</p></a>
 </section>
-
-<section class="section">
-<div class="card chat-card">
-<h2>CHAT MAGIC KIDS</h2>
-<p class="small">Sin registro. Texto solamente: no se permiten imágenes, emojis ni enlaces.</p>
-<div id="chatWindow" class="chat-window"><div class="loading">Conectando al chat…</div></div>
-<form id="chatForm" class="chat-form">
-<input id="nick" class="chat-name" maxlength="24" required placeholder="Tu nombre">
-<input id="message" class="chat-input" maxlength="240" required placeholder="Escribí un mensaje…" autocomplete="off">
-<button class="btn primary" type="submit">ENVIAR</button>
-</form>
-<div id="chatStatus" class="small" style="margin-top:7px">Conectando...</div>
-
-<div class="btn-row" style="margin-top:12px">
-<button id="adminBtn" class="btn" type="button"><span class="crown">👑</span> ADMINISTRADOR</button>
-</div>
-
-<div id="adminArea" class="admin-shell hidden">
-<div id="adminLock" class="admin-lock">
-<h3>Acceso de administrador</h3>
-<p class="admin-help">El administrador puede publicar con corona dorada, borrar mensajes y bloquear/desbloquear usuarios.</p>
-<input id="adminPassword" class="field" type="password" autocomplete="current-password" placeholder="Contraseña de administrador">
-<button id="adminLogin" class="btn primary" type="button">ENTRAR</button>
-<div id="adminLoginMsg" class="small" style="margin-top:8px"></div>
-</div>
-
-<div id="adminPanel" class="admin-panel hidden">
-<div class="admin-toolbar">
-<button id="adminLogout" class="btn" type="button">CERRAR SESIÓN</button>
-<button id="clearChat" class="btn danger" type="button">BORRAR TODO EL CHAT</button>
-</div>
-<div id="adminStatus" class="small" style="margin-top:8px"></div>
-
-<div class="admin-grid" style="margin-top:14px">
-<div class="card">
-<h3>Publicar como <span class="admin-gold">👑 MAGIC KIDS</span></h3>
-<input id="adminMessage" class="field" maxlength="240" placeholder="Mensaje del administrador">
-<button id="adminSend" class="btn primary" type="button">PUBLICAR</button>
-<div id="adminSendStatus" class="small" style="margin-top:8px"></div>
-</div>
-
-<div class="card">
-<h3>Usuarios y mensajes</h3>
-<div id="adminMessages" class="table" style="max-height:360px;overflow:auto"></div>
-</div>
-
-<div class="card">
-<h3>Usuarios bloqueados</h3>
-<div id="bans" class="table" style="max-height:260px;overflow:auto"></div>
-<div id="clearStatus" class="small" style="margin-top:8px"></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</section>
-</main>
-
-<footer><div>MAGIC KIDS · MAGICKIDSOK.ONLINE</div></footer>
-<script src="https://vjs.zencdn.net/8.24.0/video.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="magic-config.js"></script>
-<script src="magic-public.js" defer></script>
-</body>
-</html>
+</main><footer class="site-footer"><div class="wrap footer-inner"><span>MAGIC KIDS · FORMOSA, ARGENTINA</span><span>Una señal para volver a disfrutar de los clásicos.</span><span><a href="panel-programacion.html">Panel de programación</a> · <a href="panel-premium.html">Panel Premium</a></span></div></footer>
+<script src="https://vjs.zencdn.net/8.24.0/video.min.js"></script><script src="magic-kids-rebuild.js" defer></script>
+</body></html>
