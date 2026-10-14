@@ -1,10 +1,9 @@
 window.MK_CONFIG={
-  chatApi:'https://uifchrnvigkzantaehgz.supabase.co/functions/v1/chat-api',
-  publicChatApi:'https://uifchrnvigkzantaehgz.supabase.co/functions/v1/mk-public-chat',
-  adminHubApi:'https://uifchrnvigkzantaehgz.supabase.co/functions/v1/mk-admin-hub',
-  supabaseUrl:'https://uifchrnvigkzantaehgz.supabase.co',
-  supabasePublishableKey:'sb_publishable_pN7752MhcIXDd7ZGLsp5Hw_DEPxDnSI',
-  streamUrl:'https://kali.vdopanel.com:3053/stream/play.m3u8',
-  androidApp:'https://www.mediafire.com/file/g0dsndishwvx9lf/ELMAGICTVOK.apk/file',
-  premiumAlias:'MAGICKIDS.OK'
+ chatApi:'https://uifchrnvigkzantaehgz.supabase.co/functions/v1/chat-api',
+ adminHubApi:'https://uifchrnvigkzantaehgz.supabase.co/functions/v1/mk-admin-hub',
+ supabaseUrl:'https://uifchrnvigkzantaehgz.supabase.co',
+ supabasePublishableKey:'sb_publishable_pN7752MhcIXDd7ZGLsp5Hw_DEPxDnSI',
+ streamUrl:'https://kali.vdopanel.com:3053/stream/play.m3u8',
+ androidApp:'https://www.mediafire.com/file/g0dsndishwvx9lf/ELMAGICTVOK.apk/file',
+ premiumAlias:'MAGICKIDS.OK'
 };
