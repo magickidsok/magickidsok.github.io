@@ -39,3 +39,55 @@ footer{display:flex;gap:18px;justify-content:center;align-items:center;flex-wrap
   .chat-name,.chat-input,.chat-form button{grid-column:1;grid-row:auto}
   .chat-form button{width:100%}
 }
+
+
+/* Android/mobile chat hardening only. The player and its styles are intentionally untouched. */
+.chat-card,
+.chat-card * { min-width: 0; }
+.chat-card { width: 100%; max-width: 100%; overflow-wrap: anywhere; }
+.chat-head-actions .btn,
+.chat-form .btn,
+.chat-gate .btn { touch-action: manipulation; min-height: 42px; }
+.chat-name,
+.chat-input { font-size: 16px; line-height: 1.35; }
+.chat-window { overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+.msg { max-width: 100%; overflow-wrap: anywhere; }
+.msg span { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 620px) {
+  .chat-card { padding: 10px; margin-left: 0; margin-right: 0; }
+  .chat-head { width: 100%; }
+  .chat-heading-copy { width: 100%; }
+  .chat-head-actions { width: 100%; }
+  .chat-head-actions > * { min-width: 0; }
+  .chat-window {
+    height: 42vh;
+    height: 42dvh;
+    min-height: 220px;
+    max-height: 340px;
+    padding: 7px;
+  }
+  .chat-form { width: 100%; }
+  .chat-form .chat-name,
+  .chat-form .chat-input { width: 100%; min-height: 44px; }
+  .chat-form .btn { min-height: 44px; }
+  .chat-status, #chatStatus, #premiumStatus { overflow-wrap: anywhere; }
+  .chat-gate { overflow-wrap: anywhere; }
+}
+@media (max-width: 420px) {
+  .chat-head-actions { grid-template-columns: minmax(0, 1fr); }
+  .chat-head-actions .btn { white-space: normal; min-height: 44px; }
+  .chat-form { grid-template-columns: minmax(0, 1fr); }
+  .chat-form .chat-name,
+  .chat-form .chat-input,
+  .chat-form button { grid-column: 1; grid-row: auto; width: 100%; }
+  .chat-form button { white-space: normal; }
+  .chat-window { min-height: 210px; }
+}
+@media (max-width: 360px) {
+  .chat-card { padding: 8px; }
+  .chat-heading-copy h2 { font-size: 1rem; }
+  .chat-head-actions .btn { font-size: .7rem; padding: 9px 6px; }
+}
+@media (max-height: 500px) and (max-width: 900px) {
+  .chat-window { height: 38vh; height: 38dvh; min-height: 150px; max-height: 240px; }
+}
