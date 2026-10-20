@@ -845,6 +845,7 @@ async function premiumChatCreateRequest(request,env,origin){
   const access=await premiumChatIsApproved(env.DB,username,clientToken);
   if(access.allowed)return json({ok:true,status:"approved",username:access.username},200,origin);
   if(access.status==="banned")return json({ok:false,status:"banned",error:"Este nombre está bloqueado."},403,origin);
+  if(access.status==="token_required")return json({ok:false,status:"token_required",error:"Este usuario Premium ya está aprobado. Usá el acceso privado del navegador con el que se registró."},403,origin);
   const now=Date.now();
   const existing=await env.DB.prepare("SELECT id,status,created_at FROM mk_premium_chat_requests WHERE username_norm=? AND status='pending' ORDER BY created_at DESC LIMIT 1").bind(premiumChatNick(username)).first();
   if(existing)return json({ok:true,status:"pending",id:existing.id,createdAt:existing.created_at},200,origin);
