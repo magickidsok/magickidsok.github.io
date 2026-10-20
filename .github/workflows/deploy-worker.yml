@@ -42,15 +42,56 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Inspect Cloudflare account and Worker access
+      - name: Resolve Cloudflare account and Worker access
         shell: bash
         run: |
-          account_response="$(curl -sS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}" || true)"
-          scripts_response="$(curl -sS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts?per_page=100" || true)"
-          echo "Account check:"
-          printf '%s' "$account_response" | jq '{success, errors, result: (if .success then {type: .result.type, status: .result.status} else null end)}'
-          echo "Worker list check:"
-          printf '%s' "$scripts_response" | jq '{success, errors, resultCount: (.result|length)}'
+          set -euo pipefail
+          token="${CLOUDFLARE_API_TOKEN}"
+          configured_account="${CLOUDFLARE_ACCOUNT_ID:-}"
+          base="https://api.cloudflare.com/client/v4"
+          chosen=""
+
+          # First validate the configured account identifier without printing it.
+          if [[ -n "$configured_account" ]]; then
+            account_response="$(curl -sS --max-time 20 -H "Authorization: Bearer ${token}" "${base}/accounts/${configured_account}" || true)"
+            if printf '%s' "$account_response" | jq -e '.success == true' >/dev/null 2>&1; then
+              scripts_response="$(curl -sS --max-time 20 -H "Authorization: Bearer ${token}" "${base}/accounts/${configured_account}/workers/scripts?per_page=100" || true)"
+              if printf '%s' "$scripts_response" | jq -e '.success == true' >/dev/null 2>&1; then
+                if printf '%s' "$scripts_response" | jq -e '.result[]? | select(.id == "magickidsok-github-io")' >/dev/null 2>&1; then
+                  chosen="$configured_account"
+                fi
+              fi
+            fi
+          fi
+
+          # If the saved identifier is stale, resolve only an account that already
+          # contains this exact Worker and is visible to the existing API token.
+          if [[ -z "$chosen" ]]; then
+            echo "Configured Cloudflare account identifier did not validate for this Worker; searching accessible accounts."
+            accounts_response="$(curl -sS --max-time 20 -H "Authorization: Bearer ${token}" "${base}/accounts?per_page=100" || true)"
+            if ! printf '%s' "$accounts_response" | jq -e '.success == true and (.result | type == "array")' >/dev/null 2>&1; then
+              echo "::error::Cloudflare rejected account discovery. Update the repository secrets CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN with valid credentials; never put the token in source code."
+              exit 1
+            fi
+
+            while IFS= read -r candidate; do
+              [[ -z "$candidate" ]] && continue
+              scripts_response="$(curl -sS --max-time 20 -H "Authorization: Bearer ${token}" "${base}/accounts/${candidate}/workers/scripts?per_page=100" || true)"
+              if printf '%s' "$scripts_response" | jq -e '.success == true and any(.result[]?; .id == "magickidsok-github-io")' >/dev/null 2>&1; then
+                chosen="$candidate"
+                break
+              fi
+            done < <(printf '%s' "$accounts_response" | jq -r '.result[]?.id')
+
+          fi
+
+          if [[ -z "$chosen" ]]; then
+            echo "::error::The current API token could not identify an accessible account containing the existing MAGIC KIDS Worker. Check Cloudflare API-token permissions and CLOUDFLARE_ACCOUNT_ID in repository Actions secrets."
+            exit 1
+          fi
+
+          echo "Cloudflare credentials validated for the existing MAGIC KIDS Worker."
+          echo "CLOUDFLARE_ACCOUNT_ID=$chosen" >> "$GITHUB_ENV"
         env:
           CLOUDFLARE_API_TOKEN: ${{ env.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
