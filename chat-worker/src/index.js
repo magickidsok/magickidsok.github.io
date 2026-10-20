@@ -944,7 +944,6 @@ function premiumChatTimestamp(value,fallback){
 async function premiumChatAdminImport(request,env,origin){
   const denied=await premiumChatAdminRequired(request,origin);if(denied)return denied;
   const marker=await env.DB.prepare("SELECT value FROM mk_premium_chat_config WHERE key='legacy_import_done'").first();
-  if(marker&&marker.value==="1")return json({ok:true,alreadyImported:true},200,origin);
   const b=await body(request),now=Date.now(),approved=Array.isArray(b.approvedUsers)?b.approvedUsers.slice(0,2000):[],requests=Array.isArray(b.requests)?b.requests.slice(0,2000):[],messages=Array.isArray(b.messages)?b.messages.slice(-2000):[],banned=Array.isArray(b.bannedUsers)?b.bannedUsers.slice(0,2000):[];
   for(const raw of approved){
     const username=String(typeof raw==="string"?raw:(raw&&raw.username)||"").trim().replace(/\s+/g," ").slice(0,24),norm=premiumChatNick(username);
