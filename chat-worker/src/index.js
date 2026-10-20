@@ -823,8 +823,11 @@ async function premiumChatHistory(request,env,origin){
   return json({ok:true,messages:(rows.results||[]).reverse().map(premiumChatMessageRow)},200,origin);
 }
 async function premiumChatOnlineRoute(request,env,origin){
-  const rows=await premiumChatOnline(env.DB);
-  return json({ok:true,onlineUsers:rows.map(x=>x.username),count:rows.length},200,origin);
+  const online=await premiumChatOnline(env.DB);
+  const approved=await env.DB.prepare("SELECT u.username,u.username_norm FROM mk_premium_chat_users u WHERE NOT EXISTS (SELECT 1 FROM mk_premium_chat_bans b WHERE b.username_norm=u.username_norm) ORDER BY u.username COLLATE NOCASE LIMIT 500").all();
+  const onlineNorm=new Set(online.map(x=>x.username_norm));
+  const chatUsers=(approved.results||[]).map(x=>({username:x.username,online:onlineNorm.has(x.username_norm)})).sort((a,b)=>Number(b.online)-Number(a.online)||a.username.localeCompare(b.username,"es"));
+  return json({ok:true,onlineUsers:online.map(x=>x.username),chatUsers,count:online.length},200,origin);
 }
 async function premiumChatCheck(request,env,origin){
   const u=new URL(request.url);
@@ -930,7 +933,10 @@ async function premiumChatPoll(request,env,origin){
   if(messages.length)after=Math.max(after,...messages.map(m=>m.id));
   if(nudges.length)afterNudge=Math.max(afterNudge,...nudges.map(n=>Number(n.id)));
   const online=await premiumChatOnline(env.DB);
-  return json({ok:true,messages,nudges:nudges.map(n=>({id:Number(n.id),username:n.username,clientId:n.client_id,createdAt:Number(n.created_at)})),cursor:after,nudgeCursor:afterNudge,onlineUsers:online.map(x=>x.username),count:online.length},200,origin);
+  const approved=await env.DB.prepare("SELECT u.username,u.username_norm FROM mk_premium_chat_users u WHERE NOT EXISTS (SELECT 1 FROM mk_premium_chat_bans b WHERE b.username_norm=u.username_norm) ORDER BY u.username COLLATE NOCASE LIMIT 500").all();
+  const onlineNorm=new Set(online.map(x=>x.username_norm));
+  const chatUsers=(approved.results||[]).map(x=>({username:x.username,online:onlineNorm.has(x.username_norm)})).sort((a,b)=>Number(b.online)-Number(a.online)||a.username.localeCompare(b.username,"es"));
+  return json({ok:true,messages,nudges:nudges.map(n=>({id:Number(n.id),username:n.username,clientId:n.client_id,createdAt:Number(n.created_at)})),cursor:after,nudgeCursor:afterNudge,onlineUsers:online.map(x=>x.username),chatUsers,count:online.length},200,origin);
 }
 async function premiumChatAdminState(request,env,origin){
   const denied=await premiumChatAdminRequired(request,origin);if(denied)return denied;
@@ -1072,7 +1078,22 @@ async function premiumChatAdminSend(request,env,origin){
   const result=await env.DB.prepare("INSERT INTO mk_premium_chat_messages(username,username_norm,text,is_admin,created_at) VALUES('MAGIC KIDS','MAGICKIDS',?,1,?)").bind(text,now).run();
   return json({ok:true,id:Number(result.meta&&result.meta.last_row_id||0)},201,origin);
 }
+async function premiumChatAvatar(request,env,origin){
+  const row=await env.DB.prepare("SELECT value FROM mk_premium_chat_config WHERE key='admin_avatar_data_url'").first();
+  return json({ok:true,avatarDataUrl:row&&row.value?String(row.value):""},200,origin);
+}
+async function premiumChatAdminAvatar(request,env,origin){
+  const denied=await premiumChatAdminRequired(request,origin);if(denied)return denied;
+  const b=await body(request),dataUrl=String(b.avatarDataUrl||"").trim();
+  if(!dataUrl||dataUrl.length>300000||!/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(dataUrl)){
+    return json({ok:false,error:"La foto debe ser PNG, JPG o WebP y pesar menos de 220 KB una vez optimizada."},400,origin);
+  }
+  await env.DB.prepare("INSERT INTO mk_premium_chat_config(key,value) VALUES('admin_avatar_data_url',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(dataUrl).run();
+  return json({ok:true},200,origin);
+}
+
 async function premiumChatAdmin(request,env,origin,path){
+  if(path==="/api/premium-chat/admin/avatar"&&request.method==="POST")return premiumChatAdminAvatar(request,env,origin);
   if(path==="/api/premium-chat/admin/state"&&request.method==="GET")return premiumChatAdminState(request,env,origin);
   if(path==="/api/premium-chat/admin/import"&&request.method==="POST")return premiumChatAdminImport(request,env,origin);
   if(path==="/api/premium-chat/admin/approve"&&request.method==="POST")return premiumChatAdminApprove(request,env,origin);
@@ -1098,6 +1119,7 @@ export default {
       if(path.startsWith(MK_PREMIUM_CHAT_PREFIX)){
         const adminResult=await premiumChatAdmin(request,env,origin,path);
         if(adminResult)return adminResult;
+        if(path===MK_PREMIUM_CHAT_PREFIX+"/avatar"&&request.method==="GET")return premiumChatAvatar(request,env,origin);
         if(path===MK_PREMIUM_CHAT_PREFIX+"/history"&&request.method==="GET")return premiumChatHistory(request,env,origin);
         if(path===MK_PREMIUM_CHAT_PREFIX+"/online"&&request.method==="GET")return premiumChatOnlineRoute(request,env,origin);
         if(path===MK_PREMIUM_CHAT_PREFIX+"/check"&&(request.method==="GET"||request.method==="POST"))return premiumChatCheck(request,env,origin);
