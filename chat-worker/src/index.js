@@ -889,7 +889,13 @@ async function premiumChatNudge(request,env,origin){
 async function premiumChatPoll(request,env,origin){
   const u=new URL(request.url);
   let after=Math.max(0,Number(u.searchParams.get("after")||0));
-  let afterNudge=Math.max(0,Number(u.searchParams.get("afterNudge")||0));
+  let afterNudge=0;
+  const nudgeCursor=u.searchParams.get("afterNudge");
+  if(nudgeCursor!==null&&nudgeCursor!=="")afterNudge=Math.max(0,Number(nudgeCursor||0));
+  else{
+    const maxNudge=await env.DB.prepare("SELECT COALESCE(MAX(id),0) AS id FROM mk_premium_chat_nudges").first();
+    afterNudge=Number(maxNudge&&maxNudge.id||0);
+  }
   const username=String(u.searchParams.get("username")||"").trim().slice(0,24);
   const clientId=String(u.searchParams.get("clientId")||"").slice(0,100);
   const isAdmin=u.searchParams.get("isAdmin")==="true" && await premiumChatPanelAuth(request);
@@ -899,7 +905,8 @@ async function premiumChatPoll(request,env,origin){
   }
   if(username&&clientId)await premiumChatPresence(env.DB,clientId,isAdmin?"MAGIC KIDS":username);
   let messages=[],nudges=[];
-  const stop=Date.now()+19000;
+  const waitMs=Math.max(0,Math.min(19000,Number(u.searchParams.get("wait")||19000)));
+  const stop=Date.now()+waitMs;
   do{
     const [m,n]=await Promise.all([
       env.DB.prepare("SELECT id,username,text,is_admin,created_at FROM mk_premium_chat_messages WHERE id>? ORDER BY id ASC LIMIT 40").bind(after).all(),
@@ -927,6 +934,13 @@ async function premiumChatAdminState(request,env,origin){
   const marker=await env.DB.prepare("SELECT value FROM mk_premium_chat_config WHERE key='legacy_import_done'").first();
   return json({ok:true,migrationDone:!!(marker&&marker.value==="1"),requests:reqRows.results||[],approvedUsers:(userRows.results||[]).map(x=>x.username),messages:(messageRows.results||[]).reverse().map(premiumChatMessageRow).map(m=>({id:m.id,username:m.username,text:m.text,createdAt:m.createdAt,isAdmin:m.isAdmin})),bannedUsers:(banRows.results||[]).map(x=>x.username),presenceCount:online.length},200,origin);
 }
+function premiumChatTimestamp(value,fallback){
+  if(typeof value==="number"&&Number.isFinite(value))return value;
+  const numeric=Number(value);
+  if(value!==null&&value!==undefined&&value!==""&&Number.isFinite(numeric)&&numeric>0)return numeric;
+  const parsed=Date.parse(String(value||""));
+  return Number.isFinite(parsed)?parsed:fallback;
+}
 async function premiumChatAdminImport(request,env,origin){
   const denied=await premiumChatAdminRequired(request,origin);if(denied)return denied;
   const marker=await env.DB.prepare("SELECT value FROM mk_premium_chat_config WHERE key='legacy_import_done'").first();
@@ -946,7 +960,7 @@ async function premiumChatAdminImport(request,env,origin){
     if(!username||!norm)continue;
     const id=String(r.id||crypto.randomUUID()).slice(0,120);
     await env.DB.prepare("INSERT OR IGNORE INTO mk_premium_chat_requests(id,username,username_norm,client_token,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?)")
-      .bind(id,username,norm,"",["pending","approved","rejected"].includes(r.status)?r.status:"pending",Number(r.createdAt||r.created_at||now),now).run();
+      .bind(id,username,norm,"",["pending","approved","rejected"].includes(r.status)?r.status:"pending",premiumChatTimestamp(r.createdAt||r.created_at,now),now).run();
   }
   for(const m of messages){
     const username=String(m&&m.username||m&&m.nick||"MAGIC KIDS").trim().replace(/\s+/g," ").slice(0,24)||"MAGIC KIDS";
@@ -954,7 +968,7 @@ async function premiumChatAdminImport(request,env,origin){
     if(!text)continue;
     const legacyId=String(m.id||m.createdAt||m.created_at||crypto.randomUUID()).slice(0,160);
     await env.DB.prepare("INSERT OR IGNORE INTO mk_premium_chat_messages(username,username_norm,text,is_admin,created_at,legacy_id) VALUES(?,?,?,?,?,?)")
-      .bind(username,norm,text,(m.isAdmin||m.is_admin||norm==="MAGICKIDS")?1:0,Number(m.createdAt||m.created_at||now),legacyId).run();
+      .bind(username,norm,text,(m.isAdmin||m.is_admin||norm==="MAGICKIDS")?1:0,premiumChatTimestamp(m.createdAt||m.created_at,now),legacyId).run();
   }
   await env.DB.prepare("INSERT INTO mk_premium_chat_config(key,value) VALUES('legacy_import_done','1') ON CONFLICT(key) DO UPDATE SET value='1'").run();
   return json({ok:true,imported:{approved:approved.length,requests:requests.length,messages:messages.length,banned:banned.length}},200,origin);
