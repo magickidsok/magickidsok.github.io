@@ -954,8 +954,27 @@ function premiumChatTimestamp(value,fallback){
 async function premiumChatAdminImport(request,env,origin){
   const denied=await premiumChatAdminRequired(request,origin);if(denied)return denied;
   const marker=await env.DB.prepare("SELECT value FROM mk_premium_chat_config WHERE key='legacy_import_done'").first();
-  if(marker&&marker.value==="1")return json({ok:true,alreadyImported:true},200,origin);
   const b=await body(request),now=Date.now(),approved=Array.isArray(b.approvedUsers)?b.approvedUsers.slice(0,2000):[],requests=Array.isArray(b.requests)?b.requests.slice(0,2000):[],messages=Array.isArray(b.messages)?b.messages.slice(-2000):[],banned=Array.isArray(b.bannedUsers)?b.bannedUsers.slice(0,2000):[];
+  if(marker&&marker.value==="1"){
+    if(b.backfillTokens){
+      const done=await env.DB.prepare("SELECT value FROM mk_premium_chat_config WHERE key='legacy_token_backfill_done'").first();
+      if(!(done&&done.value==="1")){
+        for(const raw of requests){
+          const id=String(raw&&raw.id||"").slice(0,120),norm=premiumChatNick(raw&&raw.username||""),token=String(raw&&(raw.clientToken||raw.client_token)||"").slice(0,160);
+          if(!id||!norm||!token)continue;
+          await env.DB.prepare("UPDATE mk_premium_chat_requests SET client_token=? WHERE id=? AND client_token=''").bind(token,id).run();
+          if(raw.status==="approved")await env.DB.prepare("UPDATE mk_premium_chat_users SET client_token=? WHERE username_norm=? AND client_token=''").bind(token,norm).run();
+        }
+        for(const raw of approved){
+          if(!raw||typeof raw!=="object")continue;
+          const username=String(raw.username||"").trim().replace(/\\s+/g," ").slice(0,24),norm=premiumChatNick(username),token=String(raw.clientToken||raw.client_token||"").slice(0,160);
+          if(username&&norm&&token)await env.DB.prepare("UPDATE mk_premium_chat_users SET client_token=? WHERE username_norm=? AND client_token=''").bind(token,norm).run();
+        }
+        await env.DB.prepare("INSERT INTO mk_premium_chat_config(key,value) VALUES('legacy_token_backfill_done','1') ON CONFLICT(key) DO UPDATE SET value='1'").run();
+      }
+    }
+    return json({ok:true,alreadyImported:true},200,origin);
+  }
   for(const raw of approved){
     const username=String(typeof raw==="string"?raw:(raw&&raw.username)||"").trim().replace(/\s+/g," ").slice(0,24),norm=premiumChatNick(username);
     const clientToken=String(raw&&typeof raw==="object"?(raw.clientToken||raw.client_token||""):"").slice(0,160);
