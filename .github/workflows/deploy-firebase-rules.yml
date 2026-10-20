@@ -1,0 +1,25 @@
+name: Deploy Magic Kids Firebase database rules
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "database.rules.json"
+      - "firebase.json"
+      - ".github/workflows/deploy-firebase-rules.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MAGIC_KIDS_32B27 }}
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools
+      - name: Deploy Realtime Database rules
+        run: firebase deploy --only database --project magic-kids-32b27 --non-interactive
