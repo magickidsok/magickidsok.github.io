@@ -743,7 +743,7 @@ const MK_PREMIUM_CHAT_PREFIX = "/api/premium-chat";
 
 async function ensurePremiumChatSchema(db){
   await db.batch([
-    db.prepare("CREATE TABLE IF NOT EXISTS mk_premium_chat_users (username_norm TEXT PRIMARY KEY, username TEXT NOT NULL, approved_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS mk_premium_chat_users (username_norm TEXT PRIMARY KEY, username TEXT NOT NULL, client_token TEXT NOT NULL DEFAULT '', approved_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS mk_premium_chat_requests (id TEXT PRIMARY KEY, username TEXT NOT NULL, username_norm TEXT NOT NULL, client_token TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'pending', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_mk_premium_requests_status_created ON mk_premium_chat_requests(status, created_at DESC)"),
     db.prepare("CREATE TABLE IF NOT EXISTS mk_premium_chat_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL, username_norm TEXT NOT NULL, text TEXT NOT NULL, is_admin INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, legacy_id TEXT UNIQUE)"),
@@ -755,6 +755,7 @@ async function ensurePremiumChatSchema(db){
     db.prepare("CREATE INDEX IF NOT EXISTS idx_mk_premium_chat_nudges_id ON mk_premium_chat_nudges(id DESC)"),
     db.prepare("CREATE TABLE IF NOT EXISTS mk_premium_chat_config (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
   ]);
+  try{await db.prepare("ALTER TABLE mk_premium_chat_users ADD COLUMN client_token TEXT NOT NULL DEFAULT ''").run()}catch(e){}
 }
 function premiumChatNick(value){
   return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]/g,"").toUpperCase();
@@ -784,13 +785,17 @@ async function premiumChatAdminRequired(request,origin){
   if(await premiumChatPanelAuth(request))return null;
   return json({ok:false,error:"Panel Premium no autorizado."},403,origin);
 }
-async function premiumChatIsApproved(db,username){
+async function premiumChatIsApproved(db,username,clientToken){
   const norm=premiumChatNick(username);
   if(!norm)return {allowed:false,status:"none"};
   const ban=await db.prepare("SELECT username FROM mk_premium_chat_bans WHERE username_norm=?").bind(norm).first();
   if(ban)return {allowed:false,status:"banned",username:ban.username||username};
-  const row=await db.prepare("SELECT username FROM mk_premium_chat_users WHERE username_norm=?").bind(norm).first();
-  if(row)return {allowed:true,status:"approved",username:row.username};
+  const row=await db.prepare("SELECT username,client_token FROM mk_premium_chat_users WHERE username_norm=?").bind(norm).first();
+  if(row){
+    const required=String(row.client_token||"");
+    if(required&&String(clientToken||"")!==required)return {allowed:false,status:"token_required",username:row.username};
+    return {allowed:true,status:"approved",username:row.username};
+  }
   const request=await db.prepare("SELECT status FROM mk_premium_chat_requests WHERE username_norm=? ORDER BY created_at DESC LIMIT 1").bind(norm).first();
   return {allowed:false,status:request&&request.status||"none"};
 }
@@ -825,10 +830,11 @@ async function premiumChatCheck(request,env,origin){
   const u=new URL(request.url);
   const b=request.method==="POST"?await body(request):{};
   const username=String(b.username||u.searchParams.get("username")||"").trim().slice(0,24);
+  const clientToken=String(b.clientToken||b.client_token||u.searchParams.get("clientToken")||u.searchParams.get("client_token")||"").slice(0,160);
   const isAdmin=String(b.isAdmin||u.searchParams.get("isAdmin")||"")==="true";
   if(isAdmin&&await premiumChatPanelAuth(request))return json({ok:true,allowed:true,status:"approved",username:"MAGIC KIDS",isAdmin:true},200,origin);
   if(!premiumChatNick(username))return json({ok:true,allowed:false,status:"none"},200,origin);
-  const status=await premiumChatIsApproved(env.DB,username);
+  const status=await premiumChatIsApproved(env.DB,username,clientToken);
   return json({ok:true,...status,isAdmin:false},200,origin);
 }
 async function premiumChatCreateRequest(request,env,origin){
@@ -836,7 +842,7 @@ async function premiumChatCreateRequest(request,env,origin){
   const username=String(b.username||b.nick||"").trim().replace(/\s+/g," ").slice(0,24);
   const clientToken=String(b.clientToken||b.client_token||"").slice(0,160);
   if(!premiumChatValidNick(username))return json({ok:false,error:"Nombre no válido. No se permiten enlaces ni teléfonos."},400,origin);
-  const access=await premiumChatIsApproved(env.DB,username);
+  const access=await premiumChatIsApproved(env.DB,username,clientToken);
   if(access.allowed)return json({ok:true,status:"approved",username:access.username},200,origin);
   if(access.status==="banned")return json({ok:false,status:"banned",error:"Este nombre está bloqueado."},403,origin);
   const now=Date.now();
@@ -852,6 +858,7 @@ async function premiumChatSend(request,env,origin){
   const username=String(b.username||"").trim().replace(/\s+/g," ").slice(0,24);
   const text=String(b.text||b.message||"").replace(/\s+/g," ").trim().slice(0,240);
   const clientId=String(b.clientId||b.client_id||"").slice(0,100);
+  const clientToken=String(b.clientToken||b.client_token||"").slice(0,160);
   const isAdmin=String(b.isAdmin||"")==="true" && await premiumChatPanelAuth(request);
   if(!text)return json({ok:false,error:"Escribí un mensaje."},400,origin);
   if(premiumChatBadText(text))return json({ok:false,error:"No se permiten enlaces ni números de teléfono."},400,origin);
@@ -861,8 +868,8 @@ async function premiumChatSend(request,env,origin){
     return json({ok:true,id:Number(result.meta&&result.meta.last_row_id||0),username:"MAGIC KIDS",text,createdAt:now,isAdmin:true},201,origin);
   }
   if(!premiumChatValidNick(username))return json({ok:false,error:"Nombre de usuario no válido."},400,origin);
-  const access=await premiumChatIsApproved(env.DB,username);
-  if(!access.allowed)return json({ok:false,error:access.status==="banned"?"Tu usuario está bloqueado.":"Este nombre Premium no está aprobado en el panel.",status:access.status},403,origin);
+  const access=await premiumChatIsApproved(env.DB,username,clientToken);
+  if(!access.allowed)return json({ok:false,error:access.status==="banned"?"Tu usuario está bloqueado.":access.status==="token_required"?"Falta la clave privada de este acceso Premium. Volvé a MAGIC KIDS desde el enlace de tu solicitud.":"Este nombre Premium no está aprobado en el panel.",status:access.status},403,origin);
   const now=Date.now(),norm=premiumChatNick(username);
   const previous=await env.DB.prepare("SELECT created_at,text FROM mk_premium_chat_messages WHERE username_norm=? ORDER BY id DESC LIMIT 1").bind(norm).first();
   if(previous&&now-Number(previous.created_at||0)<2500)return json({ok:false,error:"Esperá unos segundos antes de enviar otro mensaje."},429,origin);
@@ -875,11 +882,12 @@ async function premiumChatNudge(request,env,origin){
   const b=await body(request);
   const username=String(b.username||"").trim().slice(0,24);
   const clientId=String(b.clientId||"").slice(0,100);
+  const clientToken=String(b.clientToken||b.client_token||"").slice(0,160);
   const isAdmin=String(b.isAdmin||"")==="true" && await premiumChatPanelAuth(request);
   if(!isAdmin){
     if(!premiumChatValidNick(username))return json({ok:false,error:"Ingresá tu nombre Premium aprobado."},400,origin);
-    const access=await premiumChatIsApproved(env.DB,username);
-    if(!access.allowed)return json({ok:false,error:"Solo los usuarios Premium aprobados pueden usar el zumbido."},403,origin);
+    const access=await premiumChatIsApproved(env.DB,username,clientToken);
+    if(!access.allowed)return json({ok:false,error:access.status==="token_required"?"Falta la clave privada de este acceso Premium.":"Solo los usuarios Premium aprobados pueden usar el zumbido."},403,origin);
   }
   const now=Date.now();
   const result=await env.DB.prepare("INSERT INTO mk_premium_chat_nudges(username,username_norm,client_id,created_at) VALUES(?,?,?,?)")
@@ -898,10 +906,11 @@ async function premiumChatPoll(request,env,origin){
   }
   const username=String(u.searchParams.get("username")||"").trim().slice(0,24);
   const clientId=String(u.searchParams.get("clientId")||"").slice(0,100);
+  const clientToken=String(u.searchParams.get("clientToken")||u.searchParams.get("client_token")||"").slice(0,160);
   const isAdmin=u.searchParams.get("isAdmin")==="true" && await premiumChatPanelAuth(request);
   if(username&&!isAdmin){
-    const access=await premiumChatIsApproved(env.DB,username);
-    if(!access.allowed)return json({ok:false,error:access.status==="banned"?"Este usuario está bloqueado.":"El acceso Premium no está aprobado.",status:access.status},403,origin);
+    const access=await premiumChatIsApproved(env.DB,username,clientToken);
+    if(!access.allowed)return json({ok:false,error:access.status==="banned"?"Este usuario está bloqueado.":access.status==="token_required"?"Falta la clave privada de este acceso Premium.":"El acceso Premium no está aprobado.",status:access.status},403,origin);
   }
   if(username&&clientId)await premiumChatPresence(env.DB,clientId,isAdmin?"MAGIC KIDS":username);
   let messages=[],nudges=[];
@@ -948,8 +957,9 @@ async function premiumChatAdminImport(request,env,origin){
   const b=await body(request),now=Date.now(),approved=Array.isArray(b.approvedUsers)?b.approvedUsers.slice(0,2000):[],requests=Array.isArray(b.requests)?b.requests.slice(0,2000):[],messages=Array.isArray(b.messages)?b.messages.slice(-2000):[],banned=Array.isArray(b.bannedUsers)?b.bannedUsers.slice(0,2000):[];
   for(const raw of approved){
     const username=String(typeof raw==="string"?raw:(raw&&raw.username)||"").trim().replace(/\s+/g," ").slice(0,24),norm=premiumChatNick(username);
+    const clientToken=String(raw&&typeof raw==="object"?(raw.clientToken||raw.client_token||""):"").slice(0,160);
     if(!username||!norm||norm.includes("MAGIC"))continue;
-    await env.DB.prepare("INSERT INTO mk_premium_chat_users(username_norm,username,approved_at,updated_at) VALUES(?,?,?,?) ON CONFLICT(username_norm) DO UPDATE SET username=excluded.username,updated_at=excluded.updated_at").bind(norm,username,now,now).run();
+    await env.DB.prepare("INSERT INTO mk_premium_chat_users(username_norm,username,client_token,approved_at,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(username_norm) DO UPDATE SET username=excluded.username,client_token=CASE WHEN excluded.client_token<>'' THEN excluded.client_token ELSE mk_premium_chat_users.client_token END,updated_at=excluded.updated_at").bind(norm,username,clientToken,now,now).run();
   }
   for(const raw of banned){
     const username=String(typeof raw==="string"?raw:(raw&&raw.username)||"").trim().replace(/\s+/g," ").slice(0,24),norm=premiumChatNick(username);
@@ -959,8 +969,11 @@ async function premiumChatAdminImport(request,env,origin){
     const username=String(r&&r.username||"").trim().replace(/\s+/g," ").slice(0,24),norm=premiumChatNick(username);
     if(!username||!norm)continue;
     const id=String(r.id||crypto.randomUUID()).slice(0,120);
+    const clientToken=String(r.clientToken||r.client_token||"").slice(0,160);
+    const requestStatus=["pending","approved","rejected"].includes(r.status)?r.status:"pending";
     await env.DB.prepare("INSERT OR IGNORE INTO mk_premium_chat_requests(id,username,username_norm,client_token,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?)")
-      .bind(id,username,norm,"",["pending","approved","rejected"].includes(r.status)?r.status:"pending",premiumChatTimestamp(r.createdAt||r.created_at,now),now).run();
+      .bind(id,username,norm,clientToken,requestStatus,premiumChatTimestamp(r.createdAt||r.created_at,now),now).run();
+    if(requestStatus==="approved"&&clientToken)await env.DB.prepare("UPDATE mk_premium_chat_users SET client_token=? WHERE username_norm=? AND client_token=''").bind(clientToken,norm).run();
   }
   for(const m of messages){
     const username=String(m&&m.username||m&&m.nick||"MAGIC KIDS").trim().replace(/\s+/g," ").slice(0,24)||"MAGIC KIDS";
@@ -981,7 +994,9 @@ async function premiumChatAdminApprove(request,env,origin){
   const norm=premiumChatNick(username);
   if(!username||!norm||norm.includes("MAGIC"))return json({ok:false,error:"Nombre Premium inválido."},400,origin);
   const now=Date.now();
-  await env.DB.prepare("INSERT INTO mk_premium_chat_users(username_norm,username,approved_at,updated_at) VALUES(?,?,?,?) ON CONFLICT(username_norm) DO UPDATE SET username=excluded.username,updated_at=excluded.updated_at").bind(norm,username,now,now).run();
+  let clientToken=String(b.clientToken||b.client_token||"").slice(0,160);
+  if(id){const req=await env.DB.prepare("SELECT client_token FROM mk_premium_chat_requests WHERE id=?").bind(id).first();if(req&&req.client_token)clientToken=String(req.client_token)}
+  await env.DB.prepare("INSERT INTO mk_premium_chat_users(username_norm,username,client_token,approved_at,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(username_norm) DO UPDATE SET username=excluded.username,client_token=CASE WHEN excluded.client_token<>'' THEN excluded.client_token ELSE mk_premium_chat_users.client_token END,updated_at=excluded.updated_at").bind(norm,username,clientToken,now,now).run();
   if(id)await env.DB.prepare("UPDATE mk_premium_chat_requests SET status='approved',updated_at=? WHERE id=?").bind(now,id).run();
   else await env.DB.prepare("UPDATE mk_premium_chat_requests SET status='approved',updated_at=? WHERE username_norm=? AND status='pending'").bind(now,norm).run();
   return json({ok:true,username},200,origin);
@@ -999,7 +1014,8 @@ async function premiumChatAdminAddUser(request,env,origin){
   const b=await body(request),username=String(b.username||"").trim().replace(/\s+/g," ").slice(0,24),norm=premiumChatNick(username);
   if(!premiumChatValidNick(username))return json({ok:false,error:"Nombre Premium inválido."},400,origin);
   const now=Date.now();
-  await env.DB.prepare("INSERT INTO mk_premium_chat_users(username_norm,username,approved_at,updated_at) VALUES(?,?,?,?) ON CONFLICT(username_norm) DO UPDATE SET username=excluded.username,updated_at=excluded.updated_at").bind(norm,username,now,now).run();
+  const clientToken=String(b.clientToken||b.client_token||"").slice(0,160);
+  await env.DB.prepare("INSERT INTO mk_premium_chat_users(username_norm,username,client_token,approved_at,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(username_norm) DO UPDATE SET username=excluded.username,client_token=CASE WHEN excluded.client_token<>'' THEN excluded.client_token ELSE mk_premium_chat_users.client_token END,updated_at=excluded.updated_at").bind(norm,username,clientToken,now,now).run();
   return json({ok:true,username},200,origin);
 }
 async function premiumChatAdminRemoveUser(request,env,origin){
