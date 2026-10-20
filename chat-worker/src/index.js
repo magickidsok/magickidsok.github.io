@@ -824,7 +824,7 @@ async function premiumChatHistory(request,env,origin){
 }
 async function premiumChatOnlineRoute(request,env,origin){
   const online=await premiumChatOnline(env.DB);
-  const approved=await env.DB.prepare("SELECT u.username,u.username_norm FROM mk_premium_chat_users u WHERE NOT EXISTS (SELECT 1 FROM mk_premium_chat_bans b WHERE b.username_norm=u.username_norm) ORDER BY u.username COLLATE NOCASE LIMIT 500").all();
+  const approved=await env.DB.prepare("SELECT u.username,u.username_norm FROM mk_premium_chat_users u WHERE INSTR(u.username,'@')=0 AND NOT EXISTS (SELECT 1 FROM mk_premium_chat_bans b WHERE b.username_norm=u.username_norm) ORDER BY u.username COLLATE NOCASE LIMIT 500").all();
   const onlineNorm=new Set(online.map(x=>x.username_norm));
   const chatUsers=(approved.results||[]).map(x=>({username:x.username,online:onlineNorm.has(x.username_norm)})).sort((a,b)=>Number(b.online)-Number(a.online)||a.username.localeCompare(b.username,"es"));
   return json({ok:true,onlineUsers:online.map(x=>x.username),chatUsers,count:online.length},200,origin);
@@ -933,7 +933,7 @@ async function premiumChatPoll(request,env,origin){
   if(messages.length)after=Math.max(after,...messages.map(m=>m.id));
   if(nudges.length)afterNudge=Math.max(afterNudge,...nudges.map(n=>Number(n.id)));
   const online=await premiumChatOnline(env.DB);
-  const approved=await env.DB.prepare("SELECT u.username,u.username_norm FROM mk_premium_chat_users u WHERE NOT EXISTS (SELECT 1 FROM mk_premium_chat_bans b WHERE b.username_norm=u.username_norm) ORDER BY u.username COLLATE NOCASE LIMIT 500").all();
+  const approved=await env.DB.prepare("SELECT u.username,u.username_norm FROM mk_premium_chat_users u WHERE INSTR(u.username,'@')=0 AND NOT EXISTS (SELECT 1 FROM mk_premium_chat_bans b WHERE b.username_norm=u.username_norm) ORDER BY u.username COLLATE NOCASE LIMIT 500").all();
   const onlineNorm=new Set(online.map(x=>x.username_norm));
   const chatUsers=(approved.results||[]).map(x=>({username:x.username,online:onlineNorm.has(x.username_norm)})).sort((a,b)=>Number(b.online)-Number(a.online)||a.username.localeCompare(b.username,"es"));
   return json({ok:true,messages,nudges:nudges.map(n=>({id:Number(n.id),username:n.username,clientId:n.client_id,createdAt:Number(n.created_at)})),cursor:after,nudgeCursor:afterNudge,onlineUsers:online.map(x=>x.username),chatUsers,count:online.length},200,origin);
