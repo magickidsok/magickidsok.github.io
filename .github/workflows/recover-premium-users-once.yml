@@ -18,43 +18,46 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install Wrangler
-        run: npm install --no-save wrangler@latest
-      - name: Read approved nicknames only
+      - name: Read approved nicknames from Cloudflare D1
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]]; then
-            echo "::error::Cloudflare read credentials are not available in repository Actions secrets."
-            exit 1
-          fi
-          if ! npx wrangler d1 execute magic-kids-chat-db --config chat-worker/wrangler.toml --remote --json --command "SELECT username FROM mk_premium_chat_users UNION SELECT username FROM mk_premium_chat_requests WHERE status = 'approved' ORDER BY username" > /tmp/approved-nicknames.json 2> /tmp/wrangler-error.txt; then
-            echo "::error::Wrangler could not query legacy D1. Diagnostic:"
-            cat /tmp/wrangler-error.txt
-            cat /tmp/approved-nicknames.json || true
-            exit 1
-          fi
-          node --input-type=module -e '
-            import fs from "node:fs";
-            const raw = fs.readFileSync("/tmp/approved-nicknames.json", "utf8");
-            const parsed = JSON.parse(raw);
-            const rows = [];
-            const walk = value => {
-              if (Array.isArray(value)) { for (const item of value) walk(item); return; }
-              if (!value || typeof value !== "object") return;
-              if (Array.isArray(value.results)) {
-                for (const row of value.results) {
-                  if (row && typeof row.username === "string" && row.username.trim()) rows.push(row.username.trim());
-                }
-              }
-              for (const [key, child] of Object.entries(value)) if (key !== "results") walk(child);
-            };
-            walk(parsed);
-            const names = [...new Set(rows)].sort((a,b)=>a.localeCompare(b));
-            console.log("APPROVED_NICKNAMES_JSON=" + JSON.stringify(names));
-            console.log("APPROVED_NICKNAMES_COUNT=" + names.length);
-            if (names.length === 0) console.log("No approved usernames were found in the legacy D1 tables.");
-          '
+          node --input-type=module <<'NODE'
+          const token = process.env.CLOUDFLARE_API_TOKEN;
+          const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+          if (!token || !accountId) throw new Error("Required Cloudflare Actions secrets are absent.");
+          const api = "https://api.cloudflare.com/client/v4";
+          const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
+          const listResponse = await fetch(`${api}/accounts/${accountId}/d1/database?per_page=100`, { headers });
+          const list = await listResponse.json();
+          if (!listResponse.ok || list.success !== true) {
+            const detail = (list.errors || []).map(e => e.code + ": " + e.message).join("; ");
+            throw new Error("Cloudflare could not list D1 databases: " + detail);
+          }
+          const database = (list.result || []).find(db => db.name === "magic-kids-chat-db");
+          if (!database) {
+            const names = (list.result || []).map(db => db.name).filter(Boolean);
+            console.log("D1 database magic-kids-chat-db was not found; available database names: " + JSON.stringify(names));
+            process.exit(2);
+          }
+          const databaseId = database.uuid || database.id;
+          if (!databaseId) throw new Error("The selected D1 database had no identifier.");
+          const sql = "SELECT username FROM mk_premium_chat_users UNION SELECT username FROM mk_premium_chat_requests WHERE status = 'approved' ORDER BY username";
+          const queryResponse = await fetch(`${api}/accounts/${accountId}/d1/database/${databaseId}/query`, {
+            method: "POST", headers, body: JSON.stringify({ sql, params: [] })
+          });
+          const data = await queryResponse.json();
+          if (!queryResponse.ok || data.success !== true) {
+            const detail = (data.errors || []).map(e => e.code + ": " + e.message).join("; ");
+            throw new Error("Cloudflare D1 query failed: " + detail);
+          }
+          const payload = data.result || [];
+          const rows = payload.flatMap(result => Array.isArray(result.results) ? result.results : []);
+          const names = [...new Set(rows.map(row => String(row.username || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+          console.log("APPROVED_NICKNAMES_JSON=" + JSON.stringify(names));
+          console.log("APPROVED_NICKNAMES_COUNT=" + names.length);
+          if (names.length === 0) console.log("No approved usernames were found in the legacy D1 tables.");
+          NODE          '
