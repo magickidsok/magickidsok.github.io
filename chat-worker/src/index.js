@@ -1,5 +1,5 @@
 import { ensureUnifiedPanelSchema, unifiedPanelFetch } from "./unified-panel.js";
-const ALLOWED_ORIGINS = new Set(["https://magickidsok.online","https://www.magickidsok.online","http://magickidsok.online","http://www.magickidsok.online","https://magickidsok.github.io","https://magickidsok-github-io.elmagickids.workers.dev","https://headless-zchpdkyghyi-elmagickids-140b.wix-site-host.com","https://headless-evwdgpjttxv-elmagickids-140b.wix-site-host.com"]);
+const ALLOWED_ORIGINS = new Set(["https://magickidsok.online","https://www.magickidsok.online","http://magickidsok.online","http://www.magickidsok.online","https://magickidsok.github.io","https://magickidsok-github-io.elmagickids.workers.dev","https://headless-zchpdkyghyi-elmagickids-140b.wix-site-host.com","https://headless-evwdgpjttxv-elmagickids-140b.wix-site-host.com","https://headless-bmyiaymnvxx-elmagickids-140b.wix-site-host.com"]);
 const COOKIE = "MKCHAT_SESSION";
 const ADMIN_COOKIE = "MKADMIN_SESSION";
 const ADMIN_SESSION_SECONDS = 60 * 60 * 12;
@@ -14,7 +14,6 @@ function allowedOrigin(origin){
     const host=new URL(value).hostname.toLowerCase();
     if(host==="magickidsok.online"||host==="www.magickidsok.online")return value;
     if(host.endsWith(".github.io")&&host==="magickidsok.github.io")return value;
-    if(host.endsWith(".elmagickids-140b.wix-site-host.com"))return value;
   }catch(e){}
   return "";
 }
