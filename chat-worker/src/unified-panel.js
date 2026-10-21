@@ -246,6 +246,13 @@ export async function unifiedPanelFetch(request, env, origin, helpers) {
     return json(await jsonPanelState(db, normalizeNick), 200, origin);
   }
 
+  if (path === "/admin/presence" && method === "GET") {
+    const response = await denied();
+    if (response) return response;
+    const row = await db.prepare("SELECT COUNT(*) AS count FROM mk_unified_presence WHERE last_seen>=?").bind(Date.now() - 90000).first();
+    return json({ ok: true, presenceCount: Number(row && row.count || 0) }, 200, origin);
+  }
+
   if (path === "/admin/schedule" && method === "POST") {
     const response = await denied();
     if (response) return response;
