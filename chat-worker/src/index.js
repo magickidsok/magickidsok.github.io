@@ -1,10 +1,11 @@
+import { ensureUnifiedPanelSchema, unifiedPanelFetch } from "./unified-panel.js";
 const ALLOWED_ORIGINS = new Set(["https://magickidsok.online","https://www.magickidsok.online","http://magickidsok.online","http://www.magickidsok.online","https://magickidsok.github.io","https://magickidsok-github-io.elmagickids.workers.dev","https://headless-zchpdkyghyi-elmagickids-140b.wix-site-host.com","https://headless-evwdgpjttxv-elmagickids-140b.wix-site-host.com"]);
 const COOKIE = "MKCHAT_SESSION";
 const ADMIN_COOKIE = "MKADMIN_SESSION";
 const ADMIN_SESSION_SECONDS = 60 * 60 * 12;
 const SESSION_SECONDS = 60 * 60 * 24 * 14;
 const PASSWORD_ITERATIONS = 120000;
-const PANEL_LINK_TOKEN = "MKPANEL-7X4D-92QF-8N3L-6V2Z-4K7P";
+
 
 function allowedOrigin(origin){
   const value=String(origin||"").trim();
@@ -13,6 +14,7 @@ function allowedOrigin(origin){
     const host=new URL(value).hostname.toLowerCase();
     if(host==="magickidsok.online"||host==="www.magickidsok.online")return value;
     if(host.endsWith(".github.io")&&host==="magickidsok.github.io")return value;
+    if(host.endsWith(".elmagickids-140b.wix-site-host.com"))return value;
   }catch(e){}
   return "";
 }
@@ -664,8 +666,7 @@ async function register(request,env,origin){
 }
 async function adminLinkLogin(request,env,origin){
   if(!env.SESSION_SECRET)return json({error:"Falta SESSION_SECRET."},500,origin);
-  const token=String(request.headers.get("X-MK-PANEL-TOKEN")||"");
-  if(token!==PANEL_LINK_TOKEN)return json({error:"Panel no autorizado."},403,origin);
+  if(!await premiumChatPanelAuth(request))return json({error:"Panel no autorizado."},403,origin);
   const session=await makeAdminSessionToken(env.SESSION_SECRET);
   return json({ok:true,token:session,user:{id:"admin-link",email:"",nick:"MAGICKIDS",isAdmin:true}},200,origin,{"Set-Cookie":setAdminSessionCookie(session)});
 }
@@ -738,7 +739,7 @@ async function adminBan(request,env,origin){
 }
 
 
-const MK_PREMIUM_PANEL_TOKEN_SHA256 = "5ecd764773dc26a5326fedf2b70320512100e1afeebe9090d38b5d4440d2840d";
+const MK_PREMIUM_PANEL_TOKEN_SHA256 = "4058cb9834747b4384abc229da159387b51bdba3dba16e9c900e0600f66ca3d9";
 const MK_PREMIUM_CHAT_PREFIX = "/api/premium-chat";
 
 async function ensurePremiumChatSchema(db){
@@ -1115,7 +1116,10 @@ export default {
       await ensureSchema(env.DB);
       await ensureVideoSchema(env.DB);
       await ensurePremiumChatSchema(env.DB);
+      await ensureUnifiedPanelSchema(env.DB);
       const path=new URL(request.url).pathname;
+      const unifiedResult=await unifiedPanelFetch(request,env,origin,{auth:premiumChatPanelAuth,json:json,validNick:premiumChatValidNick,normalizeNick:premiumChatNick});
+      if(unifiedResult)return unifiedResult;
       if(path.startsWith(MK_PREMIUM_CHAT_PREFIX)){
         const adminResult=await premiumChatAdmin(request,env,origin,path);
         if(adminResult)return adminResult;
