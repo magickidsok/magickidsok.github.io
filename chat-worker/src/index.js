@@ -1,4 +1,5 @@
 import { ensureUnifiedPanelSchema, unifiedPanelFetch } from "./unified-panel.js";
+import { playerConfigFetch } from "./player-config.js";
 const ALLOWED_ORIGINS = new Set(["https://magickidsok.online","https://www.magickidsok.online","http://magickidsok.online","http://www.magickidsok.online","https://magickidsok.github.io","https://magickidsok-github-io.elmagickids.workers.dev","https://headless-zchpdkyghyi-elmagickids-140b.wix-site-host.com","https://headless-evwdgpjttxv-elmagickids-140b.wix-site-host.com","https://headless-bmyiaymnvxx-elmagickids-140b.wix-site-host.com"]);
 const COOKIE = "MKCHAT_SESSION";
 const ADMIN_COOKIE = "MKADMIN_SESSION";
@@ -1119,6 +1120,8 @@ export default {
       const path=new URL(request.url).pathname;
       const unifiedResult=await unifiedPanelFetch(request,env,origin,{auth:premiumChatPanelAuth,json:json,validNick:premiumChatValidNick,normalizeNick:premiumChatNick});
       if(unifiedResult)return unifiedResult;
+      const playerConfigResult=await playerConfigFetch(request,env,origin,{auth:premiumChatPanelAuth,json:json});
+      if(playerConfigResult)return playerConfigResult;
       if(path.startsWith(MK_PREMIUM_CHAT_PREFIX)){
         const adminResult=await premiumChatAdmin(request,env,origin,path);
         if(adminResult)return adminResult;
