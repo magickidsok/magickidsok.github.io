@@ -60,4 +60,4 @@ jobs:
           console.log("APPROVED_NICKNAMES_JSON=" + JSON.stringify(names));
           console.log("APPROVED_NICKNAMES_COUNT=" + names.length);
           if (names.length === 0) console.log("No approved usernames were found in the legacy D1 tables.");
-          NODE          '
+          NODE
