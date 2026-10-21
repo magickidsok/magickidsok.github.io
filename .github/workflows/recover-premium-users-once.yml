@@ -31,7 +31,7 @@ jobs:
             echo "::error::Cloudflare read credentials are not available in repository Actions secrets."
             exit 1
           fi
-          npx wrangler d1 execute magic-kids-chat-db --remote --json --command "SELECT username FROM mk_premium_chat_users UNION SELECT username FROM mk_premium_chat_requests WHERE status = 'approved' ORDER BY username" > /tmp/approved-nicknames.json
+          npx wrangler d1 execute magic-kids-chat-db --config chat-worker/wrangler.toml --remote --json --command "SELECT username FROM mk_premium_chat_users UNION SELECT username FROM mk_premium_chat_requests WHERE status = 'approved' ORDER BY username" > /tmp/approved-nicknames.json
           node --input-type=module -e '
             import fs from "node:fs";
             const raw = fs.readFileSync("/tmp/approved-nicknames.json", "utf8");
