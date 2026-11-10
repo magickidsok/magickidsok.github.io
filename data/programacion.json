@@ -9,10 +9,15 @@
       "position": 2,
       "start_time": "05:03",
       "title": "KONI CHAN"
+    },
+    {
+      "position": 3,
+      "start_time": "05:27",
+      "title": "LOONEY TUNES"
     }
   ],
   "schemaVersion": 1,
   "section": "programacion",
-  "revision": 12,
-  "updatedAt": "2026-11-10T07:43:46.661Z"
+  "revision": 13,
+  "updatedAt": "2026-11-10T07:46:03.956Z"
 }
