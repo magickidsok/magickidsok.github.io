@@ -164,10 +164,15 @@
       "position": 33,
       "start_time": "01:07",
       "title": "LOS SIMPSONS"
+    },
+    {
+      "position": 34,
+      "start_time": "01:32",
+      "title": "DETECTIVE CONAN"
     }
   ],
   "schemaVersion": 1,
   "section": "programacion",
-  "revision": 19,
-  "updatedAt": "2026-11-10T08:07:11.446Z"
+  "revision": 20,
+  "updatedAt": "2026-11-10T08:07:47.624Z"
 }
