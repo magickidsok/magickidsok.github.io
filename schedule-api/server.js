@@ -74,7 +74,13 @@ const server=http.createServer(async(req,res)=>{
     res.write("event: connected\ndata: {}\n\n");clients.add(res);req.on("close",()=>clients.delete(res));return;
   }
   if(req.method==="POST"&&url.pathname==="/schedule"){
-    const adminToken=(req.headers.authorization||"").replace(/^Bearer\\s+/i,"");\n    if(!adminToken)return send(res,401,{ok:false,error:"UNAUTHORIZED"});\n    try { const auth=await fetch(`${SUPABASE_API}/admin/state`,{headers:{authorization:`Bearer ${adminToken}`,accept:"application/json"},cache:"no-store"}); const authData=await auth.json().catch(()=>({})); if(!auth.ok||!authData.ok)return send(res,401,{ok:false,error:"ADMIN_AUTH_FAILED"}); } catch { return send(res,503,{ok:false,error:"ADMIN_AUTH_UNAVAILABLE"}); }
+    const adminToken=(req.headers.authorization||"").replace(/^Bearer\s+/i,"");
+    if(!adminToken)return send(res,401,{ok:false,error:"UNAUTHORIZED"});
+    try {
+      const auth=await fetch(`${SUPABASE_API}/admin/state`,{headers:{authorization:`Bearer ${adminToken}`,accept:"application/json"},cache:"no-store"});
+      const authData=await auth.json().catch(()=>({}));
+      if(!auth.ok||!authData.ok)return send(res,401,{ok:false,error:"ADMIN_AUTH_FAILED"});
+    } catch { return send(res,503,{ok:false,error:"ADMIN_AUTH_UNAVAILABLE"}); }
     let raw="";for await(const chunk of req)raw+=chunk;
     if(raw.length>100000)return send(res,413,{ok:false,error:"PAYLOAD_TOO_LARGE"});
     let body;try{body=JSON.parse(raw);}catch{return send(res,400,{ok:false,error:"INVALID_JSON"});}
