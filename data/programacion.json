@@ -14,10 +14,40 @@
       "position": 3,
       "start_time": "05:27",
       "title": "LOONEY TUNES"
+    },
+    {
+      "position": 4,
+      "start_time": "06:04",
+      "title": "LOS SIMPSONS"
+    },
+    {
+      "position": 5,
+      "start_time": "06:28",
+      "title": "MIKAMI LA CAZAFANTASMAS"
+    },
+    {
+      "position": 6,
+      "start_time": "06:53",
+      "title": "KITO PIZZAS"
+    },
+    {
+      "position": 7,
+      "start_time": "07:18",
+      "title": "MIKAMI LA CAZAFANTASMAS"
+    },
+    {
+      "position": 8,
+      "start_time": "07:43",
+      "title": "POWER RANGERS FUERZA SALVAJE"
+    },
+    {
+      "position": 9,
+      "start_time": "08:07",
+      "title": "LAS AVENTURAS DE ORPHEN"
     }
   ],
   "schemaVersion": 1,
   "section": "programacion",
-  "revision": 13,
-  "updatedAt": "2026-11-10T07:46:03.956Z"
+  "revision": 14,
+  "updatedAt": "2026-11-10T07:52:36.314Z"
 }
