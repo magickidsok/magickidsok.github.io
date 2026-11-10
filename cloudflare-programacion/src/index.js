@@ -35,13 +35,10 @@ function githubHeaders(env) {
   return {authorization:"Bearer "+env.GITHUB_TOKEN,accept:"application/vnd.github+json","x-github-api-version":"2022-11-28"};
 }
 async function getSchedule(env) {
-  const u="https://api.github.com/repos/"+OWNER+"/"+REPO+"/contents/"+PATH+"?ref="+encodeURIComponent(BRANCH);
-  const r=await fetch(u,{headers:githubHeaders(env)});
-  if(!r.ok)throw new Error("GITHUB_READ_"+r.status);
-  const file=await r.json();
-  const raw=atob(file.content.replace(/\n/g,""));
-  const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
-  return {data:JSON.parse(new TextDecoder().decode(bytes)),sha:file.sha};
+  const u="https://raw.githubusercontent.com/"+OWNER+"/"+REPO+"/"+BRANCH+"/"+PATH;
+  const r=await fetch(u,{headers:{"accept":"application/json"},cf:{cacheTtl:15,cacheEverything:true}});
+  if(!r.ok)throw new Error("GITHUB_RAW_READ_"+r.status);
+  return {data:await r.json()};
 }
 function validSchedule(x) {
   return !!x && Array.isArray(x.entries) && x.entries.length>=1 && x.entries.length<=200 &&
@@ -49,17 +46,22 @@ function validSchedule(x) {
     /^([01]\d|2[0-3]):[0-5]\d$/.test(e.start_time)&&typeof e.title==="string"&&e.title.trim().length>0&&e.title.length<=180);
 }
 async function saveSchedule(env,schedule) {
-  const current=await getSchedule(env);
-  const next={...schedule,schemaVersion:1,section:"programacion",revision:Number(current.data.revision||0)+1,updatedAt:new Date().toISOString()};
+  if(!env.GITHUB_TOKEN)throw new Error("GITHUB_TOKEN_NOT_CONFIGURED");
+  const api="https://api.github.com/repos/"+OWNER+"/"+REPO+"/contents/"+PATH;
+  const get=await fetch(api+"?ref="+encodeURIComponent(BRANCH),{headers:githubHeaders(env)});
+  if(!get.ok)throw new Error("GITHUB_READ_FOR_WRITE_"+get.status);
+  const current=await get.json();
+  const raw=atob(current.content.replace(/\n/g,""));
+  const previous=JSON.parse(new TextDecoder().decode(Uint8Array.from(raw,c=>c.charCodeAt(0))));
+  const next={...schedule,schemaVersion:1,section:"programacion",revision:Number(previous.revision||0)+1,updatedAt:new Date().toISOString()};
   const content=btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(next,null,2)+"\n")));
-  const url="https://api.github.com/repos/"+OWNER+"/"+REPO+"/contents/"+PATH;
-  const r=await fetch(url,{method:"PUT",headers:{...githubHeaders(env),"content-type":"application/json"},body:JSON.stringify({
-    message:"Update MAGIC KIDS schedule revision "+next.revision,
-    content,sha:current.sha,branch:BRANCH
+  const put=await fetch(api,{method:"PUT",headers:{...githubHeaders(env),"content-type":"application/json"},body:JSON.stringify({
+    message:"Update MAGIC KIDS schedule revision "+next.revision,content,sha:current.sha,branch:BRANCH
   })});
-  if(!r.ok)throw new Error("GITHUB_WRITE_"+r.status);
+  if(!put.ok)throw new Error("GITHUB_WRITE_"+put.status);
   return next;
 }
+
 export default {
   async fetch(request,env) {
     const origin=request.headers.get("Origin");
