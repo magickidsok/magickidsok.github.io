@@ -2,142 +2,137 @@
   "entries": [
     {
       "position": 1,
-      "start_time": "04:35",
-      "title": "KITO PIZZAS"
-    },
-    {
-      "position": 2,
       "start_time": "05:03",
       "title": "KONI CHAN"
     },
     {
-      "position": 3,
+      "position": 2,
       "start_time": "05:27",
       "title": "LOONEY TUNES"
     },
     {
-      "position": 4,
+      "position": 3,
       "start_time": "06:04",
       "title": "LOS SIMPSONS"
     },
     {
-      "position": 5,
+      "position": 4,
       "start_time": "06:28",
       "title": "MIKAMI LA CAZAFANTASMAS"
     },
     {
-      "position": 6,
+      "position": 5,
       "start_time": "06:53",
       "title": "KITO PIZZAS"
     },
     {
-      "position": 7,
+      "position": 6,
       "start_time": "07:18",
       "title": "MIKAMI LA CAZAFANTASMAS"
     },
     {
-      "position": 8,
+      "position": 7,
       "start_time": "07:43",
       "title": "POWER RANGERS FUERZA SALVAJE"
     },
     {
-      "position": 9,
+      "position": 8,
       "start_time": "08:07",
       "title": "LAS AVENTURAS DE ORPHEN"
     },
     {
-      "position": 10,
+      "position": 9,
       "start_time": "08:30",
       "title": "PINKY Y CEREBRO"
     },
     {
-      "position": 11,
+      "position": 10,
       "start_time": "08:51",
       "title": "LA PANTERA ROSA"
     },
     {
-      "position": 12,
+      "position": 11,
       "start_time": "08:58",
       "title": "POWER RANGERS FUERZA DEL TIEMPO"
     },
     {
-      "position": 13,
+      "position": 12,
       "start_time": "09:19",
       "title": "POWER RANGERS LA GALAXIA PERDIDA"
     },
     {
-      "position": 14,
+      "position": 13,
       "start_time": "09:45",
       "title": "PINKY Y CEREBRO"
     },
     {
-      "position": 15,
+      "position": 14,
       "start_time": "10:09",
       "title": "RANMA 1/2"
     },
     {
-      "position": 16,
+      "position": 15,
       "start_time": "10:33",
       "title": "REEBOT"
     },
     {
-      "position": 17,
+      "position": 16,
       "start_time": "10:57",
       "title": "ROBOCOP"
     },
     {
-      "position": 18,
+      "position": 17,
       "start_time": "11:19",
       "title": "ROBOTECH"
     },
     {
-      "position": 19,
+      "position": 18,
       "start_time": "11:44",
       "title": "SAKURA CARD CAPTOR"
     },
     {
-      "position": 20,
+      "position": 19,
       "start_time": "13:27",
       "title": "SAMURAI WARRIOS"
     },
     {
-      "position": 21,
+      "position": 20,
       "start_time": "13:51",
       "title": "DRAGON BALL"
     },
     {
-      "position": 22,
+      "position": 21,
       "start_time": "14:21",
       "title": "DRAGON BALL Z BLOQUE TOONAMI"
     },
     {
-      "position": 23,
+      "position": 22,
       "start_time": "16:13",
       "title": "DRAGON BALL SUPER BLOQUE TOONAMI"
     },
     {
-      "position": 24,
+      "position": 23,
       "start_time": "17:32",
       "title": "DRAGON BALL HEROES"
     },
     {
-      "position": 25,
+      "position": 24,
       "start_time": "17:48",
       "title": "DRAGON BALL GT"
     },
     {
-      "position": 26,
+      "position": 25,
       "start_time": "18:10",
       "title": "MOB 100"
     },
     {
-      "position": 27,
+      "position": 26,
       "start_time": "19:51",
       "title": "SHAMAN KING"
     }
   ],
   "schemaVersion": 1,
   "section": "programacion",
-  "revision": 17,
-  "updatedAt": "2026-11-10T08:03:04.470Z"
+  "revision": 18,
+  "updatedAt": "2026-11-10T08:05:15.829Z"
 }
