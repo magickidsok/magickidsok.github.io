@@ -1,5 +1,5 @@
 import http from "node:http";
-import { timingSafeEqual } from "node:crypto";
+import { timingSafeEqual, createHmac } from "node:crypto";
 
 const PORT = Number(process.env.PORT || 10000);
 const GH_OWNER = process.env.GITHUB_OWNER || "magickidsok";
@@ -8,7 +8,7 @@ const GH_BRANCH = process.env.GITHUB_BRANCH || "migration/programacion-github-js
 const GH_PATH = process.env.GITHUB_FILE_PATH || "data/programacion.json";
 const GH_TOKEN = process.env.GITHUB_TOKEN;
 const SUPABASE_API = process.env.SUPABASE_API || "https://bfedjvqhrxmkgaiaqtpm.supabase.co/functions/v1/mk-api";
-const SCHEDULE_ADMIN_KEY = process.env.SCHEDULE_ADMIN_KEY || "";
+const SCHEDULE_SIGNING_SECRET = process.env.SCHEDULE_SIGNING_SECRET || "";
 const ALLOWED_ORIGINS = new Set([
   "https://headless-zchpdkyghyi-elmagickids-140b.wix-site-host.com",
   "https://headless-bmyiaymnvxx-elmagickids-140b.wix-site-host.com"
@@ -58,6 +58,21 @@ async function writeGithub(schedule) {
   for (const client of clients) client.write(`event: schedule\ndata: ${JSON.stringify(next)}\n\n`);
   return next;
 }
+function b64url(value) { return Buffer.from(value).toString("base64url"); }
+function signScheduleSession(payload) {
+  if (!SCHEDULE_SIGNING_SECRET) throw new Error("SCHEDULE_SIGNING_SECRET_NOT_CONFIGURED");
+  const body = b64url(JSON.stringify(payload));
+  const sig = createHmac("sha256", SCHEDULE_SIGNING_SECRET).update(body).digest("base64url");
+  return body + "." + sig;
+}
+function verifyScheduleSession(token) {
+  if (!SCHEDULE_SIGNING_SECRET || typeof token !== "string") return false;
+  const parts = token.split("."); if (parts.length !== 2) return false;
+  const expected = createHmac("sha256", SCHEDULE_SIGNING_SECRET).update(parts[0]).digest();
+  let supplied; try { supplied = Buffer.from(parts[1], "base64url"); } catch { return false; }
+  if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) return false;
+  try { const p=JSON.parse(Buffer.from(parts[0],"base64url").toString("utf8")); return p.scope==="schedule:write" && Number(p.exp)>Math.floor(Date.now()/1000); } catch { return false; }
+}
 function validSchedule(x) {
   if (!x || !Array.isArray(x.entries) || x.entries.length<1 || x.entries.length>200) return false;
   return x.entries.every((e,i)=>Number.isInteger(e.position)&&e.position===i+1&&/^([01]\d|2[0-3]):[0-5]\d$/.test(e.start_time)&&typeof e.title==="string"&&e.title.trim().length>0&&e.title.length<=180);
@@ -75,22 +90,23 @@ const server=http.createServer(async(req,res)=>{
     res.writeHead(200,{"content-type":"text/event-stream","cache-control":"no-cache, no-transform","connection":"keep-alive","access-control-allow-origin":req.headers.origin||"*"});
     res.write("event: connected\ndata: {}\n\n");clients.add(res);req.on("close",()=>clients.delete(res));return;
   }
-  if(req.method==="POST"&&url.pathname==="/schedule"){
-    const adminToken=(req.headers.authorization||"").replace(/^Bearer\s+/i,"");
+  if(req.method==="POST"&&url.pathname==="/schedule/session"){
+    const adminToken=(req.headers.authorization||"").replace(/^Bearer\\s+/i,"");
     if(!adminToken)return send(res,401,{ok:false,error:"UNAUTHORIZED"});
-    if (SCHEDULE_ADMIN_KEY) {
-      const supplied = Buffer.from(adminToken);
-      const expected = Buffer.from(SCHEDULE_ADMIN_KEY);
-      if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
-        return send(res,401,{ok:false,error:"SCHEDULE_AUTH_FAILED"});
-      }
-    } else {
-      try {
-        const auth=await fetch(`${SUPABASE_API}/admin/state`,{headers:{authorization:`Bearer ${adminToken}`,accept:"application/json"},cache:"no-store"});
-        const authData=await auth.json().catch(()=>({}));
-        if(!auth.ok||!authData.ok)return send(res,401,{ok:false,error:"ADMIN_AUTH_FAILED"});
-      } catch { return send(res,503,{ok:false,error:"ADMIN_AUTH_UNAVAILABLE"}); }
-    }
+    if(!SCHEDULE_SIGNING_SECRET)return send(res,503,{ok:false,error:"SCHEDULE_SIGNING_SECRET_NOT_CONFIGURED"});
+    try {
+      const auth=await fetch(SUPABASE_API+"/admin/state",{headers:{authorization:"Bearer "+adminToken,accept:"application/json"},cache:"no-store"});
+      const authData=await auth.json().catch(()=>({}));
+      if(!auth.ok||!authData.ok)return send(res,401,{ok:false,error:"ADMIN_AUTH_FAILED"});
+      const now=Math.floor(Date.now()/1000),exp=now+8*60*60;
+      const sessionToken=signScheduleSession({scope:"schedule:write",iat:now,exp});
+      return send(res,200,{ok:true,sessionToken,expiresAt:new Date(exp*1000).toISOString()});
+    } catch(e) { return send(res,503,{ok:false,error:"SCHEDULE_SESSION_UNAVAILABLE"}); }
+  }
+  if(req.method==="POST"&&url.pathname==="/schedule"){
+    const scheduleSession=(req.headers.authorization||"").replace(/^Bearer\\s+/i,"");
+    if(!scheduleSession)return send(res,401,{ok:false,error:"UNAUTHORIZED"});
+    if(!verifyScheduleSession(scheduleSession))return send(res,401,{ok:false,error:"SCHEDULE_SESSION_INVALID_OR_EXPIRED"});
     let raw="";for await(const chunk of req)raw+=chunk;
     if(raw.length>100000)return send(res,413,{ok:false,error:"PAYLOAD_TOO_LARGE"});
     let body;try{body=JSON.parse(raw);}catch{return send(res,400,{ok:false,error:"INVALID_JSON"});}
