@@ -99,10 +99,45 @@
       "position": 20,
       "start_time": "13:27",
       "title": "SAMURAI WARRIOS"
+    },
+    {
+      "position": 21,
+      "start_time": "13:51",
+      "title": "DRAGON BALL"
+    },
+    {
+      "position": 22,
+      "start_time": "14:21",
+      "title": "DRAGON BALL Z BLOQUE TOONAMI"
+    },
+    {
+      "position": 23,
+      "start_time": "16:13",
+      "title": "DRAGON BALL SUPER BLOQUE TOONAMI"
+    },
+    {
+      "position": 24,
+      "start_time": "17:32",
+      "title": "DRAGON BALL HEROES"
+    },
+    {
+      "position": 25,
+      "start_time": "17:48",
+      "title": "DRAGON BALL GT"
+    },
+    {
+      "position": 26,
+      "start_time": "18:10",
+      "title": "MOB 100"
+    },
+    {
+      "position": 27,
+      "start_time": "19:51",
+      "title": "SHAMAN KING"
     }
   ],
   "schemaVersion": 1,
   "section": "programacion",
-  "revision": 16,
-  "updatedAt": "2026-11-10T07:56:21.147Z"
+  "revision": 17,
+  "updatedAt": "2026-11-10T08:03:04.470Z"
 }
