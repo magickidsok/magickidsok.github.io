@@ -3,7 +3,7 @@
     {
       "position": 1,
       "start_time": "01:06",
-      "title": "GUERRA DE BESTIAS"
+      "title": "bestias"
     },
     {
       "position": 2,
@@ -58,6 +58,6 @@
   ],
   "schemaVersion": 1,
   "section": "programacion",
-  "revision": 3,
-  "updatedAt": "2026-11-10T04:21:41.121Z"
+  "revision": 4,
+  "updatedAt": "2026-11-10T04:22:02.998Z"
 }
