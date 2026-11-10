@@ -91,7 +91,7 @@ const server=http.createServer(async(req,res)=>{
     res.write("event: connected\ndata: {}\n\n");clients.add(res);req.on("close",()=>clients.delete(res));return;
   }
   if(req.method==="POST"&&url.pathname==="/schedule/session"){
-    const adminToken=(req.headers.authorization||"").replace(/^Bearer\\s+/i,"");
+    const adminToken=(req.headers.authorization||"").replace(/^Bearer\s+/i,"");
     if(!adminToken)return send(res,401,{ok:false,error:"UNAUTHORIZED"});
     if(!SCHEDULE_SIGNING_SECRET)return send(res,503,{ok:false,error:"SCHEDULE_SIGNING_SECRET_NOT_CONFIGURED"});
     try {
@@ -104,7 +104,7 @@ const server=http.createServer(async(req,res)=>{
     } catch(e) { return send(res,503,{ok:false,error:"SCHEDULE_SESSION_UNAVAILABLE"}); }
   }
   if(req.method==="POST"&&url.pathname==="/schedule"){
-    const scheduleSession=(req.headers.authorization||"").replace(/^Bearer\\s+/i,"");
+    const scheduleSession=(req.headers.authorization||"").replace(/^Bearer\s+/i,"");
     if(!scheduleSession)return send(res,401,{ok:false,error:"UNAUTHORIZED"});
     if(!verifyScheduleSession(scheduleSession))return send(res,401,{ok:false,error:"SCHEDULE_SESSION_INVALID_OR_EXPIRED"});
     let raw="";for await(const chunk of req)raw+=chunk;
