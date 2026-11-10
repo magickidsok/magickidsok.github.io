@@ -1,0 +1,10 @@
+name = "magic-kids-programacion"
+main = "cloudflare-programacion/src/index.js"
+compatibility_date = "2026-11-10"
+workers_dev = true
+
+[vars]
+GITHUB_OWNER = "magickidsok"
+GITHUB_REPO = "magickidsok.github.io"
+GITHUB_BRANCH = "migration/programacion-github-json"
+GITHUB_FILE_PATH = "data/programacion.json"
