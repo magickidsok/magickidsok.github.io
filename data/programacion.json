@@ -1,10 +1,4 @@
 {
-  "schemaVersion": 1,
-  "section": "programacion",
-  "timezone": "America/Argentina/Cordoba",
-  "revision": 1,
-  "updatedAt": "2026-11-10T03:48:04.349Z",
-  "source": "snapshot-from-live-private-wix-panel",
   "entries": [
     {
       "position": 1,
@@ -71,5 +65,9 @@
       "start_time": "05:03",
       "title": "KONI CHAN"
     }
-  ]
+  ],
+  "schemaVersion": 1,
+  "section": "programacion",
+  "revision": 2,
+  "updatedAt": "2026-11-10T04:20:01.490Z"
 }
