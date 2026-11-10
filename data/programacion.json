@@ -2,62 +2,47 @@
   "entries": [
     {
       "position": 1,
-      "start_time": "01:06",
-      "title": "GUERRA DE BESTIASS"
-    },
-    {
-      "position": 2,
-      "start_time": "01:28",
-      "title": "GODZILLA LA SERIE"
-    },
-    {
-      "position": 3,
-      "start_time": "01:49",
-      "title": "GUERRERAS MAGICAS"
-    },
-    {
-      "position": 4,
       "start_time": "02:14",
       "title": "HE MAN"
     },
     {
-      "position": 5,
+      "position": 2,
       "start_time": "02:36",
       "title": "HALCONES GALACTICOS"
     },
     {
-      "position": 6,
+      "position": 3,
       "start_time": "02:58",
       "title": "HERCULES LA SERIE"
     },
     {
-      "position": 7,
+      "position": 4,
       "start_time": "03:22",
       "title": "MIKAMI LA CAZAFANTASMAS"
     },
     {
-      "position": 8,
+      "position": 5,
       "start_time": "03:49",
       "title": "HOMBRES DE NEGRO LA SERIE"
     },
     {
-      "position": 9,
+      "position": 6,
       "start_time": "04:12",
       "title": "EL INSPECTOR GATGET"
     },
     {
-      "position": 10,
+      "position": 7,
       "start_time": "04:35",
       "title": "KITO PIZZAS"
     },
     {
-      "position": 11,
+      "position": 8,
       "start_time": "05:03",
       "title": "KONI CHAN"
     }
   ],
   "schemaVersion": 1,
   "section": "programacion",
-  "revision": 8,
-  "updatedAt": "2026-11-10T04:35:09.882Z"
+  "revision": 9,
+  "updatedAt": "2026-11-10T05:17:29.577Z"
 }
