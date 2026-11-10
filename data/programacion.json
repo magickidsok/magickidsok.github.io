@@ -74,10 +74,35 @@
       "position": 15,
       "start_time": "10:09",
       "title": "RANMA 1/2"
+    },
+    {
+      "position": 16,
+      "start_time": "10:33",
+      "title": "REEBOT"
+    },
+    {
+      "position": 17,
+      "start_time": "10:57",
+      "title": "ROBOCOP"
+    },
+    {
+      "position": 18,
+      "start_time": "11:19",
+      "title": "ROBOTECH"
+    },
+    {
+      "position": 19,
+      "start_time": "11:44",
+      "title": "SAKURA CARD CAPTOR"
+    },
+    {
+      "position": 20,
+      "start_time": "13:27",
+      "title": "SAMURAI WARRIOS"
     }
   ],
   "schemaVersion": 1,
   "section": "programacion",
-  "revision": 15,
-  "updatedAt": "2026-11-10T07:54:29.117Z"
+  "revision": 16,
+  "updatedAt": "2026-11-10T07:56:21.147Z"
 }
