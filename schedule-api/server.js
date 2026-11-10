@@ -1,4 +1,5 @@
 import http from "node:http";
+import { timingSafeEqual } from "node:crypto";
 
 const PORT = Number(process.env.PORT || 10000);
 const GH_OWNER = process.env.GITHUB_OWNER || "magickidsok";
@@ -80,7 +81,7 @@ const server=http.createServer(async(req,res)=>{
     if (SCHEDULE_ADMIN_KEY) {
       const supplied = Buffer.from(adminToken);
       const expected = Buffer.from(SCHEDULE_ADMIN_KEY);
-      if (supplied.length !== expected.length || !require("node:crypto").timingSafeEqual(supplied, expected)) {
+      if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
         return send(res,401,{ok:false,error:"SCHEDULE_AUTH_FAILED"});
       }
     } else {
