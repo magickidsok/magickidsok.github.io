@@ -2,37 +2,17 @@
   "entries": [
     {
       "position": 1,
-      "start_time": "02:58",
-      "title": "HERCULES LA SERIE"
-    },
-    {
-      "position": 2,
-      "start_time": "03:22",
-      "title": "MIKAMI LA CAZAFANTASMAS"
-    },
-    {
-      "position": 3,
-      "start_time": "03:49",
-      "title": "HOMBRES DE NEGRO LA SERIE"
-    },
-    {
-      "position": 4,
-      "start_time": "04:12",
-      "title": "EL INSPECTOR GATGET"
-    },
-    {
-      "position": 5,
       "start_time": "04:35",
       "title": "KITO PIZZAS"
     },
     {
-      "position": 6,
+      "position": 2,
       "start_time": "05:03",
       "title": "KONI CHAN"
     }
   ],
   "schemaVersion": 1,
   "section": "programacion",
-  "revision": 11,
-  "updatedAt": "2026-11-10T06:13:23.436Z"
+  "revision": 12,
+  "updatedAt": "2026-11-10T07:43:46.661Z"
 }
