@@ -44,10 +44,40 @@
       "position": 9,
       "start_time": "08:07",
       "title": "LAS AVENTURAS DE ORPHEN"
+    },
+    {
+      "position": 10,
+      "start_time": "08:30",
+      "title": "PINKY Y CEREBRO"
+    },
+    {
+      "position": 11,
+      "start_time": "08:51",
+      "title": "LA PANTERA ROSA"
+    },
+    {
+      "position": 12,
+      "start_time": "08:58",
+      "title": "POWER RANGERS FUERZA DEL TIEMPO"
+    },
+    {
+      "position": 13,
+      "start_time": "09:19",
+      "title": "POWER RANGERS LA GALAXIA PERDIDA"
+    },
+    {
+      "position": 14,
+      "start_time": "09:45",
+      "title": "PINKY Y CEREBRO"
+    },
+    {
+      "position": 15,
+      "start_time": "10:09",
+      "title": "RANMA 1/2"
     }
   ],
   "schemaVersion": 1,
   "section": "programacion",
-  "revision": 14,
-  "updatedAt": "2026-11-10T07:52:36.314Z"
+  "revision": 15,
+  "updatedAt": "2026-11-10T07:54:29.117Z"
 }
