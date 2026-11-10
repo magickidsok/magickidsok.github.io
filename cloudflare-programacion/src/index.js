@@ -14,7 +14,7 @@ function json(data, status=200, origin=null, extra={}) {
   return new Response(JSON.stringify(data),{status,headers});
 }
 function b64url(bytes) { return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
-function unb64url(s) { return Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")+"===".slice((s.length+3)%4)),c=>c.charCodeAt(0)); }
+function unb64url(s) { const normalized=s.replace(/-/g,"+").replace(/_/g,"/"); const padded=normalized+"=".repeat((4-normalized.length%4)%4); return Uint8Array.from(atob(padded),c=>c.charCodeAt(0)); }
 async function hmacKey(secret) { return crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign","verify"]); }
 async function sign(payload,secret) {
   const body=b64url(new TextEncoder().encode(JSON.stringify(payload)));
