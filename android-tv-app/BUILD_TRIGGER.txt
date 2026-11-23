@@ -1,1 +1,1 @@
-Build MAGIC KIDS TV APK from the isolated Android TV project.
+Rebuild MAGIC KIDS TV APK with Wix app-android URL as startup page.
