@@ -1,0 +1,1 @@
+Build MAGIC KIDS TV APK from the isolated Android TV project.
