@@ -1,1 +1,1 @@
-Rebuild MAGIC KIDS TV APK with Wix app-android URL as startup page.
+Build and publish MAGIC KIDS TV APK v1.0.1 with requested Wix startup URL.
