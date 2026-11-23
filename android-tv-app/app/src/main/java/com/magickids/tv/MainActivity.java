@@ -24,7 +24,7 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-    private static final String HOME_URL = "https://www.magickidsok.online";
+    private static final String HOME_URL = "https://headless-zchpdkyghyi-elmagickids-140b.wix-site-host.com/app-android/index.html";
 
     private FrameLayout root;
     private WebView webView;
